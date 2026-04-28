@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Luma Estate OS | Luma Premium",
   description: "Infraestructura comercial inmobiliaria para captar, medir y cerrar prospectos de alto valor.",
+  openGraph: {
+    title: "Luma Estate OS | Luma Premium",
+    description: "Infraestructura comercial inmobiliaria para captar, medir y cerrar prospectos de alto valor.",
+    type: "website",
+    locale: "es_ES",
+  },
 };
 
 export default function RootLayout({

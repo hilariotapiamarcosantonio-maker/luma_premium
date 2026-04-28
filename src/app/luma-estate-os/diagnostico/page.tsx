@@ -42,7 +42,7 @@ export default function DiagnosticoPage() {
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <label className="text-sm font-medium text-slate-400">Tipo de Operación</label>
-                <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all appearance-none">
+                <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all">
                   <option value="" disabled selected>Seleccione el perfil</option>
                   <option>Inmobiliaria Boutique</option>
                   <option>Desarrollador de Proyectos</option>
@@ -52,7 +52,7 @@ export default function DiagnosticoPage() {
               </div>
               <div className="space-y-3">
                 <label className="text-sm font-medium text-slate-400">Volumen de Propiedades</label>
-                <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all appearance-none">
+                <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all">
                   <option value="" disabled selected>Cantidad aproximada</option>
                   <option>1 - 5 proyectos exclusivos</option>
                   <option>6 - 20 propiedades</option>
@@ -73,7 +73,7 @@ export default function DiagnosticoPage() {
               </div>
               <div className="space-y-3">
                 <label className="text-sm font-medium text-slate-400">¿Invierten en publicidad?</label>
-                <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all appearance-none">
+                <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all">
                   <option value="" disabled selected>Seleccione opción</option>
                   <option>Sí, constantemente</option>
                   <option>Sí, de forma esporádica</option>
@@ -84,7 +84,7 @@ export default function DiagnosticoPage() {
 
             <div className="space-y-3">
               <label className="text-sm font-medium text-slate-400">¿Usan CRM actualmente?</label>
-              <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all appearance-none">
+              <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all">
                 <option value="" disabled selected>Estado tecnológico</option>
                 <option>Sí, y tenemos visibilidad de principio a fin</option>
                 <option>Sí, pero no está integrado a la captación (mucha carga manual)</option>
@@ -103,7 +103,7 @@ export default function DiagnosticoPage() {
 
             <div className="space-y-3">
               <label className="text-sm font-medium text-slate-400">Rango de inversión estimado para su infraestructura comercial</label>
-              <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all appearance-none">
+              <select required className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all">
                 <option value="" disabled selected>Seleccione un rango</option>
                 <option>US$1,500 - US$3,000 (Auditoría / Base inicial)</option>
                 <option>US$3,000 - US$6,500 (Foundation)</option>

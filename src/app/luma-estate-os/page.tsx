@@ -5,6 +5,11 @@ import { ArrowRight, Globe, LineChart, Layers, Target, Activity, ExternalLink } 
 export const metadata: Metadata = {
   title: 'Luma Estate OS | Infraestructura Comercial Inmobiliaria',
   description: 'No construyo páginas web. Construyo infraestructura comercial inmobiliaria para captar, medir y cerrar prospectos de alto valor.',
+  openGraph: {
+    title: 'Luma Estate OS | Infraestructura Comercial Inmobiliaria',
+    description: 'No construyo páginas web. Construyo infraestructura comercial inmobiliaria para captar, medir y cerrar prospectos de alto valor.',
+    type: 'website',
+  },
 };
 
 export default function LumaEstateOSLanding() {
