@@ -1,6 +1,6 @@
 export default function LumaFooter() {
   return (
-    <footer className="py-12 px-6 border-t border-slate-900 bg-slate-950 text-center flex flex-col items-center justify-center font-sans">
+    <footer className="py-12 px-6 border-t border-white/10 bg-slate-950 text-center flex flex-col items-center justify-center font-sans">
       <div className="space-y-4">
         <div>
           <p className="text-slate-500 text-sm mb-1">
@@ -14,8 +14,9 @@ export default function LumaFooter() {
         <div className="w-12 h-px bg-slate-800 mx-auto"></div>
         
         <div>
-          <p className="text-slate-600 text-xs tracking-wide">
-            &copy; {new Date().getFullYear()} Marcos Hilario. Arquitectura Digital de Alto Rendimiento.
+          <p className="text-sm tracking-wide">
+            <span className="text-white font-semibold">&copy; {new Date().getFullYear()} Marcos Hilario.</span>{' '}
+            <span className="text-white/70">Arquitectura Digital de Alto Rendimiento.</span>
           </p>
         </div>
       </div>

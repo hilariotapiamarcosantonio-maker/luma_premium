@@ -40,3 +40,5 @@
 > Luma Estate OS es una vertical comercial de Luma Premium.
 > Infraestructura Comercial Inmobiliaria
 > © [Año] Marcos Hilario. Arquitectura Digital de Alto Rendimiento.
+
+*Nota de estilo: La autoría debe tener presencia visual premium con contraste alto (ej. texto blanco y nombre en negrita) para reforzar la marca personal y la percepción high-ticket.*

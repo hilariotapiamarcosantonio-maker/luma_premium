@@ -35,6 +35,11 @@ Filtra prospectos para asegurar que solo tratemos con clientes calificados (C-Le
 - **Captación:** Landings ultra-optimizadas con atribución (saber de qué anuncio vino el lead).
 - **Dashboard/CRM:** Pipeline de seguimiento sin distracciones para el equipo de ventas.
 
+### 8. Firma de Autoría Permanente
+- Cada ecosistema debe incluir en el footer: `© [Año] Marcos Hilario. Arquitectura Digital de Alto Rendimiento.`
+- La firma de Marcos Hilario debe aparecer en cada proyecto futuro y replicarse en los próximos ecosistemas comerciales construidos.
+- Se debe asegurar un contraste visual alto (texto blanco, nombre en negrita) para reforzar autoridad, propiedad intelectual, consistencia de marca personal y percepción premium.
+
 ### Proceso para Adaptar a Otro Sector
 1. **Identificar la fuga de leads** en ese sector (Ej. concesionarios de lujo).
 2. **Renombrar el producto** si es necesario (Ej. Luma Auto OS).
