@@ -31,3 +31,7 @@
 - "Sustituya la intuición de sus agentes por visibilidad comercial absoluta."
 - "No compita por precio. Compita por la experiencia de compra."
 - "Capturar un lead de alto patrimonio con un formulario genérico es como servir un vino de reserva en un vaso de plástico."
+- "Una propiedad de alto valor no debería depender de seguimiento improvisado."
+- "Si no puede medir qué campaña genera oportunidades reales, su operación comercial está funcionando por intuición."
+- "Una landing aislada captura. Un sistema conectado convierte."
+- "Luma Estate OS protege los prospectos que sus campañas ya pagaron."
