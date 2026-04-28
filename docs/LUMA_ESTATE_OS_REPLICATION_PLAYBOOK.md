@@ -57,6 +57,15 @@ Filtra prospectos para asegurar que solo tratemos con clientes calificados (C-Le
   - Estética C-Level: Evitar bloques de color disruptivos (ej. blanco puro en diseño oscuro) que parezcan plantillas de SaaS genéricas.
   - **Regla estricta:** Ningún ecosistema futuro debe recibir tráfico pagado hasta que sus formularios capturen datos reales y sus anchors estén limpios de duplicaciones de hashes.
 
+### 11. Arquitectura de Datos Segura (B2B vs Operativo)
+- **Separación estricta:** La base de prospectos interesados en comprar la infraestructura (B2B) NUNCA debe mezclarse con el CRM inmobiliario operativo que gestiona compradores de propiedades o cierres de los clientes.
+- **Patrón replicable de integración:**
+  1. Crear plantilla profesional `.xlsx` con dashboards integrados (`scripts/create-luma-sales-sheet-template.mjs`).
+  2. Subir a Google Drive como hoja nativa.
+  3. Declarar variables exclusivas con prefijo (ej. `LUMA_LEADS_SPREADSHEET_ID`).
+  4. Mantener `.env.local` fuera de Git. Solo versionar `.env.example` limpio.
+  5. Probar captura de datos localmente antes de Vercel.
+
 ### Proceso para Adaptar a Otro Sector
 1. **Identificar la fuga de leads** en ese sector (Ej. concesionarios de lujo).
 2. **Renombrar el producto** si es necesario (Ej. Luma Auto OS).

@@ -29,3 +29,6 @@ Implementación ágil de infraestructura comercial para operaciones inmobiliaria
 - Un ecosistema "Done-for-You" (hecho para ti) que centraliza captación, atribución y cierre.
 - Visibilidad ejecutiva del pipeline de ventas.
 - El puente técnico entre el presupuesto de marketing y las comisiones reales.
+
+---
+*Nota de Arquitectura Interna:* La captación de leads que compran este Sales Kit está estrictamente aislada bajo el identificador `LUMA_LEADS`. No cruzar credenciales con el producto final entregado al cliente.
