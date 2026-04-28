@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Layers, ArrowRight, TrendingUp, Building2, CheckCircle2 } from 'lucide-react';
+import LumaFooter from '@/components/luma-estate/LumaFooter';
 
 export const metadata: Metadata = {
   title: 'Vista del Río - Segmentación Inmobiliaria | Luma Estate OS',
@@ -96,6 +97,8 @@ export default function VistaDelRioDemo() {
           </Link>
         </div>
       </section>
+
+      <LumaFooter />
     </main>
   );
 }

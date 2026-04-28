@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Globe, LineChart, Layers, Target, Activity, ExternalLink } from 'lucide-react';
+import LumaFooter from '@/components/luma-estate/LumaFooter';
 
 export const metadata: Metadata = {
   title: 'Luma Estate OS | Infraestructura Comercial Inmobiliaria',
@@ -259,14 +260,7 @@ export default function LumaEstateOSLanding() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-slate-900 bg-slate-950 text-center flex flex-col items-center justify-center">
-        <p className="text-slate-500 text-sm mb-2">
-          Luma Estate OS es una vertical comercial de <strong className="text-slate-400 font-medium">Luma Premium</strong>.
-        </p>
-        <p className="text-slate-600 text-xs">
-          Infraestructura Comercial Inmobiliaria &copy; {new Date().getFullYear()}
-        </p>
-      </footer>
+      <LumaFooter />
     </main>
   );
 }

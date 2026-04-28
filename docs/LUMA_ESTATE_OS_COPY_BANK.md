@@ -35,3 +35,8 @@
 - "Si no puede medir qué campaña genera oportunidades reales, su operación comercial está funcionando por intuición."
 - "Una landing aislada captura. Un sistema conectado convierte."
 - "Luma Estate OS protege los prospectos que sus campañas ya pagaron."
+
+## Firma de Autoría Permanente (Footer)
+> Luma Estate OS es una vertical comercial de Luma Premium.
+> Infraestructura Comercial Inmobiliaria
+> © [Año] Marcos Hilario. Arquitectura Digital de Alto Rendimiento.

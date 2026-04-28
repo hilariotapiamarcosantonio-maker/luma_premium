@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import LumaFooter from '@/components/luma-estate/LumaFooter';
 
 export const metadata: Metadata = {
   title: 'Auditoría Comercial | Luma Estate OS',
@@ -123,6 +124,8 @@ export default function DiagnosticoPage() {
           </p>
         </form>
       </div>
+
+      <LumaFooter />
     </main>
   );
 }
