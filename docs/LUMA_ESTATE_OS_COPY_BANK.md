@@ -7,10 +7,10 @@
 **Headline:** Propiedades Premium. Experiencias de venta amateur.
 **Subheadline:** Si su equipo no sabe qué campaña generó qué venta, está perdiendo dinero. Luma Estate OS es el puente definitivo entre su marketing y sus comisiones.
 
-## CTAs (Call to Actions)
-- Agendar Auditoría Comercial
-- Ver Demo de Pipeline
-- Solicitar Despliegue Privado
+## CTAs (Call to Actions) - Jerarquía Consistente
+- **Principal (Landing / Botones Core):** Solicitar Auditoría Comercial
+- **Secundario (Educación):** Ver Caso de Segmentación
+- **Submit (Formulario):** Solicitar Evaluación Ejecutiva
 
 ## Pitch Corto
 "Luma Estate OS es una infraestructura comercial diseñada para propiedades de alto nivel. Conectamos una presentación visual impecable con un backend de datos preciso. Es la diferencia entre recibir un email genérico y tener visibilidad total de su ciclo de ventas."

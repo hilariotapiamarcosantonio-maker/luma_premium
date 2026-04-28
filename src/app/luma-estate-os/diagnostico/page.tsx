@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function DiagnosticoPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-300 p-6 font-sans">
-      <div className="max-w-3xl mx-auto pt-24 pb-24">
+      <div className="max-w-3xl mx-auto pt-16 pb-24">
         <Link href="/luma-estate-os" className="text-slate-500 hover:text-white transition-colors mb-8 inline-block text-sm font-medium">
           &larr; Volver a Luma Estate OS
         </Link>

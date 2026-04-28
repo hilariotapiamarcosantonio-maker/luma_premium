@@ -33,24 +33,24 @@ export default function LumaEstateOSLanding() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-40 pb-24 px-6 overflow-hidden">
+      <section className="relative pt-32 pb-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10"></div>
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-800 bg-slate-900/50 text-xs font-medium text-amber-400/90 mb-4">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-800 bg-slate-900/50 text-xs font-medium text-amber-400/90 mb-2">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
             Luma Estate OS | Foundation
           </div>
           <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-[1.1]">
             Propiedades Premium. <br />
-            <span className="text-slate-500">Experiencias de venta amateur.</span>
+            <span className="text-slate-400">Experiencias de venta amateur.</span>
           </h1>
           <p className="text-xl md:text-2xl text-slate-400 font-light max-w-3xl mx-auto leading-relaxed">
             Si su equipo no sabe qué campaña generó qué venta, está perdiendo dinero. 
             Luma Estate OS es el puente definitivo entre su marketing y sus comisiones.
           </p>
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/luma-estate-os/diagnostico" className="w-full sm:w-auto bg-white text-slate-950 px-8 py-4 rounded-sm font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
-              Agendar Auditoría Comercial <ArrowRight className="w-4 h-4" />
+              Solicitar Auditoría Comercial <ArrowRight className="w-4 h-4" />
             </Link>
             <Link href="#demo" className="w-full sm:w-auto px-8 py-4 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors flex items-center justify-center">
               Ver Caso de Segmentación
@@ -72,7 +72,7 @@ export default function LumaEstateOSLanding() {
       </section>
 
       {/* NEW: Infraestructura Conectada */}
-      <section id="sistema" className="py-24 px-6">
+      <section id="sistema" className="py-24 px-6 scroll-mt-20">
         <div className="max-w-7xl mx-auto">
           <div className="mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-800 bg-slate-900/50 text-xs font-medium text-slate-400 mb-4">
@@ -118,7 +118,7 @@ export default function LumaEstateOSLanding() {
       </section>
 
       {/* Showcase / Demo - Vista del Río */}
-      <section id="demo" className="py-24 px-6 bg-slate-900/30 border-y border-slate-800/50">
+      <section id="demo" className="py-24 px-6 bg-slate-900/30 border-y border-slate-800/50 scroll-mt-20">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -162,13 +162,29 @@ export default function LumaEstateOSLanding() {
             </div>
             
             <div className="relative">
-              <div className="aspect-square md:aspect-[4/3] rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden relative shadow-2xl flex items-center justify-center">
-                <div className="text-center p-8">
-                  <Layers className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                  <p className="text-slate-500 font-medium">Arquitectura de Segmentación</p>
-                  <p className="text-slate-600 text-sm mt-2">1 Propiedad &rarr; 3 Terminales Comerciales</p>
+              <div className="aspect-square md:aspect-[4/3] rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden relative shadow-2xl flex flex-col p-8">
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                  <Layers className="w-12 h-12 text-amber-500 mb-6" />
+                  <p className="text-white font-semibold text-xl mb-2">1 Propiedad</p>
+                  <p className="text-slate-500 text-sm mb-6">Vista del Río</p>
+                  
+                  <div className="w-px h-8 bg-slate-800 mb-6"></div>
+                  
+                  <p className="text-white font-semibold mb-4">3 Rutas Comerciales</p>
+                  <div className="flex flex-wrap justify-center gap-2 mb-6">
+                    <span className="px-3 py-1 rounded-md bg-slate-950 border border-slate-800 text-xs text-slate-400">Inversión / Airbnb</span>
+                    <span className="px-3 py-1 rounded-md bg-slate-950 border border-slate-800 text-xs text-slate-400">Corporativo</span>
+                    <span className="px-3 py-1 rounded-md bg-slate-950 border border-slate-800 text-xs text-slate-400">Ley 171-07</span>
+                  </div>
+
+                  <div className="w-px h-8 bg-slate-800 mb-6"></div>
+
+                  <p className="text-amber-500 font-semibold mb-2">1 Pipeline Ejecutivo</p>
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <span>Landing</span> <ArrowRight className="w-3 h-3" /> <span>Formulario</span> <ArrowRight className="w-3 h-3" /> <span>CRM</span>
+                  </div>
                 </div>
-                <div className="absolute top-4 left-4 right-4 h-12 border-b border-slate-800/50 flex items-center px-4 gap-2">
+                <div className="absolute top-4 left-4 right-4 h-12 border-b border-slate-800/50 flex items-center px-4 gap-2 bg-slate-900/80 backdrop-blur-sm z-10">
                   <div className="w-3 h-3 rounded-full bg-slate-800"></div>
                   <div className="w-3 h-3 rounded-full bg-slate-800"></div>
                   <div className="w-3 h-3 rounded-full bg-slate-800"></div>
@@ -180,7 +196,7 @@ export default function LumaEstateOSLanding() {
       </section>
 
       {/* NEW: Niveles de Oferta */}
-      <section id="oferta" className="py-24 px-6">
+      <section id="oferta" className="py-24 px-6 scroll-mt-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
@@ -244,18 +260,19 @@ export default function LumaEstateOSLanding() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 px-6 bg-white text-slate-950 text-center">
-        <div className="max-w-3xl mx-auto space-y-8">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight">Deje de perder comisiones por falta de visibilidad.</h2>
-          <p className="text-xl text-slate-600 font-light max-w-2xl mx-auto">
+      <section className="py-32 px-6 bg-slate-950 text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10"></div>
+        <div className="max-w-4xl mx-auto bg-slate-900/40 border border-white/10 rounded-3xl p-12 md:p-20 shadow-2xl backdrop-blur-sm">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-6">Deje de perder comisiones por falta de visibilidad.</h2>
+          <p className="text-xl text-slate-400 font-light max-w-2xl mx-auto mb-10">
             Agende una auditoría ejecutiva. Analizaremos su ecosistema actual y diseñaremos el roadmap para su infraestructura comercial Luma.
           </p>
-          <div className="pt-4">
-            <Link href="/luma-estate-os/diagnostico" className="inline-flex items-center gap-2 bg-slate-950 text-white px-8 py-4 rounded-sm font-medium hover:bg-slate-800 transition-all shadow-xl shadow-slate-950/20">
-              Aplicar para Diagnóstico <ArrowRight className="w-4 h-4" />
+          <div>
+            <Link href="/luma-estate-os/diagnostico" className="inline-flex items-center gap-2 bg-white text-slate-950 px-10 py-5 rounded-sm font-semibold hover:bg-slate-200 transition-all shadow-xl shadow-white/5">
+              Solicitar Auditoría Comercial <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
-          <p className="text-sm text-slate-500 pt-4 font-medium">Solo para operaciones de alto patrimonio, desarrolladores y agencias C-Level.</p>
+          <p className="text-sm text-slate-500 pt-8 font-medium">Solo para operaciones de alto patrimonio, desarrolladores y agencias C-Level.</p>
         </div>
       </section>
 

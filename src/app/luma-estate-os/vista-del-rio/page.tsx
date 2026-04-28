@@ -93,7 +93,7 @@ export default function VistaDelRioDemo() {
 
         <div className="mt-16 text-center">
           <Link href="/luma-estate-os/diagnostico" className="inline-flex items-center gap-2 bg-white text-slate-950 px-8 py-4 rounded-sm font-medium hover:bg-slate-200 transition-colors">
-            Auditar mi Infraestructura Comercial <ArrowRight className="w-4 h-4" />
+            Solicitar Auditoría Comercial <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

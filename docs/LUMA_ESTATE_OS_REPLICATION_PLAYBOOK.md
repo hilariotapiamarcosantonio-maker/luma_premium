@@ -48,6 +48,14 @@ Filtra prospectos para asegurar que solo tratemos con clientes calificados (C-Le
   - **Diagnostic Call Script:** Guion de venta y diagnóstico C-Level.
   - **Prospecting System:** Matriz de calificación y base de datos (CSV).
 
+### 10. Auditoría de Navegación Pre-Pauta
+- Antes de enviar tráfico pagado a un nuevo ecosistema, es obligatorio realizar una revisión grabada en video de la navegación en Desktop y Mobile.
+- Puntos de validación:
+  - Primer fold (que el CTA sea visible sin scroll).
+  - Anclajes de menú (uso de `scroll-mt` para no pisar títulos con el header).
+  - Consistencia del copy en los botones (ej. mantener siempre "Solicitar Auditoría Comercial" a lo largo de la ruta).
+  - Estética C-Level: Evitar bloques de color disruptivos (ej. blanco puro en diseño oscuro) que parezcan plantillas de SaaS genéricas.
+
 ### Proceso para Adaptar a Otro Sector
 1. **Identificar la fuga de leads** en ese sector (Ej. concesionarios de lujo).
 2. **Renombrar el producto** si es necesario (Ej. Luma Auto OS).
