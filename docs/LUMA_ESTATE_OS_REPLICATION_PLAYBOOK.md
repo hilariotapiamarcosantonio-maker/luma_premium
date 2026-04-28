@@ -40,6 +40,14 @@ Filtra prospectos para asegurar que solo tratemos con clientes calificados (C-Le
 - La firma de Marcos Hilario debe aparecer en cada proyecto futuro y replicarse en los próximos ecosistemas comerciales construidos.
 - Se debe asegurar un contraste visual alto (texto blanco, nombre en negrita) para reforzar autoridad, propiedad intelectual, consistencia de marca personal y percepción premium.
 
+### 9. Sales Kit y Prospección
+- Todo nuevo vertical debe ir acompañado de su Sales Kit, incluyendo:
+  - **Video Demo Script:** Estructura de Problema -> Sistema -> Valor.
+  - **Plan de Ads:** Enfocado en el sistema B2B, no en propiedades sueltas.
+  - **Outreach Playbook:** Mensajes, seguimiento y manejo de objeciones.
+  - **Diagnostic Call Script:** Guion de venta y diagnóstico C-Level.
+  - **Prospecting System:** Matriz de calificación y base de datos (CSV).
+
 ### Proceso para Adaptar a Otro Sector
 1. **Identificar la fuga de leads** en ese sector (Ej. concesionarios de lujo).
 2. **Renombrar el producto** si es necesario (Ej. Luma Auto OS).

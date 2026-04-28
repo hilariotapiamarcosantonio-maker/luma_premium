@@ -42,3 +42,8 @@
 > © [Año] Marcos Hilario. Arquitectura Digital de Alto Rendimiento.
 
 *Nota de estilo: La autoría debe tener presencia visual premium con contraste alto (ej. texto blanco y nombre en negrita) para reforzar la marca personal y la percepción high-ticket.*
+
+## Sales Kit - Promesa y Tono
+**Promesa Central:** "En 21 a 30 días organizamos la operación comercial inmobiliaria con landings, formularios, CRM, pipeline, atribución, seguimiento y dashboard ejecutivo."
+
+**Regla de Outreach:** No perseguir. Filtrar. Buscamos operaciones que ya tienen el dolor de la desorganización de leads.
