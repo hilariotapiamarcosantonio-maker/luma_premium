@@ -13,7 +13,7 @@ export default function VistaDelRioDemo() {
     <main className="min-h-screen bg-slate-950 text-slate-300 font-sans">
       <nav className="fixed top-0 w-full border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-md z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/luma-estate-os" className="text-slate-500 hover:text-white transition-colors text-sm font-medium flex items-center gap-2">
+          <Link href="/luma-estate-os" className="text-slate-400 hover:text-white transition-colors text-sm font-medium flex items-center gap-2">
             &larr; Volver a Luma Estate OS
           </Link>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-800 bg-slate-900 text-xs font-medium text-amber-500">

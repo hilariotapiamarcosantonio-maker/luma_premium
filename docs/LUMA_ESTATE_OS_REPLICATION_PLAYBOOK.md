@@ -55,6 +55,7 @@ Filtra prospectos para asegurar que solo tratemos con clientes calificados (C-Le
   - Anclajes de menú (uso de `scroll-mt` para no pisar títulos con el header).
   - Consistencia del copy en los botones (ej. mantener siempre "Solicitar Auditoría Comercial" a lo largo de la ruta).
   - Estética C-Level: Evitar bloques de color disruptivos (ej. blanco puro en diseño oscuro) que parezcan plantillas de SaaS genéricas.
+  - **Regla estricta:** Ningún ecosistema futuro debe recibir tráfico pagado hasta que sus formularios capturen datos reales y sus anchors estén limpios de duplicaciones de hashes.
 
 ### Proceso para Adaptar a Otro Sector
 1. **Identificar la fuga de leads** en ese sector (Ej. concesionarios de lujo).
