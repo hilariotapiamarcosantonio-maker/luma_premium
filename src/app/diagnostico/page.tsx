@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, MessageCircle, Search, FileCheck, Route } from 'lucide-react';
+import { ArrowRight, MessageCircle, Search, FileCheck, Route, Users, Clock, ShieldCheck } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
+import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import { whatsappLink } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -81,6 +82,20 @@ export default function DiagnosticoPage() {
               <MessageCircle className="w-4 h-4" /> Hablar por WhatsApp
             </a>
           </div>
+
+          {/* Meta info */}
+          <div className="pt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
+            {[
+              { icon: Users, text: 'Para dueños y directivos' },
+              { icon: Clock, text: 'Revisión inicial en 24–48 h' },
+              { icon: ShieldCheck, text: 'Sin compromiso de venta' },
+            ].map((m) => (
+              <span key={m.text} className="inline-flex items-center gap-2">
+                <m.icon className="w-3.5 h-3.5 text-amber-500/70" />
+                {m.text}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -111,17 +126,17 @@ export default function DiagnosticoPage() {
       {/* Qué recibe el prospecto */}
       <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <MotionSection className="text-center mb-16">
             <PremiumBadge className="mb-4 mx-auto">Qué recibe</PremiumBadge>
             <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
               No es una llamada de ventas. Es una lectura ejecutiva.
             </h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          </MotionSection>
+          <MotionStagger className="grid md:grid-cols-3 gap-6">
             {RECIBE.map((item) => (
-              <div
+              <MotionItem
                 key={item.title}
-                className="p-8 rounded-2xl border border-slate-800 bg-slate-900/20"
+                className="h-full p-8 rounded-2xl border border-slate-800 bg-slate-900/20"
               >
                 <item.icon className="w-8 h-8 text-amber-500 mb-6" />
                 <h3 className="text-lg font-semibold text-white mb-3">
@@ -130,9 +145,9 @@ export default function DiagnosticoPage() {
                 <p className="text-slate-400 text-sm leading-relaxed">
                   {item.description}
                 </p>
-              </div>
+              </MotionItem>
             ))}
-          </div>
+          </MotionStagger>
         </div>
       </section>
 

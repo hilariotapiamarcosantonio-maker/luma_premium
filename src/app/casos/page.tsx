@@ -3,6 +3,7 @@ import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import CaseCard from '@/components/site/CaseCard';
 import CTASection from '@/components/site/CTASection';
+import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import { CASES } from '@/lib/cases';
 
 export const metadata: Metadata = {
@@ -35,15 +36,32 @@ export default function CasosPage() {
         </div>
       </section>
 
+      {/* Franja de autoridad */}
+      <section className="pb-12 px-6">
+        <MotionSection className="max-w-7xl mx-auto">
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-6 md:p-8 text-center">
+            <p className="text-lg md:text-xl text-white font-medium leading-snug">
+              Demos oficiales y referencias comerciales seleccionadas.
+            </p>
+            <p className="text-slate-400 mt-2">
+              No mostramos teoría. Mostramos arquitectura en funcionamiento.
+            </p>
+          </div>
+        </MotionSection>
+      </section>
+
       <section className="pb-24 px-6">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <MotionStagger className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {CASES.map((item) => (
-            <CaseCard key={item.url} item={item} />
+            <MotionItem key={item.url} className="h-full">
+              <CaseCard item={item} />
+            </MotionItem>
           ))}
-        </div>
+        </MotionStagger>
         <div className="max-w-7xl mx-auto mt-10">
           <p className="text-xs text-slate-600 border border-slate-800/60 rounded-lg p-4 leading-relaxed">
-            Demos públicas con fines demostrativos. Los entornos internos de
+            Demos públicas con fines demostrativos. Las referencias comerciales y la
+            autoridad del fundador se muestran como tales. Los entornos internos de
             operación y la sala de ventas no se exponen aquí.
           </p>
         </div>

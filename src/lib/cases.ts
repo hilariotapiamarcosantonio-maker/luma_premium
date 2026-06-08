@@ -1,12 +1,22 @@
 // Demos y referencias públicas autorizadas para mostrar en /casos.
 // Solo enlaces aprobados. La Sales Room interna NO se expone aquí.
 
+export type CaseKind = 'demo' | 'reference' | 'authority';
+
+export const CASE_KIND_LABEL: Record<CaseKind, string> = {
+  demo: 'Demo oficial',
+  reference: 'Referencia comercial',
+  authority: 'Autoridad del fundador',
+};
+
 export type CaseItem = {
   title: string;
   category: string;
   description: string;
   url: string;
   icon: string;
+  /** Tipo de referencia para etiquetado honesto */
+  kind: CaseKind;
   /** Solución relacionada (slug) para venta cruzada */
   solutionSlug?: string;
 };
@@ -19,6 +29,7 @@ export const CASES: CaseItem[] = [
       'Presentación y captación premium para proyectos inmobiliarios con rutas por perfil de comprador.',
     url: 'https://luma-real-estate-os-demo.vercel.app/',
     icon: 'Building2',
+    kind: 'demo',
     solutionSlug: 'real-estate-os',
   },
   {
@@ -28,6 +39,7 @@ export const CASES: CaseItem[] = [
       'Centro de control comercial: leads, propiedades, asesores y seguimiento con visibilidad ejecutiva.',
     url: 'https://luma-real-estate-crm-os-demo.vercel.app/',
     icon: 'LayoutDashboard',
+    kind: 'demo',
     solutionSlug: 'real-estate-crm-os',
   },
   {
@@ -37,6 +49,7 @@ export const CASES: CaseItem[] = [
       'Concierge comercial que responde, educa y califica prospectos antes de que lleguen al asesor.',
     url: 'https://luma-real-estate-concierge-os-demo.vercel.app/',
     icon: 'MessageSquare',
+    kind: 'demo',
     solutionSlug: 'real-estate-concierge-os',
   },
   {
@@ -46,6 +59,7 @@ export const CASES: CaseItem[] = [
       'Catálogo, pedidos, clientes y seguimiento para tiendas que quieren ordenar su operación comercial.',
     url: 'https://luma-commerce-os-demo.vercel.app/',
     icon: 'ShoppingBag',
+    kind: 'demo',
     solutionSlug: 'commerce-os',
   },
   {
@@ -55,6 +69,7 @@ export const CASES: CaseItem[] = [
       'Presentación de servicios, captación desde redes y solicitud de cita para spas y centros estéticos.',
     url: 'https://luma-beauty-spa-os-demo.vercel.app/',
     icon: 'Sparkles',
+    kind: 'demo',
     solutionSlug: 'beauty-spa-os',
   },
   {
@@ -64,6 +79,7 @@ export const CASES: CaseItem[] = [
       'Flujo de concierge comercial para resolver dudas y guiar a la clienta hacia la solicitud de cita.',
     url: 'https://luma-beauty-spa-os-demo.vercel.app/concierge',
     icon: 'MessageSquare',
+    kind: 'demo',
     solutionSlug: 'beauty-spa-os',
   },
   {
@@ -73,6 +89,7 @@ export const CASES: CaseItem[] = [
       'Referencia de sistema comercial digital construido con la arquitectura Luma Premium.',
     url: 'https://suvoga-os-tjaa.vercel.app/',
     icon: 'Boxes',
+    kind: 'reference',
   },
   {
     title: 'Portafolio — Marcos Hilario',
@@ -81,5 +98,6 @@ export const CASES: CaseItem[] = [
       'Portafolio del arquitecto detrás de Luma Premium: infraestructura digital premium de alto rendimiento.',
     url: 'https://marcos-portfolio-premium.vercel.app/',
     icon: 'User',
+    kind: 'authority',
   },
 ];

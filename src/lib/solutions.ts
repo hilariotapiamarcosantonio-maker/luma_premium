@@ -28,6 +28,8 @@ export type Solution = {
   capabilities: { title: string; description: string; icon: string }[];
   /** Flujo comercial paso a paso (lo que pasa con el prospecto) */
   flow: SolutionFlow[];
+  /** Flujo comercial resumido para el diagrama visual */
+  commercialFlow: string[];
   /** Demo pública autorizada */
   demoUrl?: string;
   /** Ruta interna a experiencia completa (si existe en este proyecto) */
@@ -84,6 +86,7 @@ export const SOLUTIONS: Solution[] = [
       { label: 'Captación', detail: 'Deja sus datos con su interés ya identificado.' },
       { label: 'Seguimiento', detail: 'El lead queda listo para el asesor con todo el contexto.' },
     ],
+    commercialFlow: ['Proyecto', 'Perfil comprador', 'Landing', 'Captación', 'Lead', 'Seguimiento'],
     demoUrl: 'https://luma-real-estate-os-demo.vercel.app/',
     internalUrl: '/luma-estate-os',
     salesNextStep: 'Pedir una auditoría comercial inmobiliaria (diagnóstico).',
@@ -129,6 +132,7 @@ export const SOLUTIONS: Solution[] = [
       { label: 'Seguimiento', detail: 'Cada interacción queda registrada con su próximo paso.' },
       { label: 'Gerencia', detail: 'La dirección ve el pipeline y decide con datos reales.' },
     ],
+    commercialFlow: ['Lead', 'Propiedad', 'Asesor', 'Estado', 'Próximo paso', 'Cierre'],
     demoUrl: 'https://luma-real-estate-crm-os-demo.vercel.app/',
     salesNextStep: 'Mostrar el demo del CRM y pedir el diagnóstico de seguimiento.',
   },
@@ -174,6 +178,7 @@ export const SOLUTIONS: Solution[] = [
       { label: 'Calificación', detail: 'Se identifica su intención y presupuesto.' },
       { label: 'Asesor', detail: 'El lead calificado llega al humano con contexto resumido.' },
     ],
+    commercialFlow: ['Consulta', 'Respuesta', 'Recurso', 'Calificación', 'Resumen', 'Asesor humano'],
     demoUrl: 'https://luma-real-estate-concierge-os-demo.vercel.app/',
     salesNextStep: 'Mostrar el flujo demo del concierge y pedir el diagnóstico.',
     disclaimer:
@@ -220,6 +225,7 @@ export const SOLUTIONS: Solution[] = [
       { label: 'Cliente', detail: 'Queda registrado con su historial de compra.' },
       { label: 'Seguimiento', detail: 'El panel permite recompra, postventa y control.' },
     ],
+    commercialFlow: ['Catálogo', 'Pedido', 'Cliente', 'Seguimiento', 'Recompra'],
     demoUrl: 'https://luma-commerce-os-demo.vercel.app/',
     salesNextStep: 'Mostrar el demo de tienda y pedir el diagnóstico comercial.',
   },
@@ -264,6 +270,7 @@ export const SOLUTIONS: Solution[] = [
       { label: 'Cita', detail: 'Solicita su cita con la información necesaria.' },
       { label: 'Seguimiento', detail: 'Queda registrada para recordatorios y recompra.' },
     ],
+    commercialFlow: ['Servicio', 'Consulta', 'Calificación', 'Agenda', 'Seguimiento'],
     demoUrl: 'https://luma-beauty-spa-os-demo.vercel.app/',
     salesNextStep: 'Mostrar el demo y el concierge, luego pedir el diagnóstico.',
     disclaimer:

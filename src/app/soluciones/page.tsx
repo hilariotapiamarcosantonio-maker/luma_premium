@@ -6,6 +6,7 @@ import SectionHeading from '@/components/site/SectionHeading';
 import SolutionCard from '@/components/site/SolutionCard';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import CTASection from '@/components/site/CTASection';
+import { MotionStagger, MotionItem } from '@/components/site/Motion';
 import { SOLUTIONS } from '@/lib/solutions';
 
 export const metadata: Metadata = {
@@ -38,15 +39,18 @@ export default function SolucionesPage() {
       </section>
 
       <section className="pb-24 px-6">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <MotionStagger className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {SOLUTIONS.map((s) => (
-            <SolutionCard key={s.slug} solution={s} />
+            <MotionItem key={s.slug} className="h-full">
+              <SolutionCard solution={s} />
+            </MotionItem>
           ))}
 
           {/* Tarjeta especial: Diagnóstico / Luma Intelligence */}
+          <MotionItem className="h-full">
           <Link
             href="/diagnostico"
-            className="group flex flex-col p-8 rounded-2xl border border-amber-500/30 bg-amber-500/[0.04] hover:bg-amber-500/[0.08] transition-colors"
+            className="group flex h-full flex-col p-8 rounded-2xl border border-amber-500/30 bg-amber-500/[0.04] hover:bg-amber-500/[0.08] hover:-translate-y-1 transition-all duration-300"
           >
             <div className="flex items-center justify-between mb-6">
               <span className="inline-flex items-center justify-center w-12 h-12 rounded-xl border border-amber-500/30 bg-slate-950">
@@ -68,7 +72,8 @@ export default function SolucionesPage() {
               Solicitar evaluación <ArrowRight className="w-4 h-4" />
             </span>
           </Link>
-        </div>
+          </MotionItem>
+        </MotionStagger>
       </section>
 
       <section className="pb-8 px-6">
