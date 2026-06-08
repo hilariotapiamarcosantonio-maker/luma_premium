@@ -4,7 +4,7 @@ import { Layers, ArrowRight, TrendingUp, Building2, CheckCircle2 } from 'lucide-
 import LumaFooter from '@/components/luma-estate/LumaFooter';
 
 export const metadata: Metadata = {
-  title: 'Vista del Río - Segmentación Inmobiliaria | Luma Estate OS',
+  title: { absolute: 'Vista del Río - Segmentación Inmobiliaria | Luma Estate OS' },
   description: 'El caso de segmentación inmobiliaria: Una misma propiedad, 3 ángulos de venta.',
 };
 

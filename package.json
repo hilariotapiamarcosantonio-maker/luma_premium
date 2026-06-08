@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src",
     "create:luma-sheet-template": "node scripts/create-luma-sales-sheet-template.mjs"
   },
   "dependencies": {
