@@ -1,11 +1,21 @@
 import Link from 'next/link';
 import { SITE } from '@/lib/site';
 import { SOLUTIONS } from '@/lib/solutions';
+import PremiumDivider from './PremiumDivider';
 
 // Footer madre de Luma Premium con navegación de soluciones.
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-white/10 bg-slate-950 font-sans">
+    <footer className="relative border-t border-white/10 bg-slate-950/70 backdrop-blur-sm font-sans">
+      {/* Closing statement */}
+      <div className="max-w-7xl mx-auto px-6 pt-16">
+        <p className="max-w-3xl text-2xl md:text-3xl font-medium text-white leading-snug">
+          Arquitectura comercial digital para negocios que venden por{' '}
+          <span className="text-amber-500">confianza, seguimiento y percepción</span>.
+        </p>
+        <PremiumDivider className="mt-10" />
+      </div>
+
       <div className="max-w-7xl mx-auto px-6 py-16 grid gap-12 md:grid-cols-4">
         <div className="md:col-span-2 space-y-4">
           <Link

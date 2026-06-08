@@ -5,7 +5,9 @@ import { ArrowRight, ExternalLink, Check } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import CTASection from '@/components/site/CTASection';
+import FlowDiagram from '@/components/site/FlowDiagram';
 import { Icon } from '@/components/site/Icon';
+import { MotionSection } from '@/components/site/Motion';
 import { getSolution, SOLUTION_SLUGS, SOLUTIONS } from '@/lib/solutions';
 
 type Params = { slug: string };
@@ -114,8 +116,23 @@ export default async function SolutionDetailPage({
         </div>
       </section>
 
+      {/* Flujo comercial (diagrama visual) */}
+      <section className="py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <MotionSection>
+            <PremiumBadge className="mb-4">Flujo comercial de la solución</PremiumBadge>
+            <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-8">
+              Así fluye una oportunidad dentro del sistema.
+            </h2>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 md:p-8 overflow-x-auto">
+              <FlowDiagram steps={solution.commercialFlow} />
+            </div>
+          </MotionSection>
+        </div>
+      </section>
+
       {/* Qué construye el sistema */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto">
           <div className="mb-14 max-w-2xl">
             <PremiumBadge className="mb-4">Qué entrega el sistema</PremiumBadge>
