@@ -4,7 +4,7 @@ import LumaFooter from '@/components/luma-estate/LumaFooter';
 import DiagnosticoForm from '@/components/luma-estate/DiagnosticoForm';
 
 export const metadata: Metadata = {
-  title: 'Auditoría Comercial | Luma Estate OS',
+  title: { absolute: 'Auditoría Comercial | Luma Estate OS' },
   description: 'Diagnóstico ejecutivo para identificar fugas de leads y evaluar su infraestructura comercial inmobiliaria.',
 };
 

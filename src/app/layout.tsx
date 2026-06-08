@@ -13,11 +13,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Luma Estate OS | Luma Premium",
-  description: "Infraestructura comercial inmobiliaria para captar, medir y cerrar prospectos de alto valor.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://luma-premium.vercel.app"
+  ),
+  title: {
+    default: "Luma Premium | Arquitectura comercial digital",
+    template: "%s | Luma Premium",
+  },
+  description:
+    "Sistemas comerciales digitales para negocios premium que necesitan captar, responder, organizar y convertir oportunidades con más autoridad, seguimiento y control.",
   openGraph: {
-    title: "Luma Estate OS | Luma Premium",
-    description: "Infraestructura comercial inmobiliaria para captar, medir y cerrar prospectos de alto valor.",
+    title: "Luma Premium | Arquitectura comercial digital",
+    description:
+      "Sistemas comerciales digitales para negocios premium que venden con autoridad, seguimiento y control.",
     type: "website",
     locale: "es_ES",
   },

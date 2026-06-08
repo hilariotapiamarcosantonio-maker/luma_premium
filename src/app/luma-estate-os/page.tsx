@@ -4,7 +4,7 @@ import { ArrowRight, Globe, LineChart, Layers, Target, Activity, ExternalLink } 
 import LumaFooter from '@/components/luma-estate/LumaFooter';
 
 export const metadata: Metadata = {
-  title: 'Luma Estate OS | Infraestructura Comercial Inmobiliaria',
+  title: { absolute: 'Luma Estate OS | Infraestructura Comercial Inmobiliaria' },
   description: 'No construyo páginas web. Construyo infraestructura comercial inmobiliaria para captar, medir y cerrar prospectos de alto valor.',
   openGraph: {
     title: 'Luma Estate OS | Infraestructura Comercial Inmobiliaria',
@@ -23,6 +23,7 @@ export default function LumaEstateOSLanding() {
             <Link href="/luma-estate-os" className="text-xl font-semibold tracking-tight text-white hover:opacity-90 transition-opacity">LUMA<span className="text-slate-500 font-light">PREMIUM</span></Link>
           </div>
           <div className="flex items-center gap-6 text-sm">
+            <Link href="/soluciones" className="hidden md:block text-slate-400 hover:text-white transition-colors">Luma Premium</Link>
             <Link href="/luma-estate-os#sistema" className="hidden md:block hover:text-white transition-colors">Sistema</Link>
             <Link href="/luma-estate-os#oferta" className="hidden md:block hover:text-white transition-colors">Oferta</Link>
             <Link href="/luma-estate-os/diagnostico" className="bg-white text-slate-950 px-5 py-2.5 rounded-sm font-medium hover:bg-slate-200 transition-colors">
@@ -248,7 +249,7 @@ export default function LumaEstateOSLanding() {
               Luma Estate OS es la vertical inmobiliaria de esa práctica: una arquitectura pensada para propiedades, campañas, leads, visitas, cierres y decisiones ejecutivas.
             </p>
             <a 
-              href="https://marcos-portfolio-premium.vercel.app/" 
+              href={process.env.NEXT_PUBLIC_PORTFOLIO_URL || "https://marcos-portfolio-premium.vercel.app"} 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-white border border-slate-700 px-6 py-3 rounded-sm hover:bg-slate-800 transition-colors"

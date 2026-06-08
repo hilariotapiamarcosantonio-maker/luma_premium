@@ -4,7 +4,7 @@ import { ShieldCheck } from 'lucide-react';
 import LumaFooter from '@/components/luma-estate/LumaFooter';
 
 export const metadata: Metadata = {
-  title: 'Solicitud Recibida | Luma Estate OS',
+  title: { absolute: 'Solicitud Recibida | Luma Estate OS' },
   description: 'Su solicitud de auditoría comercial ha sido recibida.',
 };
 
