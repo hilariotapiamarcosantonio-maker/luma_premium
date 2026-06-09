@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, MessageCircle, Search, CalendarClock, Layers } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
-import { whatsappLink } from '@/lib/site';
+import { whatsappLink, SOCIALS } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Contacto',
@@ -103,6 +103,28 @@ export default function ContactoPage() {
               </a>
             );
           })}
+        </div>
+      </section>
+
+      {/* Redes oficiales */}
+      <section className="pb-8 px-6">
+        <div className="max-w-4xl mx-auto rounded-2xl border border-slate-800 bg-slate-900/20 p-8 text-center">
+          <p className="text-slate-300 font-medium mb-5">
+            También puede seguir Luma Premium en sus redes oficiales.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {SOCIALS.map((s) => (
+              <a
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-slate-800 bg-slate-950/60 px-5 py-2.5 text-sm font-medium text-slate-300 hover:border-amber-500/40 hover:text-amber-500 transition-colors"
+              >
+                {s.label}
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 

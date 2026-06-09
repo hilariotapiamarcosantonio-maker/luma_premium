@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { SITE } from '@/lib/site';
+import { SITE, SOCIALS } from '@/lib/site';
 import { SOLUTIONS } from '@/lib/solutions';
 import PremiumDivider from './PremiumDivider';
 
@@ -28,6 +28,26 @@ export default function SiteFooter() {
           <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
             {SITE.promise}
           </p>
+
+          {/* Redes oficiales */}
+          <div className="pt-2">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">
+              Redes oficiales
+            </p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {SOCIALS.map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-slate-400 hover:text-amber-500 transition-colors"
+                >
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="space-y-3">
