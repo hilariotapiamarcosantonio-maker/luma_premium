@@ -101,3 +101,84 @@ export const CASES: CaseItem[] = [
     kind: 'authority',
   },
 ];
+
+export const EN_CASES: CaseItem[] = [
+  {
+    title: 'Real Estate OS — Demo',
+    category: 'Real Estate · Presentation',
+    description:
+      'Premium presentation and capture for real estate projects with routes per buyer profile.',
+    url: 'https://luma-real-estate-os-demo.vercel.app/',
+    icon: 'Building2',
+    kind: 'demo',
+    solutionSlug: 'real-estate-os',
+  },
+  {
+    title: 'Real Estate CRM OS — Demo',
+    category: 'Real Estate · Control',
+    description:
+      'Commercial control center: leads, properties, agents, and follow-up with executive visibility.',
+    url: 'https://luma-real-estate-crm-os-demo.vercel.app/',
+    icon: 'LayoutDashboard',
+    kind: 'demo',
+    solutionSlug: 'real-estate-crm-os',
+  },
+  {
+    title: 'Real Estate Concierge OS — Demo',
+    category: 'Real Estate · Concierge',
+    description:
+      'Commercial concierge that responds, educates, and qualifies prospects before they reach the agent.',
+    url: 'https://luma-real-estate-concierge-os-demo.vercel.app/',
+    icon: 'MessageSquare',
+    kind: 'demo',
+    solutionSlug: 'real-estate-concierge-os',
+  },
+  {
+    title: 'Commerce OS — Demo',
+    category: 'Retail · Commerce',
+    description:
+      'Catalog, orders, clients, and follow-up for stores that want to organize their sales operation.',
+    url: 'https://luma-commerce-os-demo.vercel.app/',
+    icon: 'ShoppingBag',
+    kind: 'demo',
+    solutionSlug: 'commerce-os',
+  },
+  {
+    title: 'Beauty Spa OS — Demo',
+    category: 'Aesthetics · Services',
+    description:
+      'Service presentation, social media capture, and booking requests for spas and aesthetic centers.',
+    url: 'https://luma-beauty-spa-os-demo.vercel.app/',
+    icon: 'Sparkles',
+    kind: 'demo',
+    solutionSlug: 'beauty-spa-os',
+  },
+  {
+    title: 'Beauty Spa OS — Concierge',
+    category: 'Aesthetics · Concierge',
+    description:
+      'Commercial concierge flow to resolve questions and guide clients toward a booking request.',
+    url: 'https://luma-beauty-spa-os-demo.vercel.app/concierge',
+    icon: 'MessageSquare',
+    kind: 'demo',
+    solutionSlug: 'beauty-spa-os',
+  },
+  {
+    title: 'Suvoga OS',
+    category: 'Commercial System',
+    description:
+      'Commercial digital system reference built with the Luma Premium architecture.',
+    url: 'https://suvoga-os-tjaa.vercel.app/',
+    icon: 'Boxes',
+    kind: 'reference',
+  },
+  {
+    title: 'Portfolio — Marcos Hilario',
+    category: 'Digital Architect',
+    description:
+      'Portfolio of the architect behind Luma Premium: premium, high-performance digital infrastructure.',
+    url: 'https://marcos-portfolio-premium.vercel.app/',
+    icon: 'User',
+    kind: 'authority',
+  },
+];

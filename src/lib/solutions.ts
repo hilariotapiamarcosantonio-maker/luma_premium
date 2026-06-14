@@ -283,3 +283,246 @@ export function getSolution(slug: string): Solution | undefined {
 }
 
 export const SOLUTION_SLUGS = SOLUTIONS.map((s) => s.slug);
+
+export const EN_SOLUTIONS: Solution[] = [
+  {
+    slug: 'real-estate-os',
+    name: 'Real Estate OS',
+    kicker: 'Real Estate · Presentation & Capture',
+    positioning:
+      'Premium presentation, capture, and authority system for high-value real estate projects.',
+    icon: 'Building2',
+    pain: 'Premium properties presented as generic listings that fail to differentiate the buyer.',
+    delivers:
+      'Premium project presentation, commercial routes per buyer profile, and campaign-connected lead capture.',
+    forWho: 'Developers, boutique agencies, and agents of high-value projects.',
+    problem:
+      'A property or project should not be presented the same way to an investor, a retiree, a family, or a corporate buyer. When everything is generic, the message loses commercial precision and campaigns waste money on unqualified leads.',
+    capabilities: [
+      {
+        title: 'Premium Project Presentation',
+        description:
+          'A visual architecture that communicates authority and value from the first second, not just another listing.',
+        icon: 'Layers',
+      },
+      {
+        title: 'Commercial Routes per Profile',
+        description:
+          'Investment, corporate rental, retirement, or living: each profile gets the correct angle, message, and form.',
+        icon: 'Target',
+      },
+      {
+        title: 'Campaign-Connected Capture',
+        description:
+          'Each ad directs to its corresponding route, with lead capture ready for Facebook, Instagram, TikTok, and WhatsApp.',
+        icon: 'Globe',
+      },
+      {
+        title: 'Base for Commercial Follow-up',
+        description:
+          'Leads arrive with full interest context, ready for the sales team and attribution tracking.',
+        icon: 'Activity',
+      },
+    ],
+    flow: [
+      { label: 'Ad', detail: 'The prospect enters from a segmented campaign per profile.' },
+      { label: 'Commercial Route', detail: 'Sees a presentation tailored to their type of purchase.' },
+      { label: 'Capture', detail: 'Submits details with their specific interest already identified.' },
+      { label: 'Follow-up', detail: 'The lead is ready for the agent with full context.' },
+    ],
+    commercialFlow: ['Project', 'Buyer profile', 'Landing', 'Capture', 'Lead', 'Follow-up'],
+    demoUrl: 'https://luma-real-estate-os-demo.vercel.app/',
+    internalUrl: '/luma-estate-os',
+    salesNextStep: 'Request a real estate commercial audit (assessment).',
+  },
+  {
+    slug: 'real-estate-crm-os',
+    name: 'Real Estate CRM OS',
+    kicker: 'Real Estate · Commercial Control',
+    positioning:
+      'Commercial control center for properties, prospects, agents, and real estate follow-up.',
+    icon: 'LayoutDashboard',
+    pain: 'Leads lost in spreadsheets and WhatsApp, without knowing their status or next step.',
+    delivers:
+      'Organized leads, associated properties, prospect status, next steps, interaction history, and management control.',
+    forWho: 'Sales teams and real estate agencies that require full traceability.',
+    problem:
+      'Without a control center, prospects are scattered across spreadsheets, chats, and individual agents memory. Management does not know which property has traction or which lead is cooling down. Money is lost due to disorder, not lack of demand.',
+    capabilities: [
+      {
+        title: 'Organized Leads',
+        description: 'Each prospect with their source, interest, and associated property in one place.',
+        icon: 'Users',
+      },
+      {
+        title: 'Status & Next Step',
+        description: 'Full visibility of where each prospect is and what action follows.',
+        icon: 'ListChecks',
+      },
+      {
+        title: 'Agent Assignment',
+        description: 'Clear distribution per agent with responsibility and traceability.',
+        icon: 'UserCheck',
+      },
+      {
+        title: 'Management Control',
+        description: 'History and follow-up data that turn intuition into measurable decisions.',
+        icon: 'LineChart',
+      },
+    ],
+    flow: [
+      { label: 'Capture', detail: 'The lead enters from Real Estate OS or a campaign.' },
+      { label: 'Assignment', detail: 'Assigned to an agent with their property of interest.' },
+      { label: 'Follow-up', detail: 'Every interaction is registered with its next step.' },
+      { label: 'Management', detail: 'Management views the pipeline and decides with real data.' },
+    ],
+    commercialFlow: ['Lead', 'Property', 'Agent', 'Status', 'Next step', 'Close'],
+    demoUrl: 'https://luma-real-estate-crm-os-demo.vercel.app/',
+    salesNextStep: 'Show CRM demo and request follow-up assessment.',
+  },
+  {
+    slug: 'real-estate-concierge-os',
+    name: 'Real Estate Concierge OS',
+    kicker: 'Real Estate · Response & Qualification',
+    positioning:
+      'Commercial concierge to respond, educate, and qualify real estate prospects before they reach the agent.',
+    icon: 'MessageSquare',
+    pain: 'Prospects asking the same questions and cooling down while waiting for an agent response.',
+    delivers:
+      'FAQ response, pre-construction vs. ready education, material delivery, and qualified leads.',
+    forWho: 'Projects with high query volume that need filtering before reaching an agent.',
+    problem:
+      'Agents waste hours answering the same questions — location, price, pre-construction vs. ready, payment terms — and serious prospects cool down. Without a first filter, the team spends time on curious users and neglects buyers.',
+    capabilities: [
+      {
+        title: 'Respond & Educate',
+        description: 'Handles FAQs and explains key differences like pre-construction vs. ready.',
+        icon: 'MessageSquare',
+      },
+      {
+        title: 'Deliver Commercial Material',
+        description: 'Orderly delivery of location, photos/renders, brochures/PDFs, and benefits.',
+        icon: 'FileText',
+      },
+      {
+        title: 'Qualify the Prospect',
+        description: 'Identifies intent, budget, and purchasing timeframe before the agent step.',
+        icon: 'Filter',
+      },
+      {
+        title: 'Summarize & Hand Over',
+        description: 'Provides a conversation summary and delivers the qualified prospect to the human agent.',
+        icon: 'ClipboardList',
+      },
+    ],
+    flow: [
+      { label: 'Inquiry', detail: 'Prospect inquires from the ad or website.' },
+      { label: 'Concierge', detail: 'Receives immediate answers, materials, and education.' },
+      { label: 'Qualification', detail: 'Intent and budget are identified.' },
+      { label: 'Agent', detail: 'Qualified lead reaches the human agent with summarized context.' },
+    ],
+    commercialFlow: ['Inquiry', 'Response', 'Resource', 'Qualification', 'Summary', 'Human agent'],
+    demoUrl: 'https://luma-real-estate-concierge-os-demo.vercel.app/',
+    salesNextStep: 'Show concierge demo flow and request assessment.',
+    disclaimer:
+      'Demonstrative concierge flow. Prepared for messaging integrations; no real connection to third-party platforms at this stage.',
+  },
+  {
+    slug: 'commerce-os',
+    name: 'Commerce OS',
+    kicker: 'Retail · Catalog & Orders',
+    positioning:
+      'Commercial system for stores that need catalog, orders, clients, follow-up, and control.',
+    icon: 'ShoppingBag',
+    pain: 'Sales via DM without an orderly catalog, client record, or follow-up.',
+    delivers:
+      'Catalog, request or cart, order, client, CRM, follow-up, and administration panel.',
+    forWho: 'Stores and brands selling via social media that want to organize their sales operation.',
+    problem:
+      'Selling via DMs works until volume grows: lost orders, zero client history, and no follow-up. Without a system, each sale depends on memory and chat availability.',
+    capabilities: [
+      {
+        title: 'Catalog & Request',
+        description: 'Store or catalog presented in order, with cart or order request.',
+        icon: 'ShoppingBag',
+      },
+      {
+        title: 'Order & Client',
+        description: 'Each order is registered and associated with a client and their purchase history.',
+        icon: 'Package',
+      },
+      {
+        title: 'CRM & Follow-up',
+        description: 'Clients organized for repeat purchases, follow-up, and after-sales care.',
+        icon: 'Users',
+      },
+      {
+        title: 'Admin Panel',
+        description: 'Control of products, orders, and clients, ready for WhatsApp and campaigns.',
+        icon: 'LayoutDashboard',
+      },
+    ],
+    flow: [
+      { label: 'Catalog', detail: 'Client explores products presented in an orderly layout.' },
+      { label: 'Order', detail: 'Requests or adds to cart and confirms the order.' },
+      { label: 'Client', detail: 'Registered with their purchase history.' },
+      { label: 'Follow-up', detail: 'The panel allows repeat purchase, post-sales, and control.' },
+    ],
+    commercialFlow: ['Catalog', 'Order', 'Client', 'Follow-up', 'Repeat purchase'],
+    demoUrl: 'https://luma-commerce-os-demo.vercel.app/',
+    salesNextStep: 'Show store demo and request commercial assessment.',
+  },
+  {
+    slug: 'beauty-spa-os',
+    name: 'Beauty Spa OS',
+    kicker: 'Aesthetics · Services & Booking',
+    positioning:
+      'Premium system for spas and aesthetic centers to present services, capture inquiries, qualify clients, and organize bookings.',
+    icon: 'Sparkles',
+    pain: 'Inquiries from Instagram that are not organized or converted into real bookings.',
+    delivers:
+      'Premium service presentation, concierge, social media capture, booking requests, and follow-up.',
+    forWho: 'Spas, aesthetic centers, and beauty clinics with a premium brand.',
+    problem:
+      'Clients arrive from Instagram and ads, but inquiries get lost in unorganized messages. Without a system that presents services with authority, qualifies, and books, the premium brand is diluted and bookings are left to improvisation.',
+    capabilities: [
+      {
+        title: 'Premium Services',
+        description: 'Service presentation with the aesthetics and authority the brand deserves.',
+        icon: 'Sparkles',
+      },
+      {
+        title: 'Concierge & Capture',
+        description: 'Attends inquiries from Instagram/ads and guides them to booking requests.',
+        icon: 'MessageSquare',
+      },
+      {
+        title: 'Booking Request',
+        description: 'Orderly booking capture with the necessary information to confirm.',
+        icon: 'CalendarCheck',
+      },
+      {
+        title: 'Follow-up & Experience',
+        description: 'Client follow-up and a consistent brand experience from end to end.',
+        icon: 'Activity',
+      },
+    ],
+    flow: [
+      { label: 'Ad', detail: 'The client enters from Instagram or a campaign.' },
+      { label: 'Concierge', detail: 'Explores services and resolves questions.' },
+      { label: 'Booking', detail: 'Requests a booking with the required details.' },
+      { label: 'Follow-up', detail: 'Registered for reminders and repeat visits.' },
+    ],
+    commercialFlow: ['Service', 'Inquiry', 'Qualification', 'Booking', 'Follow-up'],
+    demoUrl: 'https://luma-beauty-spa-os-demo.vercel.app/',
+    salesNextStep: 'Show demo and concierge, then request assessment.',
+    disclaimer:
+      'Presentation and commercial capture system. Does not make medical claims or promise clinical results.',
+  },
+];
+
+export function getEnSolution(slug: string): Solution | undefined {
+  return EN_SOLUTIONS.find((s) => s.slug === slug);
+}
+
+export const EN_SOLUTION_SLUGS = EN_SOLUTIONS.map((s) => s.slug);

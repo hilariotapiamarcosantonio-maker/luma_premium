@@ -1,40 +1,113 @@
+/**
+ * Google Sheets integration — authenticated via Vercel OIDC.
+ * Server-only. Never import from client components.
+ */
+import 'server-only';
+
 import { google } from 'googleapis';
+import { getGcpSheetsAuthClient, GcpConfigError, OidcTokenError, classifyGcpFailure } from './google-auth';
+import type { GcpFailure } from './google-auth';
 
-export async function getGoogleSheetsClient() {
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    },
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
+// ── Sheets client factory ─────────────────────────────────────────────────────
 
-  const sheets = google.sheets({ version: 'v4', auth });
-  return sheets;
+async function getSheetsClient() {
+  const auth = await getGcpSheetsAuthClient();
+  return google.sheets({ version: 'v4', auth });
 }
+
+// ── V1: legacy real-estate leads (backward compatible) ───────────────────────
 
 export async function appendLumaLead(data: string[]) {
-  try {
-    const sheets = await getGoogleSheetsClient();
-    const spreadsheetId = process.env.LUMA_LEADS_SPREADSHEET_ID;
-    const sheetName = process.env.LUMA_LEADS_SHEET_NAME || 'Luma Estate Leads';
+  const spreadsheetId = process.env.LUMA_LEADS_SPREADSHEET_ID;
+  const sheetName     = process.env.LUMA_LEADS_SHEET_NAME || 'Luma Leads V1';
 
-    if (!spreadsheetId) {
-      throw new Error('LUMA_LEADS_SPREADSHEET_ID is not defined');
-    }
+  if (!spreadsheetId) throw new GcpConfigError(['LUMA_LEADS_SPREADSHEET_ID']);
 
-    const response = await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: `${sheetName}!A:J`, // Assuming 10 columns: Date, Name, Email, Operation, Volume, Channels, Ads, CRM, PainPoint, Budget
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [data],
-      },
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error('Error appending lead to Google Sheets:', error);
-    throw error;
-  }
+  const sheets = await getSheetsClient();
+  const response = await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${sheetName}!A:J`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [data] },
+  });
+  return response.data;
 }
+
+// ── V2: multi-industry leads ──────────────────────────────────────────────────
+
+export interface LumaLeadV2 {
+  schema_version: string;
+  created_at: string;
+  locale: string;
+  country: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  company: string;
+  role: string;
+  industry: string;
+  industry_detail: string;
+  team_size: string;
+  lead_volume: string;
+  acquisition_channels: string;
+  advertising_status: string;
+  current_tools: string;
+  main_bottleneck: string;
+  desired_outcome: string;
+  solution_interest: string;
+  timeline: string;
+  investment_range: string;
+  source: string;
+  page_origin: string;
+  utm_source: string;
+  utm_medium: string;
+  utm_campaign: string;
+  utm_content: string;
+  utm_term: string;
+  status: string;
+}
+
+// Column order must match the sheet headers exactly (A → AC, 29 columns).
+const V2_COLUMNS: (keyof LumaLeadV2)[] = [
+  'schema_version', 'created_at', 'locale', 'country',
+  'full_name', 'email', 'phone', 'company', 'role',
+  'industry', 'industry_detail', 'team_size', 'lead_volume',
+  'acquisition_channels', 'advertising_status', 'current_tools',
+  'main_bottleneck', 'desired_outcome', 'solution_interest',
+  'timeline', 'investment_range',
+  'source', 'page_origin',
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+  'status',
+];
+
+export async function appendLumaLeadV2(
+  lead: Omit<LumaLeadV2, 'schema_version' | 'created_at' | 'status'>
+) {
+  const spreadsheetId = process.env.LUMA_LEADS_SPREADSHEET_ID;
+  const sheetName     = process.env.LUMA_LEADS_SHEET_V2_NAME || 'Luma Leads V2';
+
+  if (!spreadsheetId) throw new GcpConfigError(['LUMA_LEADS_SPREADSHEET_ID']);
+
+  const full: LumaLeadV2 = {
+    schema_version: '2',
+    created_at: new Date().toISOString(),
+    status: 'nuevo',
+    ...lead,
+  };
+
+  const row = V2_COLUMNS.map((col) => full[col] ?? '');
+
+  const sheets = await getSheetsClient();
+  const response = await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${sheetName}!A:AC`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [row] },
+  });
+  return response.data;
+}
+
+// Re-export error classes and the failure classifier so the API route can
+// distinguish failure modes without importing the auth module directly.
+export { GcpConfigError, OidcTokenError, classifyGcpFailure };
+export type { GcpFailure };

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://luma-premium.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.lumapremium.com"
   ),
   title: {
     default: "Luma Premium | Arquitectura comercial digital",
@@ -28,6 +28,15 @@ export const metadata: Metadata = {
       "Sistemas comerciales digitales para negocios premium que venden con autoridad, seguimiento y control.",
     type: "website",
     locale: "es_ES",
+    alternateLocale: ["en_US"],
+  },
+  alternates: {
+    canonical: "/",
+    languages: {
+      "es": "/",
+      "en": "/en",
+      "x-default": "/",
+    },
   },
 };
 

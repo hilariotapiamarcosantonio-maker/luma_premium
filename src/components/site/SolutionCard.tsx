@@ -4,10 +4,11 @@ import { Icon } from './Icon';
 import type { Solution } from '@/lib/solutions';
 
 // Tarjeta premium de solución: borde con gradiente, icono con glow y hover fuerte.
-export default function SolutionCard({ solution }: { solution: Solution }) {
+export default function SolutionCard({ solution, locale = 'es' }: { solution: Solution; locale?: 'es' | 'en' }) {
+  const isEn = locale === 'en';
   return (
     <Link
-      href={`/soluciones/${solution.slug}`}
+      href={isEn ? `/en/solutions/${solution.slug}` : `/soluciones/${solution.slug}`}
       className="group relative block h-full rounded-2xl p-px bg-gradient-to-b from-slate-700/60 via-slate-800/40 to-transparent transition-all duration-300 hover:from-amber-500/50 hover:via-amber-500/10 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/5"
     >
       <div className="flex h-full flex-col rounded-[15px] bg-slate-950/80 p-8 backdrop-blur-sm">
@@ -42,20 +43,20 @@ export default function SolutionCard({ solution }: { solution: Solution }) {
         <dl className="space-y-3 border-t border-slate-800 pt-5 text-sm">
           <div>
             <dt className="mb-0.5 text-xs uppercase tracking-wide text-slate-500">
-              Dolor que resuelve
+              {isEn ? 'Pain solved' : 'Dolor que resuelve'}
             </dt>
             <dd className="leading-snug text-slate-400">{solution.pain}</dd>
           </div>
           <div>
             <dt className="mb-0.5 text-xs uppercase tracking-wide text-slate-500">
-              Para quién es
+              {isEn ? 'Who it is for' : 'Para quién es'}
             </dt>
             <dd className="leading-snug text-slate-400">{solution.forWho}</dd>
           </div>
         </dl>
 
         <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-amber-500 transition-colors group-hover:text-amber-400">
-          Ver solución{' '}
+          {isEn ? 'View solution' : 'Ver solución'}{' '}
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </span>
       </div>

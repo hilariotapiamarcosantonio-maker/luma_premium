@@ -8,12 +8,12 @@ import CTASection from '@/components/site/CTASection';
 import FlowDiagram from '@/components/site/FlowDiagram';
 import { Icon } from '@/components/site/Icon';
 import { MotionSection } from '@/components/site/Motion';
-import { getSolution, SOLUTION_SLUGS, SOLUTIONS } from '@/lib/solutions';
+import { getEnSolution, EN_SOLUTION_SLUGS, EN_SOLUTIONS } from '@/lib/solutions';
 
 type Params = { slug: string };
 
 export function generateStaticParams(): Params[] {
-  return SOLUTION_SLUGS.map((slug) => ({ slug }));
+  return EN_SOLUTION_SLUGS.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -22,34 +22,35 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const solution = getSolution(slug);
-  if (!solution) return { title: 'Solución' };
+  const solution = getEnSolution(slug);
+  if (!solution) return { title: 'Solution' };
   return {
     title: solution.name,
     description: solution.positioning,
     alternates: {
-      canonical: `/soluciones/${slug}`,
+      canonical: `/en/solutions/${slug}`,
       languages: { es: `/soluciones/${slug}`, en: `/en/solutions/${slug}` },
     },
     openGraph: {
       title: `${solution.name} | Luma Premium`,
       description: solution.positioning,
       type: 'website',
+      locale: 'en_US',
     },
   };
 }
 
-export default async function SolutionDetailPage({
+export default async function EnSolutionDetailPage({
   params,
 }: {
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const solution = getSolution(slug);
+  const solution = getEnSolution(slug);
   if (!solution) notFound();
 
-  // Soluciones relacionadas (mismo nicho o resto), máximo 3.
-  const related = SOLUTIONS.filter((s) => s.slug !== solution.slug).slice(0, 3);
+  // Related solutions (other lines), max 3.
+  const related = EN_SOLUTIONS.filter((s) => s.slug !== solution.slug).slice(0, 3);
 
   return (
     <SiteShell>
@@ -58,10 +59,10 @@ export default async function SolutionDetailPage({
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10" />
         <div className="max-w-4xl mx-auto">
           <Link
-            href="/soluciones"
+            href="/en/solutions"
             className="text-slate-400 hover:text-white transition-colors text-sm font-medium mb-8 inline-block"
           >
-            &larr; Todas las soluciones
+            &larr; All solutions
           </Link>
           <div className="flex items-center gap-4 mb-6">
             <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl border border-slate-800 bg-slate-900">
@@ -78,19 +79,11 @@ export default async function SolutionDetailPage({
 
           <div className="pt-8 flex flex-col sm:flex-row gap-4">
             <Link
-              href="/diagnostico"
+              href="/en/assessment"
               className="w-full sm:w-auto bg-white text-slate-950 px-8 py-4 rounded-sm font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
             >
-              Solicitar evaluación <ArrowRight className="w-4 h-4" />
+              Request assessment <ArrowRight className="w-4 h-4" />
             </Link>
-            {solution.internalUrl && (
-              <Link
-                href={solution.internalUrl}
-                className="w-full sm:w-auto px-8 py-4 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors flex items-center justify-center gap-2"
-              >
-                Ver experiencia completa <ArrowRight className="w-4 h-4" />
-              </Link>
-            )}
             {solution.demoUrl && (
               <a
                 href={solution.demoUrl}
@@ -98,20 +91,20 @@ export default async function SolutionDetailPage({
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto px-8 py-4 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors flex items-center justify-center gap-2"
               >
-                Ver demo <ExternalLink className="w-4 h-4" />
+                View demo <ExternalLink className="w-4 h-4" />
               </a>
             )}
           </div>
         </div>
       </section>
 
-      {/* Problema */}
+      {/* Problem */}
       <section className="py-20 px-6 border-y border-slate-900 bg-slate-950/50">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-2 mb-6">
             <span className="w-2 h-2 rounded-full bg-red-500" />
             <span className="text-sm font-medium text-slate-400 uppercase tracking-wide">
-              El problema
+              The problem
             </span>
           </div>
           <p className="text-2xl md:text-3xl text-white font-medium leading-snug">
@@ -120,13 +113,13 @@ export default async function SolutionDetailPage({
         </div>
       </section>
 
-      {/* Flujo comercial (diagrama visual) */}
+      {/* Commercial flow (visual diagram) */}
       <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <MotionSection>
-            <PremiumBadge className="mb-4">Flujo comercial de la solución</PremiumBadge>
+            <PremiumBadge className="mb-4">Commercial flow of the solution</PremiumBadge>
             <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-8">
-              Así fluye una oportunidad dentro del sistema.
+              How an opportunity flows inside the system.
             </h2>
             <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 md:p-8 overflow-x-auto">
               <FlowDiagram steps={solution.commercialFlow} />
@@ -135,13 +128,13 @@ export default async function SolutionDetailPage({
         </div>
       </section>
 
-      {/* Qué construye el sistema */}
+      {/* What the system delivers */}
       <section className="py-24 px-6 border-t border-slate-800/50">
         <div className="max-w-7xl mx-auto">
           <div className="mb-14 max-w-2xl">
-            <PremiumBadge className="mb-4">Qué entrega el sistema</PremiumBadge>
+            <PremiumBadge className="mb-4">What the system delivers</PremiumBadge>
             <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-              Una arquitectura comercial, no una página suelta.
+              A commercial architecture, not a standalone page.
             </h2>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
@@ -163,13 +156,13 @@ export default async function SolutionDetailPage({
         </div>
       </section>
 
-      {/* Flujo comercial */}
+      {/* Prospect journey */}
       <section className="py-24 px-6 border-y border-slate-800/50 bg-slate-900/20">
         <div className="max-w-7xl mx-auto">
           <div className="mb-14 max-w-2xl">
-            <PremiumBadge className="mb-4">El recorrido del prospecto</PremiumBadge>
+            <PremiumBadge className="mb-4">The prospect journey</PremiumBadge>
             <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-              Del anuncio al cierre, sin perder el control.
+              From ad to close, without losing control.
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -193,16 +186,16 @@ export default async function SolutionDetailPage({
         </div>
       </section>
 
-      {/* Para quién + siguiente paso */}
+      {/* Who it is for + next step */}
       <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8">
           <div className="p-10 rounded-2xl border border-slate-800 bg-slate-900/20">
-            <h3 className="text-xl font-bold text-white mb-6">Para quién es</h3>
+            <h3 className="text-xl font-bold text-white mb-6">Who it is for</h3>
             <p className="text-slate-300 leading-relaxed mb-8">
               {solution.forWho}
             </p>
             <h4 className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-4">
-              Lo que resuelve
+              What it solves
             </h4>
             <ul className="space-y-3">
               {[solution.pain, solution.delivers].map((line) => (
@@ -215,22 +208,22 @@ export default async function SolutionDetailPage({
           </div>
 
           <div className="p-10 rounded-2xl border border-amber-500/30 bg-amber-500/[0.04] flex flex-col">
-            <h3 className="text-xl font-bold text-white mb-4">Siguiente paso</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Next step</h3>
             <p className="text-slate-300 leading-relaxed mb-8 flex-1">
               {solution.salesNextStep}
             </p>
             <div className="flex flex-col gap-3">
               <Link
-                href="/diagnostico"
+                href="/en/assessment"
                 className="inline-flex items-center justify-center gap-2 bg-white text-slate-950 px-6 py-4 rounded-sm font-medium hover:bg-slate-200 transition-colors"
               >
-                Solicitar evaluación <ArrowRight className="w-4 h-4" />
+                Request assessment <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/contacto"
+                href="/en/contact"
                 className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-sm font-medium text-white border border-slate-700 hover:bg-slate-900 transition-colors"
               >
-                Hablar con Luma Premium
+                Talk to Luma Premium
               </Link>
             </div>
           </div>
@@ -245,15 +238,15 @@ export default async function SolutionDetailPage({
         )}
       </section>
 
-      {/* Relacionadas */}
+      {/* Related */}
       <section className="py-20 px-6 border-t border-slate-800/50 bg-slate-900/20">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold text-white mb-10">Otras soluciones</h2>
+          <h2 className="text-2xl font-bold text-white mb-10">Other solutions</h2>
           <div className="grid sm:grid-cols-3 gap-4">
             {related.map((s) => (
               <Link
                 key={s.slug}
-                href={`/soluciones/${s.slug}`}
+                href={`/en/solutions/${s.slug}`}
                 className="group flex items-center justify-between gap-4 p-6 rounded-xl border border-slate-800 bg-slate-950 hover:border-slate-700 transition-colors"
               >
                 <div className="flex items-center gap-4">
@@ -268,10 +261,10 @@ export default async function SolutionDetailPage({
       </section>
 
       <CTASection
-        title={`¿Listo para implementar ${solution.name}?`}
-        subtitle="Empiece por una evaluación comercial digital. Le mostramos cómo se vería este sistema en su operación."
-        primary={{ label: 'Solicitar evaluación', href: '/diagnostico' }}
-        secondary={{ label: 'Ver casos y demos', href: '/casos' }}
+        title={`Ready to implement ${solution.name}?`}
+        subtitle="Start with a commercial digital assessment. We show you how this system would look inside your operation."
+        primary={{ label: 'Request assessment', href: '/en/assessment' }}
+        secondary={{ label: 'View cases and demos', href: '/en/cases' }}
       />
     </SiteShell>
   );
