@@ -10,8 +10,10 @@
     "create:luma-sheet-template": "node scripts/create-luma-sales-sheet-template.mjs"
   },
   "dependencies": {
+    "@vercel/oidc": "^3.6.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
+    "google-auth-library": "^10.7.0",
     "googleapis": "^171.4.0",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
