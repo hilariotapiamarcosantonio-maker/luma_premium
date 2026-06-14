@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { NAV_LINKS, PRIMARY_CTA, SITE } from '@/lib/site';
+import LangSwitcher from './LangSwitcher';
 
 // Header madre de Luma Premium. Sticky, con menú móvil.
 export default function SiteHeader() {
@@ -32,6 +33,7 @@ export default function SiteHeader() {
               {link.label}
             </Link>
           ))}
+          <LangSwitcher />
           <Link
             href={PRIMARY_CTA.href}
             className="bg-white text-slate-950 px-5 py-2.5 rounded-sm font-medium hover:bg-slate-200 transition-colors"
@@ -72,6 +74,9 @@ export default function SiteHeader() {
           >
             {PRIMARY_CTA.label}
           </Link>
+          <div className="pt-2">
+            <LangSwitcher />
+          </div>
         </div>
       )}
     </nav>
