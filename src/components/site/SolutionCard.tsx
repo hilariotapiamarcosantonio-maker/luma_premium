@@ -8,7 +8,7 @@ export default function SolutionCard({ solution, locale = 'es' }: { solution: So
   const isEn = locale === 'en';
   return (
     <Link
-      href={isEn ? '/en/solutions' : `/soluciones/${solution.slug}`}
+      href={isEn ? `/en/solutions/${solution.slug}` : `/soluciones/${solution.slug}`}
       className="group relative block h-full rounded-2xl p-px bg-gradient-to-b from-slate-700/60 via-slate-800/40 to-transparent transition-all duration-300 hover:from-amber-500/50 hover:via-amber-500/10 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/5"
     >
       <div className="flex h-full flex-col rounded-[15px] bg-slate-950/80 p-8 backdrop-blur-sm">

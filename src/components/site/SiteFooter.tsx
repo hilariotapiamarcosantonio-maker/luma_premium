@@ -107,7 +107,7 @@ export default function SiteFooter() {
             {SOLUTIONS.map((s) => (
               <li key={s.slug}>
                 <Link
-                  href={isEn ? copy.solutionsHref : `/soluciones/${s.slug}`}
+                  href={isEn ? `/en/solutions/${s.slug}` : `/soluciones/${s.slug}`}
                   className="text-sm text-slate-400 hover:text-white transition-colors"
                 >
                   {s.name}

@@ -2,7 +2,49 @@
 
 **Date:** 2026-06-14  
 **Branch:** feat/multilingual-multiniche-diagnostic  
-**Tester:** Claude Code (claude-sonnet-4-6)
+**Tester:** Claude Code
+
+---
+
+## ✅ PRODUCTION-PATH VALIDATION — Vercel OIDC (2026-06-14)
+
+The end-to-end write was validated on a Vercel **Preview** deployment using
+**Vercel OIDC + GCP Workload Identity Federation** (no JSON keys). This supersedes
+the local-only findings below (which predate the OIDC migration and the now-removed
+`GOOGLE_CLIENT_EMAIL` / `GOOGLE_PRIVATE_KEY`).
+
+| Component | Status |
+|-----------|--------|
+| Vercel OIDC token issuance | ✅ Operational |
+| STS token exchange (`sts.googleapis.com`) | ✅ Operational (after audience fix) |
+| Service-account impersonation | ✅ Operational |
+| Google Sheets append (V2) | ✅ Operational |
+| ES lead write (`/diagnostico`) | ✅ Submitted → redirect to `/diagnostico/gracias`, `200` from API |
+| EN lead write (`/en/assessment`) | ✅ Submitted → redirect to `/en/assessment/thank-you`, `200` from API |
+| `Luma Leads V1` | ✅ Untouched (V2 path never calls the V1 writer) |
+| Audience mismatch (`invalid_grant`) | ✅ Fixed via provider `--allowed-audiences` |
+| JSON service-account keys | ✅ None exist; none used |
+
+**Evidence:** the new preview's function logs show two `POST /api/luma-leads → 200`.
+The API returns `200` only after `appendLumaLeadV2` resolves, i.e. after a successful
+Sheets append; any STS/impersonation/Sheets failure returns `503`/`500` instead.
+
+**Column integrity:** writes map through the fixed `V2_COLUMNS` array to range `A:AC`,
+so column order cannot drift. `locale` is deterministic per form (`es` / `en`); UTMs
+come from the query string (`oidc-v2-es` / `oidc-v2-en`).
+
+> Row-level visual confirmation in the Sheets UI (two QA rows, `locale` values,
+> campaigns, no duplicates) is the owner's final glance — the dev environment has
+> no read credentials for the spreadsheet, by design. The Spreadsheet ID is not
+> printed here.
+
+See [`LUMA_PREMIUM_OIDC_PREVIEW_QA.md`](LUMA_PREMIUM_OIDC_PREVIEW_QA.md) for the full
+diagnosis of the audience fix.
+
+---
+
+> ⚠️ The sections below are **historical** (local validation before the OIDC
+> migration). Kept for traceability only.
 
 ---
 

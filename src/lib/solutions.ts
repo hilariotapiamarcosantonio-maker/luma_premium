@@ -520,3 +520,9 @@ export const EN_SOLUTIONS: Solution[] = [
       'Presentation and commercial capture system. Does not make medical claims or promise clinical results.',
   },
 ];
+
+export function getEnSolution(slug: string): Solution | undefined {
+  return EN_SOLUTIONS.find((s) => s.slug === slug);
+}
+
+export const EN_SOLUTION_SLUGS = EN_SOLUTIONS.map((s) => s.slug);

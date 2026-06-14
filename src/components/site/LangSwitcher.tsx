@@ -20,11 +20,19 @@ const EN_TO_ES: Record<string, string> = Object.fromEntries(
 );
 
 function getEquivalent(pathname: string): { isEn: boolean; opposite: string } {
-  if (pathname.startsWith('/en')) {
-    const esPath = EN_TO_ES[pathname] ?? EN_TO_ES[pathname.replace(/\/$/, '')] ?? '/';
+  const clean = pathname.replace(/\/$/, '') || '/';
+
+  // Dynamic solution detail pages: keep the slug across languages.
+  const enSolution = clean.match(/^\/en\/solutions\/([^/]+)$/);
+  if (enSolution) return { isEn: true, opposite: `/soluciones/${enSolution[1]}` };
+  const esSolution = clean.match(/^\/soluciones\/([^/]+)$/);
+  if (esSolution) return { isEn: false, opposite: `/en/solutions/${esSolution[1]}` };
+
+  if (clean.startsWith('/en')) {
+    const esPath = EN_TO_ES[pathname] ?? EN_TO_ES[clean] ?? '/';
     return { isEn: true, opposite: esPath };
   }
-  const enPath = ES_TO_EN[pathname] ?? ES_TO_EN[pathname.replace(/\/$/, '')] ?? '/en';
+  const enPath = ES_TO_EN[pathname] ?? ES_TO_EN[clean] ?? '/en';
   return { isEn: false, opposite: enPath };
 }
 

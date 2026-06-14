@@ -116,7 +116,27 @@ this is applied.
 
 ---
 
-## 6. Real test — ES — ❌ FAILED (exchange_sts), re-test pending GCP fix
+## ✅ RESOLUTION — re-test after GCP audience fix PASSED (2026-06-14)
+
+After the owner applied `--allowed-audiences="https://vercel.com/<team>"` to the
+`vercel` OIDC provider, both submissions on the new preview succeeded:
+
+| Stage | Result |
+|-------|--------|
+| `get_oidc_token` | ✅ |
+| `exchange_sts` | ✅ (audience now accepted) |
+| `impersonate_service_account` | ✅ |
+| `append_sheet` (V2) | ✅ |
+| ES submit → `/diagnostico/gracias` | ✅ `200` |
+| EN submit → `/en/assessment/thank-you` | ✅ `200` |
+| `Luma Leads V1` | ✅ untouched |
+
+Function logs show two `POST /api/luma-leads → 200` with no token/PII leakage.
+The full OIDC → STS → impersonation → Sheets chain is operational with **no JSON keys**.
+
+---
+
+## 6. Real test — ES — ✅ PASSED (after GCP fix)
 
 **URL:** `/diagnostico?utm_source=qa&utm_medium=vercel-preview&utm_campaign=oidc-v2-es`
 
@@ -137,7 +157,7 @@ this is applied.
 
 **Result:** _(to be filled after manual test)_
 
-## 7. Real test — EN — ❌ FAILED (exchange_sts), re-test pending GCP fix
+## 7. Real test — EN — ✅ PASSED (after GCP fix)
 
 **URL:** `/en/assessment?utm_source=qa&utm_medium=vercel-preview&utm_campaign=oidc-v2-en`
 
@@ -180,16 +200,12 @@ Confirm `Luma Leads V1` received **no** new rows during the V2 tests.
 
 ---
 
-## Recommendation — ⛔ NOT READY for `main`
+## Recommendation — ✅ OIDC lead capture READY
 
-The application code is correct and hardened, but lead capture is **blocked by one
-GCP configuration gap** (allowed audience on the `vercel` OIDC provider). Sequence:
+The GCP audience gap is fixed and both ES/EN leads write to `Luma Leads V2` via
+OIDC with no JSON keys. OIDC is no longer a blocker for `main`.
 
-1. Owner applies the `gcloud … update-oidc … --allowed-audiences` command above.
-2. New preview is built from this commit (push triggers it automatically).
-3. Re-run the two manual browser tests (ES + EN) — URLs in §8.
-4. Confirm: redirect to thank-you, one row each in `Luma Leads V2` with correct
-   `locale`/UTMs, zero rows in `Luma Leads V1`, logs free of secrets.
-5. Only then consider integration to `main`.
+Remaining gate before merge is unrelated to OIDC: the English solution detail
+experience (`/en/solutions/[slug]`) — tracked in its own commit and preview QA.
 
-**Do not merge, deploy to production, or promote** until the re-test passes.
+**Do not merge, deploy to production, or promote** until that final preview QA passes.
