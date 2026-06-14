@@ -2,7 +2,30 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { appendLumaLead, appendLumaLeadV2, GcpConfigError, OidcTokenError } from '@/lib/google-sheets';
+import { appendLumaLead, appendLumaLeadV2, classifyGcpFailure } from '@/lib/google-sheets';
+import type { GcpFailureMessageKey } from '@/lib/google-auth';
+
+type Locale = 'es' | 'en';
+
+// Localized client-facing messages. Infrastructure detail never crosses this line.
+const MESSAGES: Record<Locale, Record<GcpFailureMessageKey, string>> = {
+  es: {
+    config:     'Servicio no disponible. Contacte al administrador.',
+    oidc:       'Servicio no disponible temporalmente. Intente de nuevo.',
+    sts:        'Servicio de autenticación no disponible. Contacte al administrador.',
+    permission: 'Error de permisos. Contacte al administrador.',
+    notFound:   'Error de configuración. Contacte al administrador.',
+    generic:    'Error interno del servidor.',
+  },
+  en: {
+    config:     'Service unavailable. Please contact the administrator.',
+    oidc:       'Service temporarily unavailable. Please try again.',
+    sts:        'Authentication service unavailable. Please contact the administrator.',
+    permission: 'Permission error. Please contact the administrator.',
+    notFound:   'Configuration error. Please contact the administrator.',
+    generic:    'Internal server error.',
+  },
+};
 
 // ─── Validation helpers ───────────────────────────────────────────────────────
 
@@ -21,35 +44,31 @@ function isValidPhone(phone: string): boolean {
 }
 
 // ─── Error classifier — maps infrastructure errors to safe client messages ────
+//
+// Classification (stage + safe code) lives in google-auth so it stays next to
+// the OIDC → STS → impersonation → Sheets chain. Here we only log the sanitized
+// structure and pick a localized client message. No tokens, headers, full
+// spreadsheet IDs, or lead data are ever logged or returned.
 
-function classifyError(error: unknown): { status: number; message: string } {
-  if (error instanceof GcpConfigError) {
-    console.error('[luma-leads] GCP config error:', error.message);
-    return { status: 503, message: 'Servicio no disponible. Contacte al administrador.' };
-  }
-  if (error instanceof OidcTokenError) {
-    console.error('[luma-leads] OIDC token error:', error.message);
-    return { status: 503, message: 'Servicio no disponible temporalmente. Intente de nuevo.' };
-  }
-  // Sheets-specific errors (404 = sheet not found, 403 = no access)
-  const msg = error instanceof Error ? error.message : String(error);
-  if (msg.includes('404') || msg.includes('Unable to parse range')) {
-    console.error('[luma-leads] Sheet not found:', msg);
-    return { status: 503, message: 'Error de configuración. Contacte al administrador.' };
-  }
-  if (msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
-    console.error('[luma-leads] Sheets permission denied');
-    return { status: 503, message: 'Error de permisos. Contacte al administrador.' };
-  }
-  console.error('[luma-leads] Unexpected error:', error);
-  return { status: 500, message: 'Error interno del servidor.' };
+function classifyError(error: unknown, locale: Locale): { status: number; message: string } {
+  const failure = classifyGcpFailure(error);
+  console.error('[luma-leads]', {
+    stage: failure.stage,
+    code: failure.code,
+    message: failure.safeMessage,
+  });
+  return { status: failure.httpStatus, message: MESSAGES[locale][failure.messageKey] };
 }
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
+  // Locale drives error-message language; default Spanish. Set before any
+  // throw so the catch block can localize even on early failures.
+  let locale: Locale = 'es';
   try {
     const body = await request.json();
+    locale = body?.locale === 'en' ? 'en' : 'es';
 
     // Honeypot — silent success, no sheet write
     if (body._website) {
@@ -142,7 +161,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: 'Lead guardado exitosamente.' });
 
   } catch (error) {
-    const { status, message } = classifyError(error);
+    const { status, message } = classifyError(error, locale);
     return NextResponse.json({ error: message }, { status });
   }
 }

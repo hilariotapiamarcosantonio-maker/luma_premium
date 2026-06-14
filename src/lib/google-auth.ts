@@ -86,3 +86,120 @@ export async function getGcpSheetsAuthClient(): Promise<IdentityPoolClient> {
 
   return client;
 }
+
+// ── Failure classification (safe — never leaks tokens or PII) ──────────────────
+
+export type GcpFailureStage =
+  | 'create_external_client'
+  | 'get_oidc_token'
+  | 'exchange_sts'
+  | 'impersonate_service_account'
+  | 'append_sheet'
+  | 'unknown';
+
+export type GcpFailureMessageKey =
+  | 'config'
+  | 'oidc'
+  | 'sts'
+  | 'permission'
+  | 'notFound'
+  | 'generic';
+
+export interface GcpFailure {
+  stage: GcpFailureStage;
+  code: string;
+  httpStatus: number;
+  messageKey: GcpFailureMessageKey;
+  safeMessage: string;
+}
+
+// Strips anything that looks like a JWT and truncates, so logs never carry
+// an OIDC token, access token, or oversized payload.
+const JWT_RE = /eyJ[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}/g;
+function redact(value: unknown): string {
+  return String(value ?? '').replace(JWT_RE, '<redacted-jwt>').slice(0, 300);
+}
+
+function getRequestUrl(err: unknown): string {
+  const e = err as { config?: { url?: unknown }; response?: { config?: { url?: unknown } } };
+  const raw = e?.config?.url ?? e?.response?.config?.url ?? '';
+  try {
+    if (typeof raw === 'string') return raw;
+    const href = (raw as { href?: string })?.href;
+    return href ?? String(raw);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Maps any failure from the OIDC → STS → impersonation → Sheets chain to a
+ * structured, sanitized result. Returns a safe machine code and a client
+ * message key; never returns tokens, full spreadsheet IDs, or lead data.
+ */
+export function classifyGcpFailure(err: unknown): GcpFailure {
+  if (err instanceof GcpConfigError) {
+    return {
+      stage: 'create_external_client',
+      code: 'GCP_CONFIG_MISSING',
+      httpStatus: 503,
+      messageKey: 'config',
+      safeMessage: redact(err.message),
+    };
+  }
+
+  if (err instanceof OidcTokenError) {
+    return {
+      stage: 'get_oidc_token',
+      code: 'OIDC_TOKEN_UNAVAILABLE',
+      httpStatus: 503,
+      messageKey: 'oidc',
+      safeMessage: 'Vercel OIDC token unavailable',
+    };
+  }
+
+  const e = err as {
+    message?: string;
+    code?: number | string;
+    response?: { status?: number; data?: { error?: string; error_description?: string } };
+  };
+  const url = getRequestUrl(err);
+  const googleError = e?.response?.data?.error ?? '';
+  const description = e?.response?.data?.error_description ?? '';
+  const status = Number(e?.response?.status ?? e?.code ?? 0);
+  const haystack = `${googleError} ${description} ${e?.message ?? ''}`.toLowerCase();
+
+  // STS token exchange (Vercel OIDC JWT → federated token)
+  if (url.includes('sts.googleapis.com') || googleError === 'invalid_grant' || haystack.includes('expected audience')) {
+    let code = 'STS_EXCHANGE_REJECTED';
+    if (haystack.includes('audience')) code = 'STS_AUDIENCE_MISMATCH';
+    else if (haystack.includes('subject')) code = 'STS_SUBJECT_MISMATCH';
+    return { stage: 'exchange_sts', code, httpStatus: 503, messageKey: 'sts', safeMessage: redact(description || googleError) };
+  }
+
+  // Service account impersonation (federated token → SA access token)
+  if (url.includes('iamcredentials.googleapis.com') || haystack.includes('impersonat')) {
+    return {
+      stage: 'impersonate_service_account',
+      code: 'IMPERSONATION_DENIED',
+      httpStatus: 503,
+      messageKey: 'permission',
+      safeMessage: redact(description || e?.message),
+    };
+  }
+
+  // Google Sheets append
+  if (status === 404 || haystack.includes('unable to parse range') || haystack.includes('not found')) {
+    const code = haystack.includes('unable to parse range') ? 'SHEET_TAB_NOT_FOUND' : 'SPREADSHEET_NOT_FOUND';
+    return { stage: 'append_sheet', code, httpStatus: 503, messageKey: 'notFound', safeMessage: redact(e?.message) };
+  }
+  if (status === 403 || haystack.includes('permission_denied') || haystack.includes('insufficient')) {
+    const code = haystack.includes('scope') || haystack.includes('insufficient') ? 'SHEETS_SCOPE_MISSING' : 'SHEETS_PERMISSION_DENIED';
+    return { stage: 'append_sheet', code, httpStatus: 503, messageKey: 'permission', safeMessage: redact(e?.message) };
+  }
+  if (url.includes('sheets.googleapis.com')) {
+    return { stage: 'append_sheet', code: 'APPEND_REJECTED', httpStatus: 503, messageKey: 'generic', safeMessage: redact(e?.message) };
+  }
+
+  return { stage: 'unknown', code: 'UNKNOWN_SERVER_ERROR', httpStatus: 500, messageKey: 'generic', safeMessage: redact(e?.message) };
+}

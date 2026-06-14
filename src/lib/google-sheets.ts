@@ -5,7 +5,8 @@
 import 'server-only';
 
 import { google } from 'googleapis';
-import { getGcpSheetsAuthClient, GcpConfigError, OidcTokenError } from './google-auth';
+import { getGcpSheetsAuthClient, GcpConfigError, OidcTokenError, classifyGcpFailure } from './google-auth';
+import type { GcpFailure } from './google-auth';
 
 // ── Sheets client factory ─────────────────────────────────────────────────────
 
@@ -106,5 +107,7 @@ export async function appendLumaLeadV2(
   return response.data;
 }
 
-// Re-export error classes so callers can distinguish failure modes.
-export { GcpConfigError, OidcTokenError };
+// Re-export error classes and the failure classifier so the API route can
+// distinguish failure modes without importing the auth module directly.
+export { GcpConfigError, OidcTokenError, classifyGcpFailure };
+export type { GcpFailure };
