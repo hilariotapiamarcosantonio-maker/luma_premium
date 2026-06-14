@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 
 // Map Spanish routes → English equivalents and vice versa.
@@ -10,6 +11,7 @@ const ES_TO_EN: Record<string, string> = {
   '/metodo':       '/en/method',
   '/casos':        '/en/cases',
   '/diagnostico':  '/en/assessment',
+  '/diagnostico/gracias': '/en/assessment/thank-you',
   '/contacto':     '/en/contact',
 };
 
@@ -29,11 +31,21 @@ function getEquivalent(pathname: string): { isEn: boolean; opposite: string } {
 export default function LangSwitcher() {
   const pathname = usePathname();
   const { isEn, opposite } = getEquivalent(pathname);
+  const queryString = useSyncExternalStore(
+    (onStoreChange) => {
+      window.addEventListener('popstate', onStoreChange);
+      return () => window.removeEventListener('popstate', onStoreChange);
+    },
+    () => window.location.search.replace(/^\?/, ''),
+    () => ''
+  );
+  const currentHref = queryString ? `${pathname}?${queryString}` : pathname;
+  const oppositeHref = queryString ? `${opposite}?${queryString}` : opposite;
 
   return (
     <div className="flex items-center gap-1 text-xs font-medium tracking-wider border border-slate-800 rounded-sm overflow-hidden">
       <Link
-        href={isEn ? opposite : pathname}
+        href={isEn ? oppositeHref : currentHref}
         className={`px-2.5 py-1.5 transition-colors ${
           !isEn
             ? 'bg-slate-800 text-white'
@@ -44,7 +56,7 @@ export default function LangSwitcher() {
       </Link>
       <span className="text-slate-700 select-none">|</span>
       <Link
-        href={isEn ? pathname : opposite}
+        href={isEn ? currentHref : oppositeHref}
         className={`px-2.5 py-1.5 transition-colors ${
           isEn
             ? 'bg-slate-800 text-white'

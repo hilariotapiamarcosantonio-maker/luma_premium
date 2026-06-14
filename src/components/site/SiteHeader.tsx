@@ -2,19 +2,25 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
-import { NAV_LINKS, PRIMARY_CTA, SITE } from '@/lib/site';
+import { EN_NAV_LINKS, EN_PRIMARY_CTA, NAV_LINKS, PRIMARY_CTA, SITE } from '@/lib/site';
 import LangSwitcher from './LangSwitcher';
 
 // Header madre de Luma Premium. Sticky, con menú móvil.
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const isEn = pathname.startsWith('/en');
+  const navLinks = isEn ? EN_NAV_LINKS : NAV_LINKS;
+  const primaryCta = isEn ? EN_PRIMARY_CTA : PRIMARY_CTA;
+  const homeHref = isEn ? '/en' : '/';
 
   return (
     <nav className="fixed top-0 w-full border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-md z-50">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link
-          href="/"
+          href={homeHref}
           className="text-xl font-semibold tracking-tight text-white hover:opacity-90 transition-opacity"
           onClick={() => setOpen(false)}
         >
@@ -24,7 +30,7 @@ export default function SiteHeader() {
 
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-7 text-sm">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -35,10 +41,10 @@ export default function SiteHeader() {
           ))}
           <LangSwitcher />
           <Link
-            href={PRIMARY_CTA.href}
+            href={primaryCta.href}
             className="bg-white text-slate-950 px-5 py-2.5 rounded-sm font-medium hover:bg-slate-200 transition-colors"
           >
-            {PRIMARY_CTA.label}
+            {primaryCta.label}
           </Link>
         </div>
 
@@ -57,7 +63,7 @@ export default function SiteHeader() {
       {/* Mobile panel */}
       {open && (
         <div className="md:hidden border-t border-slate-800/50 bg-slate-950/95 backdrop-blur-md px-6 py-6 space-y-4">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -68,11 +74,11 @@ export default function SiteHeader() {
             </Link>
           ))}
           <Link
-            href={PRIMARY_CTA.href}
+            href={primaryCta.href}
             onClick={() => setOpen(false)}
             className="block text-center bg-white text-slate-950 px-5 py-3 rounded-sm font-medium hover:bg-slate-200 transition-colors"
           >
-            {PRIMARY_CTA.label}
+            {primaryCta.label}
           </Link>
           <div className="pt-2">
             <LangSwitcher />

@@ -147,7 +147,7 @@ export default function DiagnosticoPage() {
               </p>
             </div>
             <Suspense>
-              <DiagnosticoMaestroForm />
+              <DiagnosticoMaestroForm locale="es" />
             </Suspense>
           </div>
         </div>

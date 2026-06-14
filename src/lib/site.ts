@@ -49,7 +49,19 @@ export const NAV_LINKS = [
   { label: 'Diagnóstico', href: '/diagnostico' },
 ] as const;
 
+export const EN_NAV_LINKS = [
+  { label: 'Solutions', href: '/en/solutions' },
+  { label: 'Method', href: '/en/method' },
+  { label: 'Cases', href: '/en/cases' },
+  { label: 'Assessment', href: '/en/assessment' },
+] as const;
+
 export const PRIMARY_CTA = {
   label: 'Solicitar evaluación',
   href: '/diagnostico',
+} as const;
+
+export const EN_PRIMARY_CTA = {
+  label: 'Request assessment',
+  href: '/en/assessment',
 } as const;

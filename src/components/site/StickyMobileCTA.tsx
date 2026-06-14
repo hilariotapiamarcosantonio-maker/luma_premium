@@ -7,18 +7,21 @@ import { ArrowRight } from 'lucide-react';
 
 // CTA sticky premium solo en móvil. Aparece tras hacer scroll y no tapa el footer.
 export default function StickyMobileCTA({
-  label = 'Solicitar evaluación',
-  href = '/diagnostico',
+  label,
+  href,
 }: {
   label?: string;
   href?: string;
 }) {
   const [visible, setVisible] = useState(false);
   const pathname = usePathname();
+  const isEn = pathname.startsWith('/en');
+  const targetLabel = label ?? (isEn ? 'Request assessment' : 'Solicitar evaluación');
+  const targetHref = href ?? (isEn ? '/en/assessment' : '/diagnostico');
   // No mostrar el sticky donde ya hay un CTA principal/formulario inmediato,
   // ni en la propia ruta destino.
-  const HIDDEN_ROUTES = ['/diagnostico', '/contacto'];
-  const hidden = pathname === href || HIDDEN_ROUTES.includes(pathname);
+  const HIDDEN_ROUTES = ['/diagnostico', '/contacto', '/en/assessment', '/en/contact'];
+  const hidden = pathname === targetHref || HIDDEN_ROUTES.includes(pathname);
 
   useEffect(() => {
     const onScroll = () => {
@@ -50,10 +53,10 @@ export default function StickyMobileCTA({
     >
       <div className="bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent absolute inset-0 -z-10" />
       <Link
-        href={href}
+        href={targetHref}
         className="flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-slate-950 shadow-lg ring-1 ring-amber-500/15 transition-colors hover:bg-slate-100"
       >
-        {label} <ArrowRight className="h-4 w-4" />
+        {targetLabel} <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
   );

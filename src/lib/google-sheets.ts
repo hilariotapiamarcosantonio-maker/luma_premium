@@ -22,7 +22,7 @@ export async function appendLumaLead(data: string[]) {
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: `${sheetName}!A:J`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: [data] },
   });
   return response.data;
@@ -92,7 +92,7 @@ export async function appendLumaLeadV2(lead: Omit<LumaLeadV2, 'schema_version' |
   const response = await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: `${sheetName}!A:AC`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: 'RAW',
     requestBody: { values: [row] },
   });
   return response.data;

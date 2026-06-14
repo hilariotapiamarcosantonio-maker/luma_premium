@@ -119,7 +119,7 @@ export default function EnAssessmentPage() {
               </p>
             </div>
             <Suspense>
-              <DiagnosticoMaestroForm />
+              <DiagnosticoMaestroForm locale="en" />
             </Suspense>
           </div>
         </div>

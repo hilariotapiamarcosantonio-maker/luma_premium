@@ -1,7 +1,25 @@
 import { redirect } from 'next/navigation';
 
-// Redirige al formulario maestro multinicho con el sector inmobiliario preseleccionado.
-// Esto elimina el doble formulario desconectado y centraliza todos los leads.
-export default function DiagnosticoRedirect() {
-  redirect('/diagnostico?industry=real-estate&source=luma-estate-os#assessment-form');
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function DiagnosticoRedirect({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const incoming = await searchParams;
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(incoming)) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item));
+    } else if (value) {
+      params.set(key, value);
+    }
+  }
+
+  params.set('industry', 'real-estate');
+  params.set('source', 'luma-estate-os');
+
+  redirect(`/diagnostico?${params.toString()}#assessment-form`);
 }
