@@ -5,7 +5,7 @@ import SiteShell from '@/components/site/SiteShell';
 import SolutionCard from '@/components/site/SolutionCard';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import { MotionStagger, MotionItem } from '@/components/site/Motion';
-import { SOLUTIONS } from '@/lib/solutions';
+import { EN_SOLUTIONS } from '@/lib/solutions';
 
 export const metadata: Metadata = {
   title: 'Solutions',
@@ -35,9 +35,9 @@ export default function EnSolutionsPage() {
 
       <section className="pb-24 px-6">
         <MotionStagger className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SOLUTIONS.map((s) => (
+          {EN_SOLUTIONS.map((s) => (
             <MotionItem key={s.slug} className="h-full">
-              <SolutionCard solution={s} />
+              <SolutionCard solution={s} locale="en" />
             </MotionItem>
           ))}
 

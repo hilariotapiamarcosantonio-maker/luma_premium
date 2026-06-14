@@ -5,7 +5,7 @@ import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import CaseCard from '@/components/site/CaseCard';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
-import { CASES } from '@/lib/cases';
+import { EN_CASES } from '@/lib/cases';
 
 export const metadata: Metadata = {
   title: 'Cases & demos',
@@ -49,9 +49,9 @@ export default function EnCasesPage() {
 
       <section className="pb-24 px-6">
         <MotionStagger className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {CASES.map((c) => (
+          {EN_CASES.map((c) => (
             <MotionItem key={c.title} className="h-full">
-              <CaseCard item={c} />
+              <CaseCard item={c} locale="en" />
             </MotionItem>
           ))}
         </MotionStagger>

@@ -136,9 +136,9 @@ export default function EnHomePage() {
           </MotionSection>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { name: 'Real Estate OS', desc: 'Presentation, capture, and commercial control for high-value projects.', href: '/soluciones/real-estate-os' },
-              { name: 'Commerce OS', desc: 'End-to-end digital commerce with automated follow-up and conversion tracking.', href: '/soluciones/commerce-os' },
-              { name: 'Beauty Spa OS', desc: 'Booking, client management, and retention system for premium wellness brands.', href: '/soluciones/beauty-spa-os' },
+              { name: 'Real Estate OS', desc: 'Presentation, capture, and commercial control for high-value projects.', href: '/en/solutions' },
+              { name: 'Commerce OS', desc: 'End-to-end digital commerce with automated follow-up and conversion tracking.', href: '/en/solutions' },
+              { name: 'Beauty Spa OS', desc: 'Booking, client management, and retention system for premium wellness brands.', href: '/en/solutions' },
             ].map((s) => (
               <Link key={s.name} href={s.href} className="group p-8 rounded-2xl border border-slate-800 bg-slate-900/20 hover:border-slate-700 hover:bg-slate-900/40 transition-all">
                 <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-amber-400 transition-colors">{s.name}</h3>
