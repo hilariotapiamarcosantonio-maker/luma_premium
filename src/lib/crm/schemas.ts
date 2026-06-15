@@ -10,7 +10,7 @@ export const LeadFiltersSchema = z.object({
   date_from: z.string().optional(), // ISO string date
   date_to: z.string().optional(),   // ISO string date
   page: z.coerce.number().int().positive().default(1),
-  page_size: z.coerce.number().int().positive().default(25),
+  page_size: z.coerce.number().int().positive().max(100).default(25),
 });
 
 /**

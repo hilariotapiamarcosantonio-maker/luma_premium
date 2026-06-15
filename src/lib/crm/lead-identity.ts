@@ -54,6 +54,15 @@ export function generateLeadId(input: LeadIdentityInput): string {
 
   const hash = createHash('sha256').update(rawString).digest('hex');
 
-  // Return the friendly, safe URL identifier prefix + short hash
-  return `lp_${hash.slice(0, 16)}`;
+  // Return the friendly, safe URL identifier prefix + 24 chars of short hash
+  return `lp_${hash.slice(0, 24)}`;
 }
+
+/**
+ * Validates that a string matches the strict lead_id format: lp_<24 hexadecimal characters>.
+ */
+export function isValidLeadId(leadId: string | null | undefined): boolean {
+  if (!leadId) return false;
+  return /^lp_[a-f0-9]{24}$/.test(leadId);
+}
+

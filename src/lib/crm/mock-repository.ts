@@ -1,7 +1,7 @@
 import 'server-only';
 import { CrmRepository } from './repository';
 import { DashboardMetrics, LeadDetail, LeadFilters, PaginatedLeads } from './types';
-import { generateLeadId } from './lead-identity';
+import { generateLeadId, isValidLeadId } from './lead-identity';
 
 // Mock list of 35 synthetic leads to allow pagination testing (page size 25)
 const MOCK_LEADS_RAW = [
@@ -309,6 +309,7 @@ export class MockCrmRepository implements CrmRepository {
   }
 
   async getLeadById(leadId: string): Promise<LeadDetail | null> {
+    if (!isValidLeadId(leadId)) return null;
     const lead = MOCK_LEADS.find((l) => l.id === leadId);
     return lead || null;
   }

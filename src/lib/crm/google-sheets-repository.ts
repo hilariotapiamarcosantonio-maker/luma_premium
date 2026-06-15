@@ -3,7 +3,7 @@ import { google } from 'googleapis';
 import { getGcpSheetsAuthClient, GcpConfigError, classifyGcpFailure } from '../google-auth';
 import { CrmRepository } from './repository';
 import { DashboardMetrics, LeadDetail, LeadFilters, PaginatedLeads } from './types';
-import { generateLeadId } from './lead-identity';
+import { generateLeadId, isValidLeadId } from './lead-identity';
 import { SheetRowSchema } from './schemas';
 
 // Column mapping ordered exactly from A to AC (29 columns)
@@ -51,7 +51,17 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
       });
 
       const rows = response.data.values;
-      if (!rows || rows.length <= 1) {
+      if (!rows || rows.length === 0) {
+        return [];
+      }
+
+      // Strict validation of the columns/headers length (A:AC expects 29 columns)
+      const headers = rows[0] || [];
+      if (headers.length < 29) {
+        throw new Error(`Google Sheets schema mismatch. Expected at least 29 columns, found ${headers.length}.`);
+      }
+
+      if (rows.length <= 1) {
         return [];
       }
 
@@ -152,6 +162,7 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
   }
 
   async getLeadById(leadId: string): Promise<LeadDetail | null> {
+    if (!isValidLeadId(leadId)) return null;
     const all = await this.fetchAllLeads();
     return all.find((l) => l.id === leadId) || null;
   }
