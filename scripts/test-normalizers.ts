@@ -60,7 +60,32 @@ assert(normalizeInvestmentRange('US$5,000 - US$10,000') === 'US$5,000–10,000',
 
 // 3. Industries
 assert(normalizeIndustry('commerce') === 'Comercio y e-commerce', 'commerce industry normalization');
-assert(normalizeIndustry('professional-services') === 'Servicios profesionales', 'professional-services industry normalization');
+assert(normalizeIndustry('e-commerce') === 'Comercio y e-commerce', 'e-commerce industry normalization');
+assert(normalizeIndustry('retail') === 'Comercio y e-commerce', 'retail industry normalization');
+assert(normalizeIndustry('real estate') === 'Inmobiliarias y construcción', 'real estate industry normalization');
+assert(normalizeIndustry('construcción') === 'Inmobiliarias y construcción', 'construcción industry normalization');
+assert(normalizeIndustry('spa') === 'Belleza, spa y estética', 'spa industry normalization');
+assert(normalizeIndustry('beauty') === 'Belleza, spa y estética', 'beauty industry normalization');
+assert(normalizeIndustry('cosmetics') === 'Cosmética y cuidado personal', 'cosmetics industry normalization');
+assert(normalizeIndustry('skincare') === 'Cosmética y cuidado personal', 'skincare industry normalization');
+assert(normalizeIndustry('barbershop') === 'Peluquerías y barberías', 'barbershop industry normalization');
+assert(normalizeIndustry('peluquería') === 'Peluquerías y barberías', 'peluquería industry normalization');
+assert(normalizeIndustry('education') === 'Educación, academias y cursos', 'education industry normalization');
+assert(normalizeIndustry('academia') === 'Educación, academias y cursos', 'academia industry normalization');
+assert(normalizeIndustry('finance') === 'Finanzas, préstamos y seguros', 'finance industry normalization');
+assert(normalizeIndustry('seguros') === 'Finanzas, préstamos y seguros', 'seguros industry normalization');
+assert(normalizeIndustry('professional-services') === 'Servicios profesionales y B2B', 'professional-services industry normalization');
+assert(normalizeIndustry('b2b') === 'Servicios profesionales y B2B', 'b2b industry normalization');
+assert(normalizeIndustry('health') === 'Salud, bienestar y alto rendimiento', 'health industry normalization');
+assert(normalizeIndustry('fitness') === 'Salud, bienestar y alto rendimiento', 'fitness industry normalization');
+assert(normalizeIndustry('home') === 'Hogar, muebles y diseño de interiores', 'home industry normalization');
+assert(normalizeIndustry('interiorismo') === 'Hogar, muebles y diseño de interiores', 'interiorismo industry normalization');
+assert(normalizeIndustry('industry') === 'Industria, manufactura y minería', 'industry industry normalization');
+assert(normalizeIndustry('minería') === 'Industria, manufactura y minería', 'minería industry normalization');
+assert(normalizeIndustry('technology') === 'Tecnología, software y SaaS', 'technology industry normalization');
+assert(normalizeIndustry('saas') === 'Tecnología, software y SaaS', 'saas industry normalization');
+assert(normalizeIndustry('random') === 'Otros', 'unmatched industry maps to Otros');
+assert(normalizeIndustry('') === 'Otros', 'empty industry maps to Otros');
 
 // 4. Countries
 assert(normalizeCountryCode('DO') === 'DO', 'Country code DO');
@@ -162,7 +187,7 @@ assert(mappedFields !== null, 'Mapped fields should not be null');
 if (mappedFields) {
   // Verificación de raw vs normalizado / visual
   assert(mappedFields.raw_industry === 'Producci\uFFFDn', 'Preserves raw industry exact spelling');
-  assert(mappedFields.industry === 'Producción', 'Normalizes industry to UTF-8 Español');
+  assert(mappedFields.industry === 'Industria, manufactura y minería', 'Normalizes industry to Industria, manufactura y minería');
 
   assert(mappedFields.raw_investment_range === 'US$1,000–3,000', 'Preserves raw investment range exact spelling');
   assert(mappedFields.investment_range === 'US$1,500–3,000', 'Normalizes investment range to official range');
@@ -195,7 +220,7 @@ async function runRepoTests() {
     assert(testNormalizationLead.raw_country === 'DO', 'MockCrmRepository preserves raw_country');
 
     // Assert normalized / visual values (Rule 2)
-    assert(testNormalizationLead.industry === 'Producción', 'MockCrmRepository normalized industry to Producción');
+    assert(testNormalizationLead.industry === 'Industria, manufactura y minería', 'MockCrmRepository normalized industry to Industria, manufactura y minería');
     assert(testNormalizationLead.investment_range === 'US$1,500–3,000', 'MockCrmRepository normalized investment_range to US$1,500–3,000');
     assert(testNormalizationLead.platform === 'meta', 'MockCrmRepository normalized utm_source facebook to platform meta');
     assert(testNormalizationLead.country === 'DO', 'MockCrmRepository normalized country to DO');

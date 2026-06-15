@@ -236,7 +236,8 @@ export default async function DashboardPage() {
           </Link>
         </div>
         
-        <div className="mt-4 overflow-x-auto">
+        {/* Desktop View: Table */}
+        <div className="mt-4 hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-neutral-800 text-xs font-semibold uppercase tracking-wider text-neutral-500">
@@ -268,6 +269,30 @@ export default async function DashboardPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View: Cards */}
+        <div className="mt-4 space-y-3 md:hidden">
+          {metrics.recentLeads.map((lead) => (
+            <div key={lead.id} className="rounded-lg border border-neutral-800 bg-neutral-950/20 p-4 space-y-2 hover:bg-neutral-900/10 transition-colors">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-neutral-100 text-sm">{lead.full_name || 'Sin nombre'}</h3>
+                  <p className="text-xs text-neutral-400">{lead.company || 'Sin empresa'}</p>
+                </div>
+                <span className="text-[10px] text-neutral-500">{new Date(lead.created_at).toLocaleDateString('es-ES')}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-neutral-300 font-semibold">{getCountryLabel(lead.country) || 'País no especificado'}</span>
+                <Link
+                  href={`/admin/leads/${lead.id}`}
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-850 bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white min-h-[44px]"
+                >
+                  <ChevronRight className="h-5 w-5 text-amber-500" />
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

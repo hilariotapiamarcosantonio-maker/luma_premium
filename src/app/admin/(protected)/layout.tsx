@@ -6,6 +6,7 @@ import {
   LayoutDashboard, 
   LogOut
 } from 'lucide-react';
+import MobileNavigation from '@/components/crm/MobileNavigation';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -79,29 +80,13 @@ export default async function ProtectedLayout({
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col md:pl-64 min-w-0 w-full">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-neutral-800 bg-neutral-950/80 px-4 backdrop-blur-md md:hidden">
-          <div className="flex items-center gap-2">
-            <Link href="/admin" className="font-bold tracking-tight text-neutral-100">
-              LUMA <span className="text-amber-500 text-xs border border-amber-500/20 bg-amber-500/10 px-1 py-0.5 rounded">CRM</span>
-            </Link>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="text-xs text-neutral-400 hover:text-white">Dashboard</Link>
-            <Link href="/admin/leads" className="text-xs text-neutral-400 hover:text-white">Leads</Link>
-            <form
-              action={async () => {
-                'use server';
-                await signOut({ redirectTo: '/admin/login' });
-              }}
-            >
-              <button type="submit" className="text-red-400 hover:text-red-300">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </form>
-          </div>
-        </header>
+        <MobileNavigation
+          user={user}
+          onSignOut={async () => {
+            'use server';
+            await signOut({ redirectTo: '/admin/login' });
+          }}
+        />
 
         {/* Content Body */}
         <main className="relative z-10 flex-1 px-4 py-8 md:px-8">

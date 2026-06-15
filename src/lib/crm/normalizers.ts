@@ -180,27 +180,70 @@ export function normalizeInvestmentRange(range: string): string {
   return clean;
 }
 
+export const INDUSTRY_TAXONOMY = [
+  'Inmobiliarias y construcción',
+  'Comercio y e-commerce',
+  'Belleza, spa y estética',
+  'Cosmética y cuidado personal',
+  'Peluquerías y barberías',
+  'Educación, academias y cursos',
+  'Finanzas, préstamos y seguros',
+  'Servicios profesionales y B2B',
+  'Salud, bienestar y alto rendimiento',
+  'Hogar, muebles y diseño de interiores',
+  'Industria, manufactura y minería',
+  'Tecnología, software y SaaS',
+  'Otros',
+] as const;
+
 /**
  * Groups industry values into canonical categories.
  */
 export function normalizeIndustry(industry: string): string {
-  if (!industry) return 'No especificada';
+  if (!industry) return 'Otros';
   
   const clean = industry.trim().toLowerCase();
 
-  if (clean === 'commerce' || clean === 'ecommerce' || clean.includes('comercio') || clean.includes('e-commerce') || clean.includes('e commerce')) {
+  const has = (terms: string[]) => terms.some(term => clean === term || clean.includes(term));
+
+  if (has(['real estate', 'realtor', 'inmobiliaria', 'construcción', 'construccion', 'broker', 'bienes raices', 'bienes raíces', 'proptech', 'constructor'])) {
+    return 'Inmobiliarias y construcción';
+  }
+  if (has(['ecommerce', 'e-commerce', 'e commerce', 'commerce', 'retail', 'tienda', 'comercio'])) {
     return 'Comercio y e-commerce';
   }
-  
-  if (clean === 'professional-services' || clean === 'professional services' || clean.includes('servicios profesionales')) {
-    return 'Servicios profesionales';
+  if (has(['spa', 'beauty', 'estética', 'estetica', 'salon de belleza', 'salón de belleza', 'centro de estética', 'wellness']) && !clean.includes('cosmética') && !clean.includes('cosmetica')) {
+    return 'Belleza, spa y estética';
+  }
+  if (has(['cosmetics', 'cosmética', 'cosmetica', 'skincare', 'cuidado personal'])) {
+    return 'Cosmética y cuidado personal';
+  }
+  if (has(['barber', 'barbershop', 'peluquería', 'peluqueria'])) {
+    return 'Peluquerías y barberías';
+  }
+  if (has(['education', 'educación', 'educacion', 'academia', 'curso', 'colegio', 'escuela'])) {
+    return 'Educación, academias y cursos';
+  }
+  if (has(['finance', 'finanzas', 'préstamo', 'prestamo', 'seguro', 'insurance', 'banca'])) {
+    return 'Finanzas, préstamos y seguros';
+  }
+  if (has(['professional services', 'professional-services', 'servicios profesionales', 'consultoría', 'consultoria', 'b2b', 'legal', 'agencia'])) {
+    return 'Servicios profesionales y B2B';
+  }
+  if (has(['health', 'salud', 'alto rendimiento', 'medicina', 'clínica', 'clinica', 'fitness'])) {
+    return 'Salud, bienestar y alto rendimiento';
+  }
+  if (has(['home', 'furniture', 'interiorismo', 'diseño de interiores', 'muebles', 'decoración', 'decoracion', 'hogar'])) {
+    return 'Hogar, muebles y diseño de interiores';
+  }
+  if (has(['industry', 'manufactura', 'minería', 'mineria', 'fábrica', 'fabrica', 'industrial', 'producción', 'produccion', 'produccin', 'production'])) {
+    return 'Industria, manufactura y minería';
+  }
+  if (has(['technology', 'software', 'saas', 'tecnología', 'tech', 'desarrollo', 'programación', 'programacion'])) {
+    return 'Tecnología, software y SaaS';
   }
 
-  if (clean.includes('real estate') || clean.includes('proptech') || clean.includes('inmobiliaria') || clean.includes('broker')) {
-    return 'Real Estate / Proptech';
-  }
-
-  return industry.trim();
+  return 'Otros';
 }
 
 export interface AttributionFields {

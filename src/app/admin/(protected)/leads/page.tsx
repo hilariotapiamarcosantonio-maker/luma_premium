@@ -1,9 +1,10 @@
 import { proxyAdmin } from '@/proxy';
 import { getCrmRepository } from '@/lib/crm/repository';
 import { LeadFiltersSchema } from '@/lib/crm/schemas';
-import { getCountryLabel, getPlatformLabel, getChannelLabel } from '@/lib/crm/normalizers';
+import { getCountryLabel, getPlatformLabel, getChannelLabel, INDUSTRY_TAXONOMY } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { ChevronRight, Filter, Search, Globe, ChevronLeft, Layers } from 'lucide-react';
+import MobileFiltersDrawer from '@/components/crm/MobileFiltersDrawer';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -51,8 +52,14 @@ export default async function LeadsPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      {/* HTML native GET Filter Form */}
-      <form method="GET" action="/admin/leads" className="rounded-xl border border-neutral-800 bg-neutral-900/20 p-5 space-y-4">
+      {/* Mobile Drawer trigger */}
+      <MobileFiltersDrawer
+        activeFilters={activeFilters}
+        campaigns={metrics.byCampaign}
+      />
+
+      {/* HTML native GET Filter Form (Desktop view) */}
+      <form method="GET" action="/admin/leads" className="hidden md:block rounded-xl border border-neutral-800 bg-neutral-900/20 p-5 space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-neutral-800 text-neutral-300 font-medium">
           <Filter className="h-4 w-4" />
           <span>Filtros de Búsqueda</span>
@@ -176,9 +183,11 @@ export default async function LeadsPage({ searchParams }: PageProps) {
               className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
             >
               <option value="">Todos</option>
-              <option value="Comercio y e-commerce">Comercio y e-commerce</option>
-              <option value="Servicios profesionales">Servicios profesionales</option>
-              <option value="Real Estate / Proptech">Real Estate / Proptech</option>
+              {INDUSTRY_TAXONOMY.map((ind) => (
+                <option key={ind} value={ind}>
+                  {ind}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -240,21 +249,24 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                 </div>
                 
                 <div className="flex items-center justify-between text-xs text-neutral-500">
-                  <div className="flex items-center gap-2">
-                    <span className="uppercase">{lead.country || 'N/A'}</span>
-                    <span>•</span>
-                    <span>{lead.locale === 'es' ? 'ES' : 'EN'}</span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold text-neutral-300">{getCountryLabel(lead.country) || 'País no especificado'}</span>
+                    <span className="text-[11px] text-amber-500/80 font-medium">
+                      {lead.investment_range === 'legacy_review'
+                        ? 'US$1,500–5,000 (histórico)'
+                        : lead.investment_range || 'Presupuesto no especificado'}
+                    </span>
                   </div>
-                  <span>{new Date(lead.created_at).toLocaleDateString('es-ES')}</span>
+                  <span className="text-[11px]">{new Date(lead.created_at).toLocaleDateString('es-ES')}</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 font-medium bg-amber-950/20 px-2 py-0.5 rounded border border-amber-900/20">
-                    {getPlatformLabel(lead.platform)} / {getChannelLabel(lead.channel)}
+                  <span className="inline-flex items-center gap-1 text-[10px] text-neutral-300 font-semibold bg-neutral-900 border border-neutral-800 px-2 py-1 rounded">
+                    {getPlatformLabel(lead.platform)} • {getChannelLabel(lead.channel)}
                   </span>
                   <Link
                     href={`/admin/leads/${lead.id}`}
-                    className="flex items-center gap-1.5 text-xs text-amber-500 font-medium hover:underline"
+                    className="flex h-9 items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-3 text-xs text-amber-500 font-semibold hover:bg-neutral-800 hover:text-amber-400 min-h-[36px]"
                   >
                     Detalle <ChevronRight className="h-3.5 w-3.5" />
                   </Link>
