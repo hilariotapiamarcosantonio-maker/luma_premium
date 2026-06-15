@@ -7,7 +7,7 @@ import { generateLeadId, isValidLeadId } from './lead-identity';
 import { SheetRowSchema } from './schemas';
 
 // Column mapping ordered exactly from A to AC (29 columns)
-const V2_COLUMNS: (keyof Omit<LeadDetail, 'id'>)[] = [
+export const V2_COLUMNS: (keyof Omit<LeadDetail, 'id'>)[] = [
   'schema_version', 'created_at', 'locale', 'country',
   'full_name', 'email', 'phone', 'company', 'role',
   'industry', 'industry_detail', 'team_size', 'lead_volume',
@@ -18,6 +18,21 @@ const V2_COLUMNS: (keyof Omit<LeadDetail, 'id'>)[] = [
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
   'status',
 ];
+
+/**
+ * Validates that Google Sheets headers match the expected schema (quantity, name, and position).
+ */
+export function validateSheetHeaders(headers: string[]): boolean {
+  if (headers.length !== V2_COLUMNS.length) {
+    return false;
+  }
+  for (let i = 0; i < V2_COLUMNS.length; i++) {
+    if (String(headers[i]).trim() !== V2_COLUMNS[i]) {
+      return false;
+    }
+  }
+  return true;
+}
 
 export class GoogleSheetsCrmRepository implements CrmRepository {
   private async getSheetsClient() {
@@ -55,10 +70,11 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
         return [];
       }
 
-      // Strict validation of the columns/headers length (A:AC expects 29 columns)
+      // Strict validation of the columns/headers (quantity, name, and position in A:AC)
       const headers = rows[0] || [];
-      if (headers.length < 29) {
-        throw new Error(`Google Sheets schema mismatch. Expected at least 29 columns, found ${headers.length}.`);
+      if (!validateSheetHeaders(headers)) {
+        console.error('CRM_SHEET_SCHEMA_MISMATCH');
+        throw new Error('El esquema de la hoja de cálculo es incompatible con el sistema.');
       }
 
       if (rows.length <= 1) {

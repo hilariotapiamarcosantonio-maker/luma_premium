@@ -58,7 +58,7 @@ Todas las rutas de administración bajo `/admin/(protected)/*` y la Data Access 
 ## 6. Auditoría de Secretos y `.env.local`
 Se realizó una verificación de seguridad local con los siguientes resultados:
 * **Ignorados en Git:** Se auditó mediante `git check-ignore -v .env.local` y `git ls-files .env.local` que el archivo de entorno de desarrollo local está correctamente configurado bajo las reglas del `.gitignore` y no ha sido rastreado ni commiteado en el historial de Git.
-* **Inspección de Secretos:** La búsqueda recursiva de claves privadas o secretos de clientes reales en el repositorio dio resultado limpio. Solo se encontraron las referencias y plantillas genéricas no sensibles configuradas en `.env.example` y la documentación técnica de infraestructura.
+* **Inspección de Secretos:** La búsqueda de claves privadas o secretos de clientes reales en el repositorio dio resultado limpio. Solo se encontraron las referencias y plantillas genéricas no sensibles configuradas en `.env.example` y la documentación técnica.
 
 ---
 
@@ -85,11 +85,16 @@ source_fingerprint = sha256(
 
 ---
 
-## 8. Data Access Layer (DAL)
+## 8. Data Access Layer (DAL) y Validación de Encabezados
 * **Reutilización OIDC:** La lectura en modo `sheets` importa `getGcpSheetsAuthClient` de `src/lib/google-auth.ts`, aprovechando la autenticación de servidor a servidor (Workload Identity Federation) de GCP sin claves JSON privadas.
-* **Paginación y Filtros en Repositorio:** La DAL realiza la paginación y ordenamiento en memoria en la capa del repositorio antes de transferir datos al servidor web de Next.js, protegiendo el ancho de banda y mitigando límites del API de Sheets.
-* **Validación Robusta (Zod):** Cada fila de `Luma Leads V2` (columnas `A:AC`) se valida con `SheetRowSchema.safeParse`. Si alguna fila está corrupta, se omite silenciosamente para no corromper el resto de los registros en el CRM.
-* **Validación de Encabezados:** Se verifica que la primera fila del Spreadsheet contiene al menos 29 columnas correspondientes al rango de esquema esperado.
+* **Paginación y Filtros en Repositorio:** La DAL realiza la paginación y ordenamiento en memoria en la capa del repositorio antes de transferir datos al servidor web de Next.js.
+* **Validación de Encabezados:** Se implementó una función exportada `validateSheetHeaders(headers)` que verifica la estructura exacta de las columnas `A:AC` (29 columnas, nombre y posición exacta). Si ocurre alguna discrepancia en la cantidad, nombre o posición, la DAL arroja un error controlado, escribe en logs el código `CRM_SHEET_SCHEMA_MISMATCH` de forma segura (sin imprimir celdas, filas ni PII), y muestra al administrador un mensaje de error genérico.
+* **Pruebas del Validador de Encabezados (Paso 1):**
+  - Encabezados correctos: Aceptados (✅ *Passed*).
+  - Un encabezado cambiado: Rechazado (✅ *Passed*).
+  - Dos encabezados intercambiados: Rechazados (✅ *Passed*).
+  - 28 columnas: Rechazadas (✅ *Passed*).
+  - 30 columnas: Rechazadas (✅ *Passed*).
 
 ---
 
@@ -103,23 +108,31 @@ Con el servidor local levantado en modo mock, se auditaron las cabeceras y respu
 
 ---
 
-## 10. QA OAuth Real (Pendiente de Credenciales)
-Dado que las credenciales para el flujo Google OAuth (`AUTH_GOOGLE_ID` y `AUTH_GOOGLE_SECRET`) son ficticias en desarrollo local y entornos de QA de compilación, el QA real completo se reporta como **PENDIENTE** hasta configurar las claves correspondientes en la consola de Google Cloud e inyectarlas en el dashboard de Vercel. 
-
-El plan de validación pendiente de credenciales reales incluye:
-1. Login real de Marcos con su cuenta Google permitida en allowlist.
-2. Login real de William con su cuenta Google permitida en allowlist.
-3. Validación de rechazo de accesos no autorizados con cuentas externas.
-4. Cierre de sesión (Logout) y borrado correcto de cookies de sesión JWT.
-5. QA de sesión expirada tras el período de vida útil del token.
-6. Verificación de callbacks OIDC estables en Preview y Producción.
+## 10. QA de Rutas Públicas (HTTP Statuses)
+Se levantó el servidor local y se validaron los códigos de estado HTTP para las rutas públicas del sitio, verificando que no existan regresiones en producción:
+* `GET http://localhost:3000/` → **`200 OK`** (✅ *Passed*)
+* `GET http://localhost:3000/diagnostico` → **`200 OK`** (✅ *Passed*)
+* `GET http://localhost:3000/diagnostico/gracias` → **`200 OK`** (✅ *Passed*)
+* `GET http://localhost:3000/en` → **`200 OK`** (✅ *Passed*)
+* `GET http://localhost:3000/en/assessment` → **`200 OK`** (✅ *Passed*)
+* `GET http://localhost:3000/en/assessment/thank-you` → **`200 OK`** (✅ *Passed*)
+* `GET http://localhost:3000/soluciones` → **`200 OK`** (✅ *Passed*)
+* `GET http://localhost:3000/en/solutions` → **`200 OK`** (✅ *Passed*)
 
 ---
 
-## 11. Regresión Pública Verificada
-Se constató mediante `git diff main...HEAD` que los siguientes archivos críticos del flujo público no sufrieron ninguna modificación durante el desarrollo de la Fase 1, garantizando que no hay regresiones en la web de producción:
-* `src/app/api/luma-leads/route.ts` — (0 diferencias: ✅)
-* `src/lib/google-sheets.ts` — (0 diferencias: ✅)
-* `src/lib/google-auth.ts` — (0 diferencias: ✅)
+## 11. Limpieza de Archivos Temporales
+Se verificó mediante `git status` y `git ls-files` que:
+- Ningún archivo temporal bajo `node_modules` esté siendo rastreado.
+- No se modificó el archivo `package-lock.json` por pruebas de ejecución locales.
+- Se eliminó la carpeta dummy local de `server-only` en `node_modules`, restaurando el estado original del workspace.
 
-La compilación del build generó correctamente las páginas públicas como estáticas (`○` y `●`) y el handler de API como dinámico (`ƒ`), manteniendo la estabilidad de la landing page.
+---
+
+## 12. Estado del Despliegue
+* **Estado de la Implementación:** **CÓDIGO LISTO PARA PREVIEW** (Compila y valida tipos perfectamente).
+* **Estado del QA de Autenticación:** **OAuth Real Pendiente de Configuración**. El inicio de sesión real en local, preview y producción requiere el registro de las credenciales de Google OAuth en GCP y en las variables de Vercel correspondientes.
+* **Callback URLs OAuth requeridas:**
+  - `http://localhost:3000/api/auth/callback/google`
+  - `https://www.lumapremium.com/api/auth/callback/google`
+  - `https://<alias-preview-estable>/api/auth/callback/google` *(Se debe asignar un dominio/alias estable a la rama de Preview en Vercel para autorizar este callback en la consola de Google Cloud antes de probar en Preview).*
