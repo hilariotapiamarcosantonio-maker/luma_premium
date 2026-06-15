@@ -1,17 +1,19 @@
 import { proxyAdmin } from '@/proxy';
 import { getCrmRepository } from '@/lib/crm/repository';
+import { getCountryLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { 
   Users, 
-  UserPlus, 
-  Globe, 
+  Phone, 
   MapPin, 
   Briefcase, 
   DollarSign, 
   Tag, 
   Clock,
   ArrowRight,
-  ChevronRight
+  ChevronRight,
+  Layers,
+  Globe
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +25,14 @@ export default async function DashboardPage() {
 
   const repository = await getCrmRepository();
   const metrics = await repository.getDashboardMetrics();
+
+  const phonePercentage = metrics.totalLeads > 0 
+    ? ((metrics.leadsWithPhone / metrics.totalLeads) * 100).toFixed(0) 
+    : '0';
+
+  const budgetPercentage = metrics.totalLeads > 0 
+    ? ((metrics.leadsWithBudget / metrics.totalLeads) * 100).toFixed(0) 
+    : '0';
 
   return (
     <div className="space-y-8">
@@ -52,33 +62,34 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* New Leads */}
+        {/* Leads con Teléfono */}
         <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 shadow-sm backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-400 font-medium uppercase tracking-wider">Leads Nuevos</span>
-            <UserPlus className="h-4 w-4 text-emerald-500" />
+            <span className="text-xs text-neutral-400 font-medium uppercase tracking-wider">Leads con Teléfono</span>
+            <Phone className="h-4 w-4 text-emerald-500" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-semibold text-emerald-400">{metrics.newLeads}</span>
+            <span className="text-3xl font-semibold text-emerald-400">{metrics.leadsWithPhone}</span>
+            <span className="text-xs text-neutral-400">({phonePercentage}%)</span>
           </div>
         </div>
 
-        {/* Global Conversion Reference Placeholder */}
+        {/* Leads con Presupuesto Definido */}
         <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 shadow-sm backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-400 font-medium uppercase tracking-wider">Tasa de Conversión</span>
-            <Globe className="h-4 w-4 text-blue-500" />
+            <span className="text-xs text-neutral-400 font-medium uppercase tracking-wider">Presupuesto Definido</span>
+            <DollarSign className="h-4 w-4 text-blue-500" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-semibold">100%</span>
-            <span className="text-xs text-neutral-400">Leads calificados</span>
+            <span className="text-3xl font-semibold text-blue-400">{metrics.leadsWithBudget}</span>
+            <span className="text-xs text-neutral-400">({budgetPercentage}%)</span>
           </div>
         </div>
 
-        {/* Active Campaigns count */}
+        {/* Campañas Detectadas */}
         <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 shadow-sm backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-400 font-medium uppercase tracking-wider">Campañas Activas</span>
+            <span className="text-xs text-neutral-400 font-medium uppercase tracking-wider">Campañas Detectadas</span>
             <Tag className="h-4 w-4 text-amber-500" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -89,17 +100,35 @@ export default async function DashboardPage() {
 
       {/* Main Aggregates Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Industry Distribution */}
+        {/* Leads por Plataforma */}
         <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6">
           <div className="flex items-center gap-2 pb-4 border-b border-neutral-800">
-            <Briefcase className="h-4 w-4 text-amber-500" />
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">Por Industria</h2>
+            <Layers className="h-4 w-4 text-amber-500" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">Por Plataforma</h2>
           </div>
           <ul className="mt-4 space-y-3">
-            {metrics.byIndustry.map((item) => (
-              <li key={item.industry} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-400 truncate max-w-[200px]" title={item.industry}>
-                  {item.industry || 'No especificada'}
+            {metrics.byPlatform.map((item) => (
+              <li key={item.platform} className="flex items-center justify-between text-sm">
+                <span className="text-neutral-400 capitalize">{item.platform}</span>
+                <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
+                  {item.count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Leads por Canal */}
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6">
+          <div className="flex items-center gap-2 pb-4 border-b border-neutral-800">
+            <Globe className="h-4 w-4 text-amber-500" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">Por Canal</h2>
+          </div>
+          <ul className="mt-4 space-y-3">
+            {metrics.byChannel.map((item) => (
+              <li key={item.channel} className="flex items-center justify-between text-sm">
+                <span className="text-neutral-400 uppercase text-xs">
+                  {item.channel.replace('_', ' ')}
                 </span>
                 <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
                   {item.count}
@@ -118,7 +147,27 @@ export default async function DashboardPage() {
           <ul className="mt-4 space-y-3">
             {metrics.byCountry.map((item) => (
               <li key={item.country} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-400 uppercase">{item.country || 'N/A'}</span>
+                <span className="text-neutral-400">{getCountryLabel(item.country)}</span>
+                <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
+                  {item.count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Industry Distribution */}
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6">
+          <div className="flex items-center gap-2 pb-4 border-b border-neutral-800">
+            <Briefcase className="h-4 w-4 text-amber-500" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">Por Industria</h2>
+          </div>
+          <ul className="mt-4 space-y-3">
+            {metrics.byIndustry.map((item) => (
+              <li key={item.industry} className="flex items-center justify-between text-sm">
+                <span className="text-neutral-400 truncate max-w-[200px]" title={item.industry}>
+                  {item.industry}
+                </span>
                 <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
                   {item.count}
                 </span>
@@ -136,7 +185,9 @@ export default async function DashboardPage() {
           <ul className="mt-4 space-y-3">
             {metrics.byInvestmentRange.map((item) => (
               <li key={item.range} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-400">{item.range || 'No especificado'}</span>
+                <span className="text-neutral-400">
+                  {item.range === 'legacy_review' ? 'Revisión Histórica (1k-5k)' : item.range}
+                </span>
                 <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
                   {item.count}
                 </span>
@@ -166,26 +217,6 @@ export default async function DashboardPage() {
                 </li>
               ))
             )}
-          </ul>
-        </div>
-
-        {/* Locale Distribution */}
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6">
-          <div className="flex items-center gap-2 pb-4 border-b border-neutral-800">
-            <Globe className="h-4 w-4 text-amber-500" />
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">Por Idioma</h2>
-          </div>
-          <ul className="mt-4 space-y-3">
-            {metrics.byLocale.map((item) => (
-              <li key={item.locale} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-400 capitalize">
-                  {item.locale === 'es' ? 'Español' : 'Inglés'}
-                </span>
-                <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
-                  {item.count}
-                </span>
-              </li>
-            ))}
           </ul>
         </div>
       </div>
@@ -221,7 +252,7 @@ export default async function DashboardPage() {
                 <tr key={lead.id} className="text-sm hover:bg-neutral-900/30 transition-colors">
                   <td className="py-3 px-4 font-medium text-neutral-200">{lead.full_name || 'Sin nombre'}</td>
                   <td className="py-3 px-4 text-neutral-400">{lead.company || 'Sin empresa'}</td>
-                  <td className="py-3 px-4 text-neutral-400 uppercase">{lead.country || 'N/A'}</td>
+                  <td className="py-3 px-4 text-neutral-400 uppercase">{getCountryLabel(lead.country) || 'N/A'}</td>
                   <td className="py-3 px-4 text-neutral-400">
                     {new Date(lead.created_at).toLocaleDateString('es-ES')}
                   </td>

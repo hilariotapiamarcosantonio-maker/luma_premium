@@ -1,5 +1,6 @@
 import { proxyAdmin } from '@/proxy';
 import { getCrmRepository } from '@/lib/crm/repository';
+import { getCountryLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { 
@@ -118,14 +119,21 @@ export default async function LeadDetailPage({ params }: PageProps) {
 
             {/* Context Fields */}
             <div className="space-y-3 pt-6 border-t border-neutral-800 text-xs text-neutral-400">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-3.5 w-3.5 text-neutral-500" />
-                <span>País: <span className="text-neutral-200 uppercase">{lead.country || 'N/A'}</span></span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-neutral-500" />
+                  <span>País: <span className="text-neutral-200 uppercase font-medium">{getCountryLabel(lead.country)}</span></span>
+                </div>
+                {lead.raw_country !== lead.country && (
+                  <span className="text-[10px] text-neutral-500 ml-5">Original recibido: &ldquo;{lead.raw_country || '—'}&rdquo;</span>
+                )}
               </div>
+              
               <div className="flex items-center gap-2">
                 <Globe className="h-3.5 w-3.5 text-neutral-500" />
                 <span>Idioma: <span className="text-neutral-200 uppercase">{lead.locale === 'es' ? 'Español' : 'Inglés'}</span></span>
               </div>
+              
               <div className="flex items-center gap-2">
                 <Calendar className="h-3.5 w-3.5 text-neutral-500" />
                 <span>Creado: <span className="text-neutral-200">{new Date(lead.created_at).toLocaleString('es-ES')}</span></span>
@@ -148,6 +156,9 @@ export default async function LeadDetailPage({ params }: PageProps) {
               <div>
                 <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Industria</label>
                 <p className="mt-1 text-sm text-neutral-200 font-medium">{lead.industry || 'No especificada'}</p>
+                {lead.raw_industry !== lead.industry && (
+                  <span className="text-[10px] text-neutral-500 block">Original recibido: &ldquo;{lead.raw_industry || '—'}&rdquo;</span>
+                )}
                 {lead.industry_detail && (
                   <p className="mt-1 text-xs text-neutral-400 italic">&ldquo;{lead.industry_detail}&rdquo;</p>
                 )}
@@ -180,7 +191,14 @@ export default async function LeadDetailPage({ params }: PageProps) {
               {/* Budget */}
               <div>
                 <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Rango de Inversión</label>
-                <p className="mt-1 text-sm text-neutral-200 font-medium">{lead.investment_range || 'No especificado'}</p>
+                <p className="mt-1 text-sm text-neutral-200 font-medium">
+                  {lead.investment_range === 'legacy_review' 
+                    ? 'US$1,500–5,000 (histórico)' 
+                    : lead.investment_range || 'No especificado'}
+                </p>
+                {lead.raw_investment_range !== lead.investment_range && (
+                  <span className="text-[10px] text-neutral-500 block">Original recibido: &ldquo;{lead.raw_investment_range || '—'}&rdquo;</span>
+                )}
               </div>
 
               {/* Timeline */}
@@ -213,37 +231,59 @@ export default async function LeadDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Section: Technical & UTM Metadata */}
+          {/* Section: Atribución Omnicanal */}
           <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 space-y-6">
             <div className="flex items-center gap-2 pb-4 border-b border-neutral-800">
               <Cpu className="h-4 w-4 text-amber-500" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">Metadatos de Campaña y Origen</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">Atribución Omnicanal</h2>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 text-xs">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <span className="text-neutral-500 font-semibold block mb-0.5">Source / Page Origin</span>
-                <span className="text-neutral-300 font-mono break-all">{lead.source} / {lead.page_origin}</span>
+                <span className="text-neutral-500 font-semibold block text-xs uppercase tracking-wider mb-2">Atribución Normalizada</span>
+                <div className="space-y-3 bg-neutral-950/20 p-4 border border-neutral-900 rounded-lg">
+                  <div>
+                    <span className="text-neutral-500 text-[10px] uppercase tracking-wider block">Plataforma</span>
+                    <span className="text-amber-400 font-semibold capitalize text-sm">{lead.platform}</span>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500 text-[10px] uppercase tracking-wider block">Canal Comercial</span>
+                    <span className="text-neutral-200 font-medium uppercase text-xs tracking-wider">{lead.channel.replace('_', ' ')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-neutral-500 font-semibold block text-xs uppercase tracking-wider mb-2">Origen Recibido</span>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <span className="text-neutral-400 block font-medium">Source</span>
+                    <span className="text-neutral-300 font-mono break-all">{lead.raw_source || lead.source || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400 block font-medium">UTM Source</span>
+                    <span className="text-neutral-300 font-mono">{lead.raw_utm_source || lead.utm_source || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400 block font-medium">UTM Medium</span>
+                    <span className="text-neutral-300 font-mono">{lead.raw_utm_medium || lead.utm_medium || '—'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3 text-xs pt-4 border-t border-neutral-800/60">
+              <div>
+                <span className="text-neutral-500 font-semibold block uppercase tracking-wider mb-1">Campaña (UTM)</span>
+                <span className="text-neutral-300 font-mono">{lead.raw_utm_campaign || lead.utm_campaign || '—'}</span>
               </div>
               <div>
-                <span className="text-neutral-500 font-semibold block mb-0.5">UTM Source</span>
-                <span className="text-neutral-300 font-mono">{lead.utm_source || '—'}</span>
-              </div>
-              <div>
-                <span className="text-neutral-500 font-semibold block mb-0.5">UTM Medium</span>
-                <span className="text-neutral-300 font-mono">{lead.utm_medium || '—'}</span>
-              </div>
-              <div>
-                <span className="text-neutral-500 font-semibold block mb-0.5">UTM Campaign</span>
-                <span className="text-neutral-300 font-mono">{lead.utm_campaign || '—'}</span>
-              </div>
-              <div>
-                <span className="text-neutral-500 font-semibold block mb-0.5">UTM Content</span>
+                <span className="text-neutral-500 font-semibold block uppercase tracking-wider mb-1">Contenido (UTM)</span>
                 <span className="text-neutral-300 font-mono">{lead.utm_content || '—'}</span>
               </div>
               <div>
-                <span className="text-neutral-500 font-semibold block mb-0.5">UTM Term</span>
-                <span className="text-neutral-300 font-mono">{lead.utm_term || '—'}</span>
+                <span className="text-neutral-500 font-semibold block uppercase tracking-wider mb-1">Landing / Página Origen</span>
+                <span className="text-neutral-300 font-mono break-all">{lead.raw_page_origin || lead.page_origin || '—'}</span>
               </div>
             </div>
           </div>

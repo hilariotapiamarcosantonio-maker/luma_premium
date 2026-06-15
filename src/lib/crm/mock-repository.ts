@@ -2,6 +2,13 @@ import 'server-only';
 import { CrmRepository } from './repository';
 import { DashboardMetrics, LeadDetail, LeadFilters, PaginatedLeads } from './types';
 import { generateLeadId, isValidLeadId } from './lead-identity';
+import {
+  fixUtf8Encoding,
+  normalizeCountryCode,
+  normalizeInvestmentRange,
+  normalizeIndustry,
+  normalizeAttribution,
+} from './normalizers';
 
 // Mock list of 35 synthetic leads to allow pagination testing (page size 25)
 const MOCK_LEADS_RAW = [
@@ -61,7 +68,7 @@ const MOCK_LEADS_RAW = [
     source: 'assessment',
     page_origin: 'https://www.lumapremium.com/en/assessment',
     utm_source: 'google',
-    utm_medium: 'search',
+    utm_medium: 'cpc',
     utm_campaign: 'miami-luxury-sales',
     utm_content: 'text-ad-1',
     utm_term: 'luxury-crm',
@@ -77,7 +84,7 @@ const MOCK_LEADS_RAW = [
     phone: '+52 55 1234 5678',
     company: 'Inmuebles Capital',
     role: 'Co-Founder',
-    industry: 'Real Estate / Proptech',
+    industry: 'commerce', // test canonical industry normalization
     industry_detail: 'Desarrollo de condominios residenciales',
     team_size: '50-200',
     lead_volume: '100-500',
@@ -92,7 +99,7 @@ const MOCK_LEADS_RAW = [
     source: 'diagnostico',
     page_origin: 'https://www.lumapremium.com/diagnostico',
     utm_source: 'facebook',
-    utm_medium: 'paid',
+    utm_medium: 'cpc',
     utm_campaign: 'condo-launch-mx',
     utm_content: 'carousel-ad',
     utm_term: '',
@@ -122,8 +129,8 @@ const MOCK_LEADS_RAW = [
     investment_range: '10k-25k',
     source: 'assessment',
     page_origin: 'https://www.lumapremium.com/en/assessment',
-    utm_source: 'direct',
-    utm_medium: 'organic',
+    utm_source: 'google',
+    utm_medium: 'organic', // test organic search mapping
     utm_campaign: '',
     utm_content: '',
     utm_term: '',
@@ -136,7 +143,7 @@ const MOCK_LEADS_RAW = [
     country: 'CO',
     full_name: 'Carlos Vargas',
     email: 'carlos@vargasconstructora.co',
-    phone: '', // Empty phone test
+    phone: '',
     company: 'Constructora Vargas',
     role: 'Gerente General',
     industry: 'Desarrolladora Inmobiliaria',
@@ -144,7 +151,7 @@ const MOCK_LEADS_RAW = [
     team_size: '50-200',
     lead_volume: '500+',
     acquisition_channels: 'Radio, Facebook Ads',
-    advertising_status: 'Inversión Activa',
+    advertising_status: 'S\uFFFD, constantemente', // test UTF-8 correction
     current_tools: 'CRM propio desactualizado',
     main_bottleneck: 'Baja conversión de leads de pauta publicitaria digital',
     desired_outcome: 'Estructurar un embudo omnicanal automatizado',
@@ -160,14 +167,13 @@ const MOCK_LEADS_RAW = [
     utm_term: '',
     status: 'nuevo',
   },
-  // Incomplete record test
   {
     schema_version: '2',
     created_at: '2026-06-06T18:10:00Z',
     locale: 'es' as const,
     country: 'ES',
     full_name: 'María López',
-    email: '', // Empty email test
+    email: '',
     phone: '+34 611 222 333',
     company: 'López Brokers',
     role: 'Agente Independiente',
@@ -182,7 +188,7 @@ const MOCK_LEADS_RAW = [
     desired_outcome: 'Organizar mis contactos comerciales automáticamente',
     solution_interest: 'Luma Estate CRM OS',
     timeline: '3 meses',
-    investment_range: '1k-5k',
+    investment_range: '1k-5k', // test legacy_review
     source: 'diagnostico',
     page_origin: 'https://www.lumapremium.com/diagnostico',
     utm_source: '',
@@ -200,9 +206,11 @@ for (let i = 1; i <= 30; i++) {
   const localeVal = i % 2 === 0 ? ('es' as const) : ('en' as const);
   const countryVal = i % 2 === 0 ? 'MX' : 'US';
   const nameVal = localeVal === 'es' ? `Lead de Prueba ${i}` : `Test Lead ${i}`;
-  const industryVal = i % 3 === 0 ? 'Real Estate / Proptech' : 'High-Ticket Brokerage';
-  const rangeVal = i % 4 === 0 ? '25k+' : i % 4 === 1 ? '10k-25k' : '5k-10k';
+  const industryVal = i % 3 === 0 ? 'Real Estate / Proptech' : i % 3 === 1 ? 'professional-services' : 'High-Ticket Brokerage';
+  const rangeVal = i % 4 === 0 ? '25k+' : i % 4 === 1 ? '10k-25k' : i % 4 === 2 ? '5k-10k' : 'US$1,000-3,000';
   const campaignVal = i % 5 === 0 ? 'general-promo' : '';
+  const utmSource = i % 3 === 0 ? 'google' : i % 3 === 1 ? 'linkedin' : 'facebook';
+  const utmMedium = i % 2 === 0 ? 'cpc' : 'organic';
 
   MOCK_LEADS_RAW.push({
     schema_version: '2',
@@ -228,8 +236,8 @@ for (let i = 1; i <= 30; i++) {
     investment_range: rangeVal,
     source: 'diagnostico',
     page_origin: 'https://www.lumapremium.com/diagnostico',
-    utm_source: 'google',
-    utm_medium: 'organic',
+    utm_source: utmSource,
+    utm_medium: utmMedium,
     utm_campaign: campaignVal,
     utm_content: '',
     utm_term: '',
@@ -237,21 +245,64 @@ for (let i = 1; i <= 30; i++) {
   });
 }
 
-// Map them to include their deterministic fingerprint id
+// Map them to include their deterministic fingerprint id and run normalizations on-the-fly
 const MOCK_LEADS: LeadDetail[] = MOCK_LEADS_RAW.map((raw) => {
+  // Clean string values with fixUtf8Encoding first
+  const cleaned: Record<string, string> = {};
+  for (const [key, val] of Object.entries(raw)) {
+    cleaned[key] = typeof val === 'string' ? fixUtf8Encoding(val) : String(val);
+  }
+
+  // Preserve raw fields
+  const raw_investment_range = cleaned.investment_range || '';
+  const raw_industry = cleaned.industry || '';
+  const raw_country = cleaned.country || '';
+  const raw_source = cleaned.source || '';
+  const raw_utm_source = cleaned.utm_source || '';
+  const raw_utm_medium = cleaned.utm_medium || '';
+  const raw_utm_campaign = cleaned.utm_campaign || '';
+  const raw_page_origin = cleaned.page_origin || '';
+
+  // Perform normalizations
+  const normalizedCountry = normalizeCountryCode(cleaned.country || '');
+  const normalizedRange = normalizeInvestmentRange(cleaned.investment_range || '');
+  const normalizedInd = normalizeIndustry(cleaned.industry || '');
+
+  const { platform, channel } = normalizeAttribution({
+    utm_source: cleaned.utm_source,
+    utm_medium: cleaned.utm_medium,
+    utm_campaign: cleaned.utm_campaign,
+    source: cleaned.source,
+    page_origin: cleaned.page_origin,
+    acquisition_channels: cleaned.acquisition_channels,
+  });
+
   const id = generateLeadId({
-    schema_version: raw.schema_version,
-    created_at: raw.created_at,
-    locale: raw.locale,
-    email: raw.email,
-    phone: raw.phone,
-    company: raw.company,
+    schema_version: cleaned.schema_version,
+    created_at: cleaned.created_at,
+    locale: cleaned.locale,
+    email: cleaned.email || '',
+    phone: cleaned.phone || '',
+    company: cleaned.company || '',
   });
 
   return {
     id,
-    ...raw,
-  };
+    ...cleaned,
+    country: normalizedCountry,
+    investment_range: normalizedRange,
+    industry: normalizedInd,
+    platform,
+    channel,
+    raw_investment_range,
+    raw_industry,
+    raw_country,
+    raw_source,
+    raw_utm_source,
+    raw_utm_medium,
+    raw_utm_campaign,
+    raw_page_origin,
+  } as LeadDetail;
 });
 
 export class MockCrmRepository implements CrmRepository {
@@ -276,6 +327,12 @@ export class MockCrmRepository implements CrmRepository {
     }
     if (filters.utm_campaign) {
       filtered = filtered.filter((l) => l.utm_campaign.toLowerCase() === filters.utm_campaign!.toLowerCase());
+    }
+    if (filters.platform) {
+      filtered = filtered.filter((l) => l.platform === filters.platform);
+    }
+    if (filters.channel) {
+      filtered = filtered.filter((l) => l.channel === filters.channel);
     }
 
     if (filters.date_from) {
@@ -318,22 +375,25 @@ export class MockCrmRepository implements CrmRepository {
     const totalLeads = MOCK_LEADS.length;
     const newLeads = MOCK_LEADS.filter((l) => l.status === 'nuevo').length;
 
-    // Locales
+    // Real metrics computed on the fly
+    const leadsWithPhone = MOCK_LEADS.filter((l) => l.phone && l.phone.trim() !== '').length;
+    const leadsWithBudget = MOCK_LEADS.filter((l) => l.investment_range && l.investment_range !== 'Necesito diagnóstico antes de definirlo').length;
+
     const localeMap: Record<string, number> = {};
-    // Countries
     const countryMap: Record<string, number> = {};
-    // Industries
     const industryMap: Record<string, number> = {};
-    // Ranges
     const rangeMap: Record<string, number> = {};
-    // Campaigns
     const campaignMap: Record<string, number> = {};
+    const platformMap: Record<string, number> = {};
+    const channelMap: Record<string, number> = {};
 
     MOCK_LEADS.forEach((l) => {
       localeMap[l.locale] = (localeMap[l.locale] || 0) + 1;
       countryMap[l.country || 'N/A'] = (countryMap[l.country || 'N/A'] || 0) + 1;
       industryMap[l.industry || 'N/A'] = (industryMap[l.industry || 'N/A'] || 0) + 1;
       rangeMap[l.investment_range || 'N/A'] = (rangeMap[l.investment_range || 'N/A'] || 0) + 1;
+      platformMap[l.platform || 'other'] = (platformMap[l.platform || 'other'] || 0) + 1;
+      channelMap[l.channel || 'unknown'] = (channelMap[l.channel || 'unknown'] || 0) + 1;
       if (l.utm_campaign) {
         campaignMap[l.utm_campaign] = (campaignMap[l.utm_campaign] || 0) + 1;
       }
@@ -344,6 +404,8 @@ export class MockCrmRepository implements CrmRepository {
     const byIndustry = Object.entries(industryMap).map(([industry, count]) => ({ industry, count }));
     const byInvestmentRange = Object.entries(rangeMap).map(([range, count]) => ({ range, count }));
     const byCampaign = Object.entries(campaignMap).map(([campaign, count]) => ({ campaign, count }));
+    const byPlatform = Object.entries(platformMap).map(([platform, count]) => ({ platform, count }));
+    const byChannel = Object.entries(channelMap).map(([channel, count]) => ({ channel, count }));
 
     // Recent 5 leads
     const recentLeads = [...MOCK_LEADS]
@@ -353,11 +415,15 @@ export class MockCrmRepository implements CrmRepository {
     return {
       totalLeads,
       newLeads,
+      leadsWithPhone,
+      leadsWithBudget,
       byLocale,
       byCountry,
       byIndustry,
       byInvestmentRange,
       byCampaign,
+      byPlatform,
+      byChannel,
       recentLeads,
     };
   }
