@@ -6,7 +6,12 @@ export async function getCrmOperationsRepository(): Promise<CrmOperationsReposit
   const isProd = process.env.NODE_ENV === 'production';
 
   if (mode === 'sheets') {
-    throw new Error('GoogleSheetsOperationsRepository is not implemented in Subphase 2.0.');
+    const spreadsheetId = process.env.LUMA_CRM_OPS_SPREADSHEET_ID;
+    if (!spreadsheetId || spreadsheetId.trim() === '') {
+      throw new Error('GcpConfigError: Missing environment variable LUMA_CRM_OPS_SPREADSHEET_ID for sheets mode.');
+    }
+    const { GoogleSheetsOperationsRepository } = await import('./google-sheets-operations-repository');
+    return new GoogleSheetsOperationsRepository();
   }
 
   if (mode === 'mock') {

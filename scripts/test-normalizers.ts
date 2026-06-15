@@ -453,17 +453,28 @@ async function runOperationsTests() {
     const originalNodeEnv = process.env.NODE_ENV;
 
     try {
-      // 8.1 Mode 'sheets' throws not implemented
+      // 8.1 Mode 'sheets' checks configuration
       process.env.CRM_OPERATIONS_MODE = 'sheets';
-      let threwSheets = false;
+      const originalOpsId = process.env.LUMA_CRM_OPS_SPREADSHEET_ID;
+      delete process.env.LUMA_CRM_OPS_SPREADSHEET_ID;
+
+      let threwConfigError = false;
       try {
         await getCrmOperationsRepository();
       } catch (err: any) {
-        if (err.message.includes('GoogleSheetsOperationsRepository is not implemented')) {
-          threwSheets = true;
+        if (err.message.includes('LUMA_CRM_OPS_SPREADSHEET_ID')) {
+          threwConfigError = true;
         }
       }
-      assert(threwSheets, 'getCrmOperationsRepository throws not implemented for sheets');
+      assert(threwConfigError, 'getCrmOperationsRepository throws config error in sheets mode if spreadsheet ID is missing');
+
+      // If configured, should load successfully
+      process.env.LUMA_CRM_OPS_SPREADSHEET_ID = 'test-id';
+      const repoSheets = await getCrmOperationsRepository();
+      assert(repoSheets !== null, 'getCrmOperationsRepository returns repository when sheets mode is properly configured');
+
+      // Restore ID
+      process.env.LUMA_CRM_OPS_SPREADSHEET_ID = originalOpsId;
 
       // 8.2 Mode 'mock' returns MockOperationsRepository
       process.env.CRM_OPERATIONS_MODE = 'mock';
