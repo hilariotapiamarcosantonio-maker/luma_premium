@@ -186,7 +186,7 @@ export default async function DashboardPage() {
             {metrics.byInvestmentRange.map((item) => (
               <li key={item.range} className="flex items-center justify-between text-sm">
                 <span className="text-neutral-400">
-                  {item.range === 'legacy_review' ? 'Revisión Histórica (1k-5k)' : item.range}
+                  {item.range === 'legacy_review' ? 'US$1,500–5,000 (histórico)' : item.range}
                 </span>
                 <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
                   {item.count}

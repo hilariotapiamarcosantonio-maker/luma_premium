@@ -4,8 +4,22 @@ import {
   getCountryLabel,
   normalizeInvestmentRange,
   normalizeIndustry,
-  normalizeAttribution
+  normalizeAttribution,
+  mapRowArrayToNormalizedFields
 } from '../src/lib/crm/normalizers';
+import { MockCrmRepository } from '../src/lib/crm/mock-repository';
+import { GoogleSheetsCrmRepository, V2_COLUMNS as REAL_V2_COLUMNS } from '../src/lib/crm/google-sheets-repository';
+const V2_COLUMNS = [
+  'schema_version', 'created_at', 'locale', 'country',
+  'full_name', 'email', 'phone', 'company', 'role',
+  'industry', 'industry_detail', 'team_size', 'lead_volume',
+  'acquisition_channels', 'advertising_status', 'current_tools',
+  'main_bottleneck', 'desired_outcome', 'solution_interest',
+  'timeline', 'investment_range',
+  'source', 'page_origin',
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+  'status',
+];
 
 function assert(condition: boolean, message: string) {
   if (!condition) {
@@ -121,6 +135,86 @@ const combinedLeads = listLeadsSimulated({
 });
 assert(combinedLeads.length === 1 && combinedLeads[0].country === 'MX' && combinedLeads[0].platform === 'meta', 'Combined filter works perfectly');
 
-console.log('🎉 All functional filtering tests passed successfully!');
+// 7. Repository Mapping Test (mapRowArrayToNormalizedFields)
+const mockRow: string[] = [];
+V2_COLUMNS.forEach((colName) => {
+  if (colName === 'industry') {
+    mockRow.push('Producci\uFFFDn');
+  } else if (colName === 'investment_range') {
+    mockRow.push('US$1,000–3,000');
+  } else if (colName === 'utm_source') {
+    mockRow.push('facebook');
+  } else if (colName === 'country') {
+    mockRow.push('DO');
+  } else if (colName === 'created_at') {
+    mockRow.push('2026-06-15T12:00:00Z');
+  } else if (colName === 'locale') {
+    mockRow.push('es');
+  } else if (colName === 'schema_version') {
+    mockRow.push('2');
+  } else {
+    mockRow.push('');
+  }
+});
+
+const mappedFields = mapRowArrayToNormalizedFields(mockRow, V2_COLUMNS as string[]);
+assert(mappedFields !== null, 'Mapped fields should not be null');
+if (mappedFields) {
+  // Verificación de raw vs normalizado / visual
+  assert(mappedFields.raw_industry === 'Producci\uFFFDn', 'Preserves raw industry exact spelling');
+  assert(mappedFields.industry === 'Producción', 'Normalizes industry to UTF-8 Español');
+
+  assert(mappedFields.raw_investment_range === 'US$1,000–3,000', 'Preserves raw investment range exact spelling');
+  assert(mappedFields.investment_range === 'US$1,500–3,000', 'Normalizes investment range to official range');
+
+  assert(mappedFields.raw_utm_source === 'facebook', 'Preserves raw utm_source');
+  assert(mappedFields.platform === 'meta', 'Normalizes facebook utm_source to meta platform');
+
+  assert(mappedFields.raw_country === 'DO', 'Preserves raw country');
+  assert(mappedFields.country === 'DO', 'Normalizes country code');
+  assert(getCountryLabel(mappedFields.country) === 'República Dominicana', 'Translates country label to Spanish');
+}
+
+// 8. Repository Integration Tests
+console.log('Running repository integration tests...');
+
+async function runRepoTests() {
+  // 8.1 MockCrmRepository test
+  const mockRepo = new MockCrmRepository();
+  const mockLeadsResult = await mockRepo.listLeads({ page_size: 100 });
+  const testNormalizationLead = mockLeadsResult.leads.find(
+    (l) => l.email === 'normalizacion@test.com'
+  );
+
+  assert(testNormalizationLead !== undefined, 'MockCrmRepository successfully loaded and mapped our dedicated test lead');
+  if (testNormalizationLead) {
+    // Assert raw values are preserved exactly (Rule 1)
+    assert(testNormalizationLead.raw_industry === 'Producci\uFFFDn', 'MockCrmRepository preserves raw_industry');
+    assert(testNormalizationLead.raw_investment_range === 'US$1,000–3,000', 'MockCrmRepository preserves raw_investment_range');
+    assert(testNormalizationLead.raw_utm_source === 'facebook', 'MockCrmRepository preserves raw_utm_source');
+    assert(testNormalizationLead.raw_country === 'DO', 'MockCrmRepository preserves raw_country');
+
+    // Assert normalized / visual values (Rule 2)
+    assert(testNormalizationLead.industry === 'Producción', 'MockCrmRepository normalized industry to Producción');
+    assert(testNormalizationLead.investment_range === 'US$1,500–3,000', 'MockCrmRepository normalized investment_range to US$1,500–3,000');
+    assert(testNormalizationLead.platform === 'meta', 'MockCrmRepository normalized utm_source facebook to platform meta');
+    assert(testNormalizationLead.country === 'DO', 'MockCrmRepository normalized country to DO');
+    assert(getCountryLabel(testNormalizationLead.country) === 'República Dominicana', 'MockCrmRepository translates country code to label');
+  }
+
+  // 8.2 GoogleSheetsCrmRepository mapping test
+  // Verifying GoogleSheetsCrmRepository schema mapping logic (V2_COLUMNS must match REAL_V2_COLUMNS)
+  assert(REAL_V2_COLUMNS.length === V2_COLUMNS.length, 'GoogleSheetsCrmRepository V2_COLUMNS length matches test V2_COLUMNS');
+  for (let i = 0; i < V2_COLUMNS.length; i++) {
+    assert(REAL_V2_COLUMNS[i] === V2_COLUMNS[i], `GoogleSheetsCrmRepository column ${i} (${REAL_V2_COLUMNS[i]}) matches test schema`);
+  }
+
+  console.log('🎉 All repository integration mapping tests passed successfully!');
+}
+
+runRepoTests().catch((err) => {
+  console.error('❌ Repository Integration Tests failed:', err);
+  process.exit(1);
+});
 
 export {};

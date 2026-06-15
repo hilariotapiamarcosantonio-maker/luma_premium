@@ -1,4 +1,5 @@
-import { LeadPlatform, LeadChannel } from './types';
+import { LeadPlatform, LeadChannel, LeadDetail } from './types';
+import { SheetRowSchema } from './schemas';
 
 /**
  * Strictly fixes known broken UTF-8 sequences.
@@ -338,4 +339,71 @@ export function normalizeAttribution(fields: AttributionFields): { platform: Lea
   }
 
   return { platform: 'other', channel: 'unknown' };
+}
+
+/**
+ * Maps a raw Sheets row array to normalized fields, preserving original raw values.
+ * rawMappedObject keeps original values (no trim, no lowercase, no fixUtf8, no normalizations)
+ * correctedMappedObject cleans values with fixUtf8Encoding for schema validation and subsequent normalizations.
+ */
+export function mapRowArrayToNormalizedFields(
+  row: string[],
+  columns: string[]
+): Omit<LeadDetail, 'id'> | null {
+  const rawMappedObject: Record<string, string> = {};
+  const correctedMappedObject: Record<string, string> = {};
+
+  columns.forEach((colName, index) => {
+    const rawVal = row[index] !== undefined ? String(row[index]) : '';
+    rawMappedObject[colName] = rawVal;
+    correctedMappedObject[colName] = fixUtf8Encoding(rawVal);
+  });
+
+  const result = SheetRowSchema.safeParse(correctedMappedObject);
+  if (!result.success) {
+    return null;
+  }
+
+  const validData = result.data;
+
+  // Extract raw fields directly from rawMappedObject (before any trim, lowercase, fixUtf8 or normalization)
+  const raw_investment_range = rawMappedObject.investment_range || '';
+  const raw_country = rawMappedObject.country || '';
+  const raw_industry = rawMappedObject.industry || '';
+  const raw_source = rawMappedObject.source || '';
+  const raw_utm_source = rawMappedObject.utm_source || '';
+  const raw_utm_medium = rawMappedObject.utm_medium || '';
+  const raw_utm_campaign = rawMappedObject.utm_campaign || '';
+  const raw_page_origin = rawMappedObject.page_origin || '';
+
+  // Normalizations using validated corrected data
+  const normalizedCountry = normalizeCountryCode(validData.country);
+  const normalizedRange = normalizeInvestmentRange(validData.investment_range);
+  const normalizedInd = normalizeIndustry(validData.industry);
+
+  const { platform, channel } = normalizeAttribution({
+    utm_source: validData.utm_source,
+    utm_medium: validData.utm_medium,
+    utm_campaign: validData.utm_campaign,
+    source: validData.source,
+    page_origin: validData.page_origin,
+    acquisition_channels: validData.acquisition_channels,
+  });
+
+  return {
+    ...validData, // Contiene valores corregidos
+    country: normalizedCountry,
+    investment_range: normalizedRange,
+    industry: normalizedInd,
+    platform,
+    channel,
+    raw_investment_range,
+    raw_country,
+    raw_industry,
+    raw_source,
+    raw_utm_source,
+    raw_utm_medium,
+    raw_utm_campaign,
+    raw_page_origin,
+  };
 }

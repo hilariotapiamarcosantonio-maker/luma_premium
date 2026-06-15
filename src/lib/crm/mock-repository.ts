@@ -2,13 +2,8 @@ import 'server-only';
 import { CrmRepository } from './repository';
 import { DashboardMetrics, LeadDetail, LeadFilters, PaginatedLeads } from './types';
 import { generateLeadId, isValidLeadId } from './lead-identity';
-import {
-  fixUtf8Encoding,
-  normalizeCountryCode,
-  normalizeInvestmentRange,
-  normalizeIndustry,
-  normalizeAttribution,
-} from './normalizers';
+import { mapRowArrayToNormalizedFields } from './normalizers';
+import { V2_COLUMNS } from './google-sheets-repository';
 
 // Mock list of 35 synthetic leads to allow pagination testing (page size 25)
 const MOCK_LEADS_RAW = [
@@ -198,6 +193,37 @@ const MOCK_LEADS_RAW = [
     utm_term: '',
     status: 'nuevo',
   },
+  {
+    schema_version: '2',
+    created_at: '2026-06-06T19:00:00Z',
+    locale: 'es' as const,
+    country: 'DO',
+    full_name: 'Lead de Prueba de Normalización',
+    email: 'normalizacion@test.com',
+    phone: '+1 809 555 1234',
+    company: 'Test Company',
+    role: 'QA',
+    industry: 'Producci\uFFFDn',
+    industry_detail: 'Test',
+    team_size: '1-10',
+    lead_volume: '0-10',
+    acquisition_channels: 'Facebook',
+    advertising_status: 'Investigando',
+    current_tools: 'None',
+    main_bottleneck: 'None',
+    desired_outcome: 'None',
+    solution_interest: 'Luma Estate CRM OS',
+    timeline: '1 mes',
+    investment_range: 'US$1,000–3,000',
+    source: 'facebook',
+    page_origin: '',
+    utm_source: 'facebook',
+    utm_medium: 'cpc',
+    utm_campaign: 'test-norm',
+    utm_content: '',
+    utm_term: '',
+    status: 'nuevo',
+  },
 ];
 
 // Generate 30 more simple leads dynamically to enable pagination
@@ -247,61 +273,28 @@ for (let i = 1; i <= 30; i++) {
 
 // Map them to include their deterministic fingerprint id and run normalizations on-the-fly
 const MOCK_LEADS: LeadDetail[] = MOCK_LEADS_RAW.map((raw) => {
-  // Clean string values with fixUtf8Encoding first
-  const cleaned: Record<string, string> = {};
-  for (const [key, val] of Object.entries(raw)) {
-    cleaned[key] = typeof val === 'string' ? fixUtf8Encoding(val) : String(val);
-  }
-
-  // Preserve raw fields
-  const raw_investment_range = cleaned.investment_range || '';
-  const raw_industry = cleaned.industry || '';
-  const raw_country = cleaned.country || '';
-  const raw_source = cleaned.source || '';
-  const raw_utm_source = cleaned.utm_source || '';
-  const raw_utm_medium = cleaned.utm_medium || '';
-  const raw_utm_campaign = cleaned.utm_campaign || '';
-  const raw_page_origin = cleaned.page_origin || '';
-
-  // Perform normalizations
-  const normalizedCountry = normalizeCountryCode(cleaned.country || '');
-  const normalizedRange = normalizeInvestmentRange(cleaned.investment_range || '');
-  const normalizedInd = normalizeIndustry(cleaned.industry || '');
-
-  const { platform, channel } = normalizeAttribution({
-    utm_source: cleaned.utm_source,
-    utm_medium: cleaned.utm_medium,
-    utm_campaign: cleaned.utm_campaign,
-    source: cleaned.source,
-    page_origin: cleaned.page_origin,
-    acquisition_channels: cleaned.acquisition_channels,
+  const rowArray = V2_COLUMNS.map((col) => {
+    const val = (raw as Record<string, unknown>)[col];
+    return val !== undefined ? String(val) : '';
   });
 
+  const normalizedFields = mapRowArrayToNormalizedFields(rowArray, V2_COLUMNS as string[]);
+  if (!normalizedFields) {
+    throw new Error(`Failed to map mock lead: ${JSON.stringify(raw)}`);
+  }
+
   const id = generateLeadId({
-    schema_version: cleaned.schema_version,
-    created_at: cleaned.created_at,
-    locale: cleaned.locale,
-    email: cleaned.email || '',
-    phone: cleaned.phone || '',
-    company: cleaned.company || '',
+    schema_version: normalizedFields.schema_version,
+    created_at: normalizedFields.created_at,
+    locale: normalizedFields.locale,
+    email: normalizedFields.email,
+    phone: normalizedFields.phone,
+    company: normalizedFields.company,
   });
 
   return {
     id,
-    ...cleaned,
-    country: normalizedCountry,
-    investment_range: normalizedRange,
-    industry: normalizedInd,
-    platform,
-    channel,
-    raw_investment_range,
-    raw_industry,
-    raw_country,
-    raw_source,
-    raw_utm_source,
-    raw_utm_medium,
-    raw_utm_campaign,
-    raw_page_origin,
+    ...normalizedFields,
   } as LeadDetail;
 });
 

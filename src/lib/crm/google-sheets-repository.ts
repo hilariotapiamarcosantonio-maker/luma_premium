@@ -4,14 +4,7 @@ import { getGcpSheetsAuthClient, GcpConfigError, classifyGcpFailure } from '../g
 import { CrmRepository } from './repository';
 import { DashboardMetrics, LeadDetail, LeadFilters, PaginatedLeads } from './types';
 import { generateLeadId, isValidLeadId } from './lead-identity';
-import { SheetRowSchema } from './schemas';
-import {
-  fixUtf8Encoding,
-  normalizeCountryCode,
-  normalizeInvestmentRange,
-  normalizeIndustry,
-  normalizeAttribution,
-} from './normalizers';
+import { mapRowArrayToNormalizedFields } from './normalizers';
 
 // Column mapping ordered exactly from A to AC (29 columns)
 export const V2_COLUMNS: (keyof Omit<LeadDetail, 'id' | 'platform' | 'channel' | 'raw_investment_range' | 'raw_industry' | 'raw_country' | 'raw_source' | 'raw_utm_source' | 'raw_utm_medium' | 'raw_utm_campaign' | 'raw_page_origin'>)[] = [
@@ -92,72 +85,24 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
       const leads: LeadDetail[] = [];
 
       for (const row of dataRows) {
-        // Map row array to object fields and apply strict UTF-8 cleaning on the raw strings first
-        const mappedObj: Record<string, string> = {};
-        V2_COLUMNS.forEach((colName, index) => {
-          const rawVal = row[index] !== undefined ? String(row[index]) : '';
-          mappedObj[colName] = fixUtf8Encoding(rawVal);
-        });
-
-        // Validate structure with Zod
-        const result = SheetRowSchema.safeParse(mappedObj);
-        if (!result.success) {
-          // Skip corrupt rows to keep the CRM dashboard operational
+        const normalizedFields = mapRowArrayToNormalizedFields(row, V2_COLUMNS as string[]);
+        if (!normalizedFields) {
           continue;
         }
 
-        const validData = result.data;
-
-        // Extract raw fields before normalization
-        const raw_investment_range = validData.investment_range;
-        const raw_industry = validData.industry;
-        const raw_country = validData.country;
-        const raw_source = validData.source;
-        const raw_utm_source = validData.utm_source;
-        const raw_utm_medium = validData.utm_medium;
-        const raw_utm_campaign = validData.utm_campaign;
-        const raw_page_origin = validData.page_origin;
-
-        // Perform normalizations
-        const normalizedCountry = normalizeCountryCode(validData.country);
-        const normalizedRange = normalizeInvestmentRange(validData.investment_range);
-        const normalizedInd = normalizeIndustry(validData.industry);
-
-        const { platform, channel } = normalizeAttribution({
-          utm_source: validData.utm_source,
-          utm_medium: validData.utm_medium,
-          utm_campaign: validData.utm_campaign,
-          source: validData.source,
-          page_origin: validData.page_origin,
-          acquisition_channels: validData.acquisition_channels,
-        });
-
-        // Generate stable deterministic lead_id
+        // Generate stable deterministic lead_id using corrected email, phone, etc.
         const id = generateLeadId({
-          schema_version: validData.schema_version,
-          created_at: validData.created_at,
-          locale: validData.locale,
-          email: validData.email,
-          phone: validData.phone,
-          company: validData.company,
+          schema_version: normalizedFields.schema_version,
+          created_at: normalizedFields.created_at,
+          locale: normalizedFields.locale,
+          email: normalizedFields.email,
+          phone: normalizedFields.phone,
+          company: normalizedFields.company,
         });
 
         leads.push({
           id,
-          ...validData,
-          country: normalizedCountry,
-          investment_range: normalizedRange,
-          industry: normalizedInd,
-          platform,
-          channel,
-          raw_investment_range,
-          raw_industry,
-          raw_country,
-          raw_source,
-          raw_utm_source,
-          raw_utm_medium,
-          raw_utm_campaign,
-          raw_page_origin,
+          ...normalizedFields,
         });
       }
 

@@ -119,7 +119,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
               <option value="US$5,000–10,000">US$5,000–10,000</option>
               <option value="US$10,000–20,000">US$10,000–20,000</option>
               <option value="US$20,000+">US$20,000+</option>
-              <option value="legacy_review">Revisión Histórica (1k-5k)</option>
+              <option value="legacy_review">US$1,500–5,000 (histórico)</option>
               <option value="Necesito diagnóstico antes de definirlo">Necesito diagnóstico antes de definirlo</option>
             </select>
           </div>
