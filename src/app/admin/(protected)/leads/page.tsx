@@ -1,8 +1,9 @@
 import { proxyAdmin } from '@/proxy';
 import { getCrmRepository } from '@/lib/crm/repository';
 import { LeadFiltersSchema } from '@/lib/crm/schemas';
+import { getCountryLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
-import { ChevronRight, Filter, Search, Globe, ChevronLeft } from 'lucide-react';
+import { ChevronRight, Filter, Search, Globe, ChevronLeft, Layers } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -26,6 +27,8 @@ export default async function LeadsPage({ searchParams }: PageProps) {
     locale: typeof rawParams.locale === 'string' ? rawParams.locale : undefined,
     investment_range: typeof rawParams.investment_range === 'string' ? rawParams.investment_range : undefined,
     utm_campaign: typeof rawParams.utm_campaign === 'string' ? rawParams.utm_campaign : undefined,
+    platform: typeof rawParams.platform === 'string' ? rawParams.platform : undefined,
+    channel: typeof rawParams.channel === 'string' ? rawParams.channel : undefined,
     date_from: typeof rawParams.date_from === 'string' ? rawParams.date_from : undefined,
     date_to: typeof rawParams.date_to === 'string' ? rawParams.date_to : undefined,
     page: typeof rawParams.page === 'string' ? rawParams.page : undefined,
@@ -36,6 +39,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
 
   const repository = await getCrmRepository();
   const paginatedResult = await repository.listLeads(activeFilters);
+  const metrics = await repository.getDashboardMetrics(); // for dynamic campaign list
 
   return (
     <div className="space-y-6">
@@ -43,7 +47,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Leads</h1>
         <p className="text-sm text-neutral-400">
-          Listado de prospectos captados de formularios Luma Premium.
+          Listado de prospectos captados de formularios y canales Luma Premium.
         </p>
       </div>
 
@@ -61,7 +65,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
             <select
               name="status"
               defaultValue={activeFilters.status || ''}
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
             >
               <option value="">Todos</option>
               <option value="nuevo">Nuevo</option>
@@ -76,7 +80,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
             <select
               name="locale"
               defaultValue={activeFilters.locale || ''}
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
             >
               <option value="">Todos</option>
               <option value="es">Español</option>
@@ -84,31 +88,114 @@ export default async function LeadsPage({ searchParams }: PageProps) {
             </select>
           </div>
 
-          {/* Country */}
+          {/* Country (Dropdown) */}
           <div>
             <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">País</label>
-            <input
-              type="text"
+            <select
               name="country"
-              placeholder="Ej: MX, ES, US"
               defaultValue={activeFilters.country || ''}
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
+            >
+              <option value="">Todos</option>
+              <option value="DO">República Dominicana</option>
+              <option value="US">Estados Unidos</option>
+              <option value="MX">México</option>
+              <option value="ES">España</option>
+              <option value="CO">Colombia</option>
+            </select>
           </div>
 
-          {/* Investment Range */}
+          {/* Investment Range (Dropdown) */}
           <div>
             <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Presupuesto</label>
             <select
               name="investment_range"
               defaultValue={activeFilters.investment_range || ''}
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
             >
               <option value="">Todos</option>
-              <option value="1k-5k">1k-5k</option>
-              <option value="5k-10k">5k-10k</option>
-              <option value="10k-25k">10k-25k</option>
-              <option value="25k+">25k+</option>
+              <option value="US$1,500–3,000">US$1,500–3,000</option>
+              <option value="US$3,000–5,000">US$3,000–5,000</option>
+              <option value="US$5,000–10,000">US$5,000–10,000</option>
+              <option value="US$10,000–20,000">US$10,000–20,000</option>
+              <option value="US$20,000+">US$20,000+</option>
+              <option value="legacy_review">Revisión Histórica (1k-5k)</option>
+              <option value="Necesito diagnóstico antes de definirlo">Necesito diagnóstico antes de definirlo</option>
+            </select>
+          </div>
+
+          {/* Platform (Dropdown) */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Plataforma</label>
+            <select
+              name="platform"
+              defaultValue={activeFilters.platform || ''}
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
+            >
+              <option value="">Todos</option>
+              <option value="meta">Meta Ads / FB / IG</option>
+              <option value="google">Google Ads / Organic</option>
+              <option value="linkedin">LinkedIn Lead Gen</option>
+              <option value="tiktok">TikTok Ads</option>
+              <option value="web">Web Luma Premium</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="referral">Referidos</option>
+              <option value="outbound">Prospección Saliente</option>
+              <option value="manual">Carga Manual</option>
+              <option value="other">Otras plataformas</option>
+            </select>
+          </div>
+
+          {/* Channel (Dropdown) */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Canal</label>
+            <select
+              name="channel"
+              defaultValue={activeFilters.channel || ''}
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
+            >
+              <option value="">Todos</option>
+              <option value="paid_social">Social de Pago (Paid Social)</option>
+              <option value="paid_search">Búsqueda de Pago (Paid Search)</option>
+              <option value="organic_social">Social Orgánico</option>
+              <option value="organic_search">Búsqueda Orgánica</option>
+              <option value="direct">Directo / Web Direct</option>
+              <option value="referral">Referidos / Boca a boca</option>
+              <option value="partner">Partners</option>
+              <option value="outbound">Outbound / Saliente</option>
+              <option value="unknown">Desconocido</option>
+            </select>
+          </div>
+
+          {/* Industry (Dropdown) */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Industria</label>
+            <select
+              name="industry"
+              defaultValue={activeFilters.industry || ''}
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
+            >
+              <option value="">Todos</option>
+              <option value="Comercio y e-commerce">Comercio y e-commerce</option>
+              <option value="Servicios profesionales">Servicios profesionales</option>
+              <option value="Real Estate / Proptech">Real Estate / Proptech</option>
+            </select>
+          </div>
+
+          {/* Campaign (Dropdown dynamically populated) */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Campaña (UTM)</label>
+            <select
+              name="utm_campaign"
+              defaultValue={activeFilters.utm_campaign || ''}
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
+            >
+              <option value="">Todos</option>
+              {metrics.byCampaign.map((item) => (
+                <option key={item.campaign} value={item.campaign}>
+                  {item.campaign}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -161,7 +248,10 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                   <span>{new Date(lead.created_at).toLocaleDateString('es-ES')}</span>
                 </div>
 
-                <div className="flex justify-end pt-2">
+                <div className="flex items-center justify-between pt-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 font-medium capitalize bg-amber-950/20 px-2 py-0.5 rounded border border-amber-900/20">
+                    {lead.platform} / {lead.channel.replace('_', ' ')}
+                  </span>
                   <Link
                     href={`/admin/leads/${lead.id}`}
                     className="flex items-center gap-1.5 text-xs text-amber-500 font-medium hover:underline"
@@ -182,6 +272,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                 <th className="py-4 px-6">Nombre</th>
                 <th className="py-4 px-6">Empresa</th>
                 <th className="py-4 px-6">País</th>
+                <th className="py-4 px-6">Atribución (Plataforma/Canal)</th>
                 <th className="py-4 px-6">Idioma</th>
                 <th className="py-4 px-6">Industria</th>
                 <th className="py-4 px-6">Estado</th>
@@ -192,7 +283,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
             <tbody className="divide-y divide-neutral-900 text-sm">
               {paginatedResult.leads.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-neutral-500">
+                  <td colSpan={9} className="py-8 text-center text-neutral-500">
                     No se encontraron leads con los filtros seleccionados.
                   </td>
                 </tr>
@@ -203,7 +294,18 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                     <td className="py-4 px-6 text-neutral-400 truncate max-w-[150px]" title={lead.company}>
                       {lead.company || 'Sin empresa'}
                     </td>
-                    <td className="py-4 px-6 text-neutral-400 uppercase">{lead.country || 'N/A'}</td>
+                    <td className="py-4 px-6 text-neutral-400 uppercase">{getCountryLabel(lead.country) || 'N/A'}</td>
+                    <td className="py-4 px-6 text-neutral-400">
+                      <span className="inline-flex flex-col">
+                        <span className="font-semibold text-neutral-200 capitalize flex items-center gap-1">
+                          <Layers className="h-3 w-3 text-amber-500" />
+                          {lead.platform}
+                        </span>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wide">
+                          {lead.channel.replace('_', ' ')}
+                        </span>
+                      </span>
+                    </td>
                     <td className="py-4 px-6 text-neutral-400">
                       <span className="flex items-center gap-1.5">
                         <Globe className="h-3.5 w-3.5 text-neutral-500" />

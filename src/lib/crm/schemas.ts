@@ -7,6 +7,8 @@ export const LeadFiltersSchema = z.object({
   locale: z.enum(['es', 'en']).optional(),
   investment_range: z.string().optional(),
   utm_campaign: z.string().optional(),
+  platform: z.string().optional(),
+  channel: z.string().optional(),
   date_from: z.string().optional(), // ISO string date
   date_to: z.string().optional(),   // ISO string date
   page: z.coerce.number().int().positive().default(1),

@@ -1,3 +1,26 @@
+export type LeadPlatform =
+  | 'meta'
+  | 'google'
+  | 'linkedin'
+  | 'tiktok'
+  | 'web'
+  | 'whatsapp'
+  | 'referral'
+  | 'outbound'
+  | 'manual'
+  | 'other';
+
+export type LeadChannel =
+  | 'paid_social'
+  | 'paid_search'
+  | 'organic_social'
+  | 'organic_search'
+  | 'direct'
+  | 'referral'
+  | 'partner'
+  | 'outbound'
+  | 'unknown';
+
 export interface LeadFilters {
   status?: string;
   industry?: string;
@@ -5,6 +28,8 @@ export interface LeadFilters {
   locale?: 'es' | 'en';
   investment_range?: string;
   utm_campaign?: string;
+  platform?: string;
+  channel?: string;
   date_from?: string;
   date_to?: string;
   page?: number;
@@ -42,6 +67,18 @@ export interface LeadDetail {
   utm_content: string;
   utm_term: string;
   status: string;
+  
+  // Normalized & attribution layer (Fase 1.5)
+  platform: LeadPlatform;
+  channel: LeadChannel;
+  raw_investment_range: string;
+  raw_industry: string;
+  raw_country: string;
+  raw_source: string;
+  raw_utm_source: string;
+  raw_utm_medium: string;
+  raw_utm_campaign: string;
+  raw_page_origin: string;
 }
 
 export interface PaginatedLeads {
@@ -55,10 +92,15 @@ export interface PaginatedLeads {
 export interface DashboardMetrics {
   totalLeads: number;
   newLeads: number;
+  leadsWithPhone: number;
+  leadsWithBudget: number;
   byLocale: { locale: string; count: number }[];
   byCountry: { country: string; count: number }[];
   byIndustry: { industry: string; count: number }[];
   byInvestmentRange: { range: string; count: number }[];
   byCampaign: { campaign: string; count: number }[];
+  byPlatform: { platform: string; count: number }[];
+  byChannel: { channel: string; count: number }[];
   recentLeads: LeadDetail[];
 }
+

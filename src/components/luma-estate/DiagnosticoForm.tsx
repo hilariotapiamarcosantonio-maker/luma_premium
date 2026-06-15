@@ -136,11 +136,12 @@ export default function DiagnosticoForm() {
           <label className="text-sm font-medium text-slate-400">Rango de inversión estimado para su infraestructura comercial</label>
           <select name="investmentRange" required defaultValue="" className="w-full bg-slate-950 border border-slate-800 rounded-sm p-4 text-slate-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all">
             <option value="" disabled>Seleccione un rango</option>
-            <option value="US$1,500 - US$3,000">US$1,500 - US$3,000 (Auditoría / Base inicial)</option>
-            <option value="US$3,000 - US$6,500">US$3,000 - US$6,500 (Foundation)</option>
-            <option value="US$6,500 - US$12,000">US$6,500 - US$12,000 (Foundation Avanzado)</option>
-            <option value="US$12,000+">US$12,000+ (Enterprise / Arquitectura Privada)</option>
-            <option value="Aún estoy definiendo la inversión">Aún estoy definiendo la inversión</option>
+            <option value="US$1,500–3,000">US$1,500–3,000</option>
+            <option value="US$3,000–5,000">US$3,000–5,000</option>
+            <option value="US$5,000–10,000">US$5,000–10,000</option>
+            <option value="US$10,000–20,000">US$10,000–20,000</option>
+            <option value="US$20,000+">US$20,000+</option>
+            <option value="Necesito diagnóstico antes de definirlo">Necesito diagnóstico antes de definirlo</option>
           </select>
         </div>
       </div>

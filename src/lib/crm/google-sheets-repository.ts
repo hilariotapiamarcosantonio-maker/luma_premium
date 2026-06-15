@@ -5,9 +5,16 @@ import { CrmRepository } from './repository';
 import { DashboardMetrics, LeadDetail, LeadFilters, PaginatedLeads } from './types';
 import { generateLeadId, isValidLeadId } from './lead-identity';
 import { SheetRowSchema } from './schemas';
+import {
+  fixUtf8Encoding,
+  normalizeCountryCode,
+  normalizeInvestmentRange,
+  normalizeIndustry,
+  normalizeAttribution,
+} from './normalizers';
 
 // Column mapping ordered exactly from A to AC (29 columns)
-export const V2_COLUMNS: (keyof Omit<LeadDetail, 'id'>)[] = [
+export const V2_COLUMNS: (keyof Omit<LeadDetail, 'id' | 'platform' | 'channel' | 'raw_investment_range' | 'raw_industry' | 'raw_country' | 'raw_source' | 'raw_utm_source' | 'raw_utm_medium' | 'raw_utm_campaign' | 'raw_page_origin'>)[] = [
   'schema_version', 'created_at', 'locale', 'country',
   'full_name', 'email', 'phone', 'company', 'role',
   'industry', 'industry_detail', 'team_size', 'lead_volume',
@@ -82,14 +89,14 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
       }
 
       const dataRows = rows.slice(1); // Exclude the header row
-
       const leads: LeadDetail[] = [];
 
       for (const row of dataRows) {
-        // Map row array to object fields
+        // Map row array to object fields and apply strict UTF-8 cleaning on the raw strings first
         const mappedObj: Record<string, string> = {};
         V2_COLUMNS.forEach((colName, index) => {
-          mappedObj[colName] = row[index] !== undefined ? String(row[index]) : '';
+          const rawVal = row[index] !== undefined ? String(row[index]) : '';
+          mappedObj[colName] = fixUtf8Encoding(rawVal);
         });
 
         // Validate structure with Zod
@@ -100,6 +107,30 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
         }
 
         const validData = result.data;
+
+        // Extract raw fields before normalization
+        const raw_investment_range = validData.investment_range;
+        const raw_industry = validData.industry;
+        const raw_country = validData.country;
+        const raw_source = validData.source;
+        const raw_utm_source = validData.utm_source;
+        const raw_utm_medium = validData.utm_medium;
+        const raw_utm_campaign = validData.utm_campaign;
+        const raw_page_origin = validData.page_origin;
+
+        // Perform normalizations
+        const normalizedCountry = normalizeCountryCode(validData.country);
+        const normalizedRange = normalizeInvestmentRange(validData.investment_range);
+        const normalizedInd = normalizeIndustry(validData.industry);
+
+        const { platform, channel } = normalizeAttribution({
+          utm_source: validData.utm_source,
+          utm_medium: validData.utm_medium,
+          utm_campaign: validData.utm_campaign,
+          source: validData.source,
+          page_origin: validData.page_origin,
+          acquisition_channels: validData.acquisition_channels,
+        });
 
         // Generate stable deterministic lead_id
         const id = generateLeadId({
@@ -114,6 +145,19 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
         leads.push({
           id,
           ...validData,
+          country: normalizedCountry,
+          investment_range: normalizedRange,
+          industry: normalizedInd,
+          platform,
+          channel,
+          raw_investment_range,
+          raw_industry,
+          raw_country,
+          raw_source,
+          raw_utm_source,
+          raw_utm_medium,
+          raw_utm_campaign,
+          raw_page_origin,
         });
       }
 
@@ -145,6 +189,12 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
     }
     if (filters.utm_campaign) {
       all = all.filter((l) => l.utm_campaign.toLowerCase() === filters.utm_campaign!.toLowerCase());
+    }
+    if (filters.platform) {
+      all = all.filter((l) => l.platform === filters.platform);
+    }
+    if (filters.channel) {
+      all = all.filter((l) => l.channel === filters.channel);
     }
 
     if (filters.date_from) {
@@ -188,18 +238,26 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
 
     const totalLeads = all.length;
     const newLeads = all.filter((l) => l.status === 'nuevo').length;
+    
+    // Real metrics computed on the fly
+    const leadsWithPhone = all.filter((l) => l.phone && l.phone.trim() !== '').length;
+    const leadsWithBudget = all.filter((l) => l.investment_range && l.investment_range !== 'Necesito diagnóstico antes de definirlo').length;
 
     const localeMap: Record<string, number> = {};
     const countryMap: Record<string, number> = {};
     const industryMap: Record<string, number> = {};
     const rangeMap: Record<string, number> = {};
     const campaignMap: Record<string, number> = {};
+    const platformMap: Record<string, number> = {};
+    const channelMap: Record<string, number> = {};
 
     all.forEach((l) => {
       localeMap[l.locale] = (localeMap[l.locale] || 0) + 1;
       countryMap[l.country || 'N/A'] = (countryMap[l.country || 'N/A'] || 0) + 1;
       industryMap[l.industry || 'N/A'] = (industryMap[l.industry || 'N/A'] || 0) + 1;
       rangeMap[l.investment_range || 'N/A'] = (rangeMap[l.investment_range || 'N/A'] || 0) + 1;
+      platformMap[l.platform || 'other'] = (platformMap[l.platform || 'other'] || 0) + 1;
+      channelMap[l.channel || 'unknown'] = (channelMap[l.channel || 'unknown'] || 0) + 1;
       if (l.utm_campaign) {
         campaignMap[l.utm_campaign] = (campaignMap[l.utm_campaign] || 0) + 1;
       }
@@ -210,6 +268,8 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
     const byIndustry = Object.entries(industryMap).map(([industry, count]) => ({ industry, count }));
     const byInvestmentRange = Object.entries(rangeMap).map(([range, count]) => ({ range, count }));
     const byCampaign = Object.entries(campaignMap).map(([campaign, count]) => ({ campaign, count }));
+    const byPlatform = Object.entries(platformMap).map(([platform, count]) => ({ platform, count }));
+    const byChannel = Object.entries(channelMap).map(([channel, count]) => ({ channel, count }));
 
     // Recent 5 leads
     const recentLeads = [...all]
@@ -219,11 +279,15 @@ export class GoogleSheetsCrmRepository implements CrmRepository {
     return {
       totalLeads,
       newLeads,
+      leadsWithPhone,
+      leadsWithBudget,
       byLocale,
       byCountry,
       byIndustry,
       byInvestmentRange,
       byCampaign,
+      byPlatform,
+      byChannel,
       recentLeads,
     };
   }
