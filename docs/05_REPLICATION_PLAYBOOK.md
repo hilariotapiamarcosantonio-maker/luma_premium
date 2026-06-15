@@ -137,7 +137,33 @@ Mantener inalterado:
 
 ---
 
-## 6. Tiempo Estimado
+## 6. Ecosistema de CRM Operativo Comercial (Subfase 2.0)
+
+Para habilitar la operatividad comercial sin comprometer la base de datos de captación ni incurrir en costes de infraestructura iniciales, se replica el siguiente patrón de arquitectura desacoplada:
+
+1. **Contratos de Dominio Desacoplados (`operations-types.ts`, `operations-repository.ts`):**
+   - Definición estricta de interfaces para operaciones, notas inmutables y logs de actividad.
+   - Contratos definidos mediante interfaces TypeScript en lugar de clases concretas para permitir el intercambio transparente entre hojas de cálculo y bases de datos SQL (Supabase).
+
+2. **Fábrica de Repositorios Dinámica (`operations-repository-factory.ts`):**
+   - Carga dinámica del repositorio concreto basada en variables de entorno (`CRM_OPERATIONS_MODE` = `mock` | `sheets`).
+   - Evita problemas de compilación en fases tempranas y facilita pruebas de integración ágiles.
+
+3. **Capa de Composición (`crm-lead-service.ts`):**
+   - Orquesta la combinación de datos inmutables de captación con el estado operativo de los leads.
+   - Aplica valores por defecto seguros (`crm_status` = `new`, `owner_email` = `null`).
+   - Realiza filtros y paginación en memoria sobre el dataset consolidado.
+
+4. **Validación Estricta y Normalización (`operations-schemas.ts`):**
+   - Esquemas Zod que preprocesan correos electrónicos para limpiarlos (trim) y normalizarlos a minúsculas antes de la validación.
+   - Reglas de negocio condicionales estrictas (ej. `lost_reason` obligatorio únicamente si el estado es `lost`, y prohibido en otros casos).
+
+5. **Aislamiento en Pruebas Unitarias (`mock-operations-repository.ts`):**
+   - Implementación en memoria con un método estático `reset()` para limpiar mapas de almacenamiento y evitar contaminación de datos entre ejecuciones de pruebas.
+
+---
+
+## 7. Tiempo Estimado
 
 | Tarea | Tiempo |
 |--------|-------|

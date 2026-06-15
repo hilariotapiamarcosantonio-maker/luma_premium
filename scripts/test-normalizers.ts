@@ -9,6 +9,11 @@ import {
 } from '../src/lib/crm/normalizers';
 import { MockCrmRepository } from '../src/lib/crm/mock-repository';
 import { GoogleSheetsCrmRepository, V2_COLUMNS as REAL_V2_COLUMNS } from '../src/lib/crm/google-sheets-repository';
+import { MockOperationsRepository } from '../src/lib/crm/mock-operations-repository';
+import { CrmLeadService } from '../src/lib/crm/crm-lead-service';
+import { UpdateOperationSchema, CreateNoteSchema } from '../src/lib/crm/operations-schemas';
+import { ZodError } from 'zod';
+
 const V2_COLUMNS = [
   'schema_version', 'created_at', 'locale', 'country',
   'full_name', 'email', 'phone', 'company', 'role',
@@ -240,6 +245,205 @@ async function runRepoTests() {
 
 runRepoTests().catch((err) => {
   console.error('❌ Repository Integration Tests failed:', err);
+  process.exit(1);
+});
+
+async function runOperationsTests() {
+  console.log('Running Operational CRM Subfase 2.0 tests...');
+
+  // Test 1: Isolation & Default Values
+  MockOperationsRepository.reset();
+  const mockRepo = new MockCrmRepository();
+  const mockOpsRepo = new MockOperationsRepository();
+  const leadService = new CrmLeadService(mockRepo, mockOpsRepo);
+
+  const testLeadEmail = 'alejandro@proptech-es.com';
+  const leadsResult = await mockRepo.listLeads({ page_size: 100 });
+  const lead = leadsResult.leads.find((l) => l.email === testLeadEmail);
+  assert(lead !== undefined, 'Target lead exists in capture mock repository');
+
+  if (lead) {
+    const merged = await leadService.getLeadById(lead.id);
+    assert(merged !== null, 'Lead composition works');
+    assert(merged?.crm_status === 'new', 'Lead without operation defaults to crm_status=new');
+    assert(merged?.owner_email === null, 'Lead without operation has null owner by default');
+  }
+
+  // Test 2: Validation & Email normalization
+  {
+    const parsedUpdate = UpdateOperationSchema.parse({
+      lead_id: 'lp_123456789012345678901234',
+      crm_status: 'qualified',
+      owner_email: 'WILLIAM@LUMAPREMIUM.COM ',
+      priority: 'high',
+      expected_version: 1,
+      updated_by: 'ADMIN@LUMAPREMIUM.COM'
+    });
+    assert(parsedUpdate.owner_email === 'william@lumapremium.com', 'owner_email normalized to lowercase and trimmed');
+    assert(parsedUpdate.updated_by === 'admin@lumapremium.com', 'updated_by normalized to lowercase');
+  }
+
+  // Test 3: lost_reason validation
+  {
+    // 3.1: crm_status=lost without lost_reason should fail
+    let threwLost = false;
+    try {
+      UpdateOperationSchema.parse({
+        lead_id: 'lp_123456789012345678901234',
+        crm_status: 'lost',
+        expected_version: 1,
+        updated_by: 'admin@example.com'
+      });
+    } catch (err) {
+      if (err instanceof ZodError) {
+        threwLost = true;
+      }
+    }
+    assert(threwLost, 'Zod fails if crm_status is lost but lost_reason is missing');
+
+    // 3.2: crm_status=lost with lost_reason should pass
+    const parsedLost = UpdateOperationSchema.parse({
+      lead_id: 'lp_123456789012345678901234',
+      crm_status: 'lost',
+      lost_reason: 'Presupuesto insuficiente',
+      expected_version: 1,
+      updated_by: 'admin@example.com'
+    });
+    assert(parsedLost.lost_reason === 'Presupuesto insuficiente', 'lost_reason accepted when crm_status is lost');
+
+    // 3.3: crm_status=negotiation with lost_reason should fail
+    let threwNotLost = false;
+    try {
+      UpdateOperationSchema.parse({
+        lead_id: 'lp_123456789012345678901234',
+        crm_status: 'negotiation',
+        lost_reason: 'Algun motivo',
+        expected_version: 1,
+        updated_by: 'admin@example.com'
+      });
+    } catch (err) {
+      if (err instanceof ZodError) {
+        threwNotLost = true;
+      }
+    }
+    assert(threwNotLost, 'Zod fails if crm_status is not lost but lost_reason is provided');
+  }
+
+  // Test 4: Note validation lengths
+  {
+    let noteTooShort = false;
+    try {
+      CreateNoteSchema.parse({
+        lead_id: 'lp_123456789012345678901234',
+        body: '',
+        created_by: 'admin@example.com'
+      });
+    } catch (err) {
+      noteTooShort = true;
+    }
+    assert(noteTooShort, 'Note body cannot be empty');
+
+    let noteTooLong = false;
+    try {
+      CreateNoteSchema.parse({
+        lead_id: 'lp_123456789012345678901234',
+        body: 'a'.repeat(2001),
+        created_by: 'admin@example.com'
+      });
+    } catch (err) {
+      noteTooLong = true;
+    }
+    assert(noteTooLong, 'Note body cannot exceed 2000 characters');
+  }
+
+  // Test 5: Concurrency check & Updates
+  MockOperationsRepository.reset();
+  if (lead) {
+    // 5.1: Create first operations record
+    const createdOp = await mockOpsRepo.upsertOperation({
+      lead_id: lead.id,
+      crm_status: 'contacted',
+      owner_email: 'william@example.com',
+      priority: 'high',
+      expected_version: 1,
+      updated_by: 'marcos@example.com'
+    });
+    assert(createdOp.version === 1, 'New operation starts at version 1');
+
+    // 5.2: Update with correct version
+    const updatedOp = await mockOpsRepo.upsertOperation({
+      lead_id: lead.id,
+      crm_status: 'qualified',
+      expected_version: 1,
+      updated_by: 'marcos@example.com'
+    });
+    assert(updatedOp.version === 2, 'Successful update increments version to 2');
+
+    // 5.3: Update with incorrect version (should fail)
+    let threwConcurrency = false;
+    try {
+      await mockOpsRepo.upsertOperation({
+        lead_id: lead.id,
+        crm_status: 'proposal_sent',
+        expected_version: 1, // expected 2
+        updated_by: 'marcos@example.com'
+      });
+    } catch (err: any) {
+      if (err.message === 'CONCURRENCY_ERROR') {
+        threwConcurrency = true;
+      }
+    }
+    assert(threwConcurrency, 'Update fails with CONCURRENCY_ERROR if expected_version is wrong');
+  }
+
+  // Test 6: Notes order (Newest first)
+  MockOperationsRepository.reset();
+  if (lead) {
+    // Make sure we have the operations record first
+    await mockOpsRepo.upsertOperation({
+      lead_id: lead.id,
+      crm_status: 'new',
+      expected_version: 1,
+      updated_by: 'marcos@example.com'
+    });
+
+    await mockOpsRepo.createNote({
+      lead_id: lead.id,
+      body: 'Nota antigua',
+      created_by: 'william@example.com'
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    await mockOpsRepo.createNote({
+      lead_id: lead.id,
+      body: 'Nota nueva',
+      created_by: 'william@example.com'
+    });
+
+    const notes = await mockOpsRepo.listNotes(lead.id);
+    assert(notes.length === 2, 'Two notes created successfully');
+    assert(notes[0].body === 'Nota nueva', 'Notes are sorted: newest first');
+    assert(notes[1].body === 'Nota antigua', 'Notes are sorted: oldest last');
+  }
+
+  // Test 7: Isolation verification
+  MockOperationsRepository.reset();
+  if (lead) {
+    const operation = await mockOpsRepo.getOperationByLeadId(lead.id);
+    assert(operation === null, 'Mock repository is completely isolated and resets cleanly');
+  }
+
+  console.log('🎉 All Operational CRM Subfase 2.0 tests passed successfully!');
+}
+
+async function runAll() {
+  await runRepoTests();
+  await runOperationsTests();
+}
+
+runAll().catch((err) => {
+  console.error('❌ Tests failed:', err);
   process.exit(1);
 });
 

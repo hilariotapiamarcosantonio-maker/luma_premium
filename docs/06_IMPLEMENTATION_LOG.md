@@ -18,6 +18,7 @@
 | 28-04-2026 | Micro-pulido conversión | Landing optimizaciones | Optimizar conversión | Lanzamiento |
 | 28-04-2026 | Integración Google Sheets | API route, google-sheets.ts | Captura leads B2B | Probar formulario |
 | 28-04-2026 | Plantilla B2B Excel | Template script, .xlsx | Datos profesionales | Drive upload |
+| 15-06-2026 | Subfase 2.0 - CRM Operativo | operations-types.ts, operations-repository.ts, operations-repository-factory.ts, mock-operations-repository.ts, crm-lead-service.ts, operations-schemas.ts | Definir contratos, validaciones y composición mock de CRM Operativo | Subfase 2.1 - Hojas auxiliares Google Sheets |
 
 ---
 
@@ -47,6 +48,12 @@
    - Filtro de volumen de inversión
    - Asegura prospectos calificados
 
+5. **Arquitectura CRM Operativo Desacoplada (Subfase 2.0)**
+   - Contratos de dominio (`CrmOperationsRepository`) y fábrica dinámica para aislamiento del almacenamiento físico.
+   - Capa de composición (`CrmLeadService`) que combina captación y operaciones con valores seguros por defecto.
+   - Normalización de emails y validación condicional estricta mediante esquemas Zod con preprocesamiento.
+   - Repositorio mock aislado mediante `static reset()` en pruebas unitarias.
+
 ---
 
 ## Errores y Soluciones
@@ -67,7 +74,9 @@
 - ✅ Caso demostrativo (Vista del Río)
 - ✅ Integración Google Sheets
 - ✅ Plantilla B2B Excel
+- ✅ Subfase 2.0 - Contratos y Repositorio Mock CRM
 - ✅ Documentación completa
+- ⏳ Subfase 2.1 - Hojas auxiliares Google Sheets
 - ⏳ Deploy a producción
 
 ---
