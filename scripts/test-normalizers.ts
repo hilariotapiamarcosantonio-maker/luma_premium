@@ -78,6 +78,7 @@ assert(normalizeIndustry('professional-services') === 'Servicios profesionales y
 assert(normalizeIndustry('b2b') === 'Servicios profesionales y B2B', 'b2b industry normalization');
 assert(normalizeIndustry('health') === 'Salud, bienestar y alto rendimiento', 'health industry normalization');
 assert(normalizeIndustry('fitness') === 'Salud, bienestar y alto rendimiento', 'fitness industry normalization');
+assert(normalizeIndustry('wellness') === 'Salud, bienestar y alto rendimiento', 'wellness industry normalization');
 assert(normalizeIndustry('home') === 'Hogar, muebles y diseño de interiores', 'home industry normalization');
 assert(normalizeIndustry('interiorismo') === 'Hogar, muebles y diseño de interiores', 'interiorismo industry normalization');
 assert(normalizeIndustry('industry') === 'Industria, manufactura y minería', 'industry industry normalization');

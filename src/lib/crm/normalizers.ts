@@ -212,7 +212,7 @@ export function normalizeIndustry(industry: string): string {
   if (has(['ecommerce', 'e-commerce', 'e commerce', 'commerce', 'retail', 'tienda', 'comercio'])) {
     return 'Comercio y e-commerce';
   }
-  if (has(['spa', 'beauty', 'estética', 'estetica', 'salon de belleza', 'salón de belleza', 'centro de estética', 'wellness']) && !clean.includes('cosmética') && !clean.includes('cosmetica')) {
+  if (has(['spa', 'beauty', 'estética', 'estetica', 'salon de belleza', 'salón de belleza', 'centro de estética']) && !clean.includes('cosmética') && !clean.includes('cosmetica')) {
     return 'Belleza, spa y estética';
   }
   if (has(['cosmetics', 'cosmética', 'cosmetica', 'skincare', 'cuidado personal'])) {
@@ -230,7 +230,7 @@ export function normalizeIndustry(industry: string): string {
   if (has(['professional services', 'professional-services', 'servicios profesionales', 'consultoría', 'consultoria', 'b2b', 'legal', 'agencia'])) {
     return 'Servicios profesionales y B2B';
   }
-  if (has(['health', 'salud', 'alto rendimiento', 'medicina', 'clínica', 'clinica', 'fitness'])) {
+  if (has(['health', 'salud', 'alto rendimiento', 'medicina', 'clínica', 'clinica', 'fitness', 'wellness'])) {
     return 'Salud, bienestar y alto rendimiento';
   }
   if (has(['home', 'furniture', 'interiorismo', 'diseño de interiores', 'muebles', 'decoración', 'decoracion', 'hogar'])) {

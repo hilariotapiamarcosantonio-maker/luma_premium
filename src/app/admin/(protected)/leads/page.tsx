@@ -266,7 +266,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                   </span>
                   <Link
                     href={`/admin/leads/${lead.id}`}
-                    className="flex h-9 items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-3 text-xs text-amber-500 font-semibold hover:bg-neutral-800 hover:text-amber-400 min-h-[36px]"
+                    className="flex h-11 items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-4 text-xs text-amber-500 font-semibold hover:bg-neutral-800 hover:text-amber-400 min-h-[44px]"
                   >
                     Detalle <ChevronRight className="h-3.5 w-3.5" />
                   </Link>

@@ -19,7 +19,6 @@ interface MobileNavigationProps {
 export default function MobileNavigation({ user, onSignOut }: MobileNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const [prevPathname, setPrevPathname] = useState(pathname);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -28,10 +27,12 @@ export default function MobileNavigation({ user, onSignOut }: MobileNavigationPr
   useBodyScrollLock(isOpen);
 
   // Close drawer when pathname changes (user navigated)
-  if (pathname !== prevPathname) {
-    setPrevPathname(pathname);
-    setIsOpen(false);
-  }
+  useEffect(() => {
+    const handle = requestAnimationFrame(() => {
+      setIsOpen(false);
+    });
+    return () => cancelAnimationFrame(handle);
+  }, [pathname]);
 
   // Handle ESC key press to close drawer
   useEffect(() => {
