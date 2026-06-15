@@ -11,7 +11,8 @@ import { MockCrmRepository } from '../src/lib/crm/mock-repository';
 import { GoogleSheetsCrmRepository, V2_COLUMNS as REAL_V2_COLUMNS } from '../src/lib/crm/google-sheets-repository';
 import { MockOperationsRepository } from '../src/lib/crm/mock-operations-repository';
 import { CrmLeadService } from '../src/lib/crm/crm-lead-service';
-import { UpdateOperationSchema, CreateNoteSchema } from '../src/lib/crm/operations-schemas';
+import { UpdateOperationSchema, CreateNoteSchema, ActorEmailSchema } from '../src/lib/crm/operations-schemas';
+import { getCrmOperationsRepository } from '../src/lib/crm/operations-repository-factory';
 import { ZodError } from 'zod';
 
 const V2_COLUMNS = [
@@ -277,78 +278,100 @@ async function runOperationsTests() {
       owner_email: 'WILLIAM@LUMAPREMIUM.COM ',
       priority: 'high',
       expected_version: 1,
-      updated_by: 'ADMIN@LUMAPREMIUM.COM'
     });
     assert(parsedUpdate.owner_email === 'william@lumapremium.com', 'owner_email normalized to lowercase and trimmed');
-    assert(parsedUpdate.updated_by === 'admin@lumapremium.com', 'updated_by normalized to lowercase');
+
+    const normalizedActor = ActorEmailSchema.parse('ADMIN@LUMAPREMIUM.COM ');
+    assert(normalizedActor === 'admin@lumapremium.com', 'actorEmail normalized to lowercase and trimmed');
   }
 
   // Test 3: lost_reason validation
   {
-    // 3.1: crm_status=lost without lost_reason should fail
-    let threwLost = false;
+    // 3.1: lost_reason sin crm_status → rechazo
+    let threwLostReasonWithoutStatus = false;
+    try {
+      UpdateOperationSchema.parse({
+        lead_id: 'lp_123456789012345678901234',
+        lost_reason: 'Presupuesto insuficiente',
+        expected_version: 1,
+      });
+    } catch (err) {
+      if (err instanceof ZodError) {
+        threwLostReasonWithoutStatus = true;
+      }
+    }
+    assert(threwLostReasonWithoutStatus, 'lost_reason sin crm_status → rechazo');
+
+    // 3.2: lost_reason con status no-lost → rechazo
+    let threwLostReasonWithOtherStatus = false;
+    try {
+      UpdateOperationSchema.parse({
+        lead_id: 'lp_123456789012345678901234',
+        crm_status: 'negotiation',
+        lost_reason: 'Presupuesto insuficiente',
+        expected_version: 1,
+      });
+    } catch (err) {
+      if (err instanceof ZodError) {
+        threwLostReasonWithOtherStatus = true;
+      }
+    }
+    assert(threwLostReasonWithOtherStatus, 'lost_reason con status no-lost → rechazo');
+
+    // 3.3: status lost sin lost_reason → rechazo
+    let threwLostWithoutLostReason = false;
     try {
       UpdateOperationSchema.parse({
         lead_id: 'lp_123456789012345678901234',
         crm_status: 'lost',
         expected_version: 1,
-        updated_by: 'admin@example.com'
       });
     } catch (err) {
       if (err instanceof ZodError) {
-        threwLost = true;
+        threwLostWithoutLostReason = true;
       }
     }
-    assert(threwLost, 'Zod fails if crm_status is lost but lost_reason is missing');
+    assert(threwLostWithoutLostReason, 'status lost sin lost_reason → rechazo');
 
-    // 3.2: crm_status=lost with lost_reason should pass
+    // 3.4: status lost con lost_reason → válido
     const parsedLost = UpdateOperationSchema.parse({
       lead_id: 'lp_123456789012345678901234',
       crm_status: 'lost',
       lost_reason: 'Presupuesto insuficiente',
       expected_version: 1,
-      updated_by: 'admin@example.com'
     });
-    assert(parsedLost.lost_reason === 'Presupuesto insuficiente', 'lost_reason accepted when crm_status is lost');
-
-    // 3.3: crm_status=negotiation with lost_reason should fail
-    let threwNotLost = false;
-    try {
-      UpdateOperationSchema.parse({
-        lead_id: 'lp_123456789012345678901234',
-        crm_status: 'negotiation',
-        lost_reason: 'Algun motivo',
-        expected_version: 1,
-        updated_by: 'admin@example.com'
-      });
-    } catch (err) {
-      if (err instanceof ZodError) {
-        threwNotLost = true;
-      }
-    }
-    assert(threwNotLost, 'Zod fails if crm_status is not lost but lost_reason is provided');
+    assert(parsedLost.lost_reason === 'Presupuesto insuficiente', 'status lost con lost_reason → válido');
   }
 
-  // Test 4: Note validation lengths
+  // Test 4: Note validation lengths & space trims
   {
     let noteTooShort = false;
     try {
       CreateNoteSchema.parse({
         lead_id: 'lp_123456789012345678901234',
         body: '',
-        created_by: 'admin@example.com'
       });
     } catch (err) {
       noteTooShort = true;
     }
     assert(noteTooShort, 'Note body cannot be empty');
 
+    let noteWithSpacesOnly = false;
+    try {
+      CreateNoteSchema.parse({
+        lead_id: 'lp_123456789012345678901234',
+        body: '      ',
+      });
+    } catch (err) {
+      noteWithSpacesOnly = true;
+    }
+    assert(noteWithSpacesOnly, 'Note body with spaces only must fail validation');
+
     let noteTooLong = false;
     try {
       CreateNoteSchema.parse({
         lead_id: 'lp_123456789012345678901234',
         body: 'a'.repeat(2001),
-        created_by: 'admin@example.com'
       });
     } catch (err) {
       noteTooLong = true;
@@ -366,17 +389,16 @@ async function runOperationsTests() {
       owner_email: 'william@example.com',
       priority: 'high',
       expected_version: 1,
-      updated_by: 'marcos@example.com'
-    });
+    }, 'marcos@example.com');
     assert(createdOp.version === 1, 'New operation starts at version 1');
+    assert(createdOp.updated_by === 'marcos@example.com', 'updated_by assigned from actorEmail');
 
     // 5.2: Update with correct version
     const updatedOp = await mockOpsRepo.upsertOperation({
       lead_id: lead.id,
       crm_status: 'qualified',
       expected_version: 1,
-      updated_by: 'marcos@example.com'
-    });
+    }, 'marcos@example.com');
     assert(updatedOp.version === 2, 'Successful update increments version to 2');
 
     // 5.3: Update with incorrect version (should fail)
@@ -386,8 +408,7 @@ async function runOperationsTests() {
         lead_id: lead.id,
         crm_status: 'proposal_sent',
         expected_version: 1, // expected 2
-        updated_by: 'marcos@example.com'
-      });
+      }, 'marcos@example.com');
     } catch (err: any) {
       if (err.message === 'CONCURRENCY_ERROR') {
         threwConcurrency = true;
@@ -404,22 +425,19 @@ async function runOperationsTests() {
       lead_id: lead.id,
       crm_status: 'new',
       expected_version: 1,
-      updated_by: 'marcos@example.com'
-    });
+    }, 'marcos@example.com');
 
     await mockOpsRepo.createNote({
       lead_id: lead.id,
       body: 'Nota antigua',
-      created_by: 'william@example.com'
-    });
+    }, 'william@example.com');
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     await mockOpsRepo.createNote({
       lead_id: lead.id,
       body: 'Nota nueva',
-      created_by: 'william@example.com'
-    });
+    }, 'william@example.com');
 
     const notes = await mockOpsRepo.listNotes(lead.id);
     assert(notes.length === 2, 'Two notes created successfully');
@@ -432,6 +450,65 @@ async function runOperationsTests() {
   if (lead) {
     const operation = await mockOpsRepo.getOperationByLeadId(lead.id);
     assert(operation === null, 'Mock repository is completely isolated and resets cleanly');
+  }
+
+  // Test 8: Prevent Mock accidental in Production
+  {
+    const originalEnv = process.env.CRM_OPERATIONS_MODE;
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    // 8.1 Mode 'sheets' throws not implemented
+    process.env.CRM_OPERATIONS_MODE = 'sheets';
+    let threwSheets = false;
+    try {
+      await getCrmOperationsRepository();
+    } catch (err: any) {
+      if (err.message.includes('GoogleSheetsOperationsRepository is not implemented')) {
+        threwSheets = true;
+      }
+    }
+    assert(threwSheets, 'getCrmOperationsRepository throws not implemented for sheets');
+
+    // 8.2 Mode 'mock' returns MockOperationsRepository
+    process.env.CRM_OPERATIONS_MODE = 'mock';
+    const repoMock = await getCrmOperationsRepository();
+    assert(repoMock instanceof MockOperationsRepository, 'getCrmOperationsRepository returns MockOperationsRepository for mock mode');
+
+    // 8.3 In development/test, empty mode returns MockOperationsRepository
+    process.env.CRM_OPERATIONS_MODE = '';
+    (process.env as any).NODE_ENV = 'test';
+    const repoDev = await getCrmOperationsRepository();
+    assert(repoDev instanceof MockOperationsRepository, 'getCrmOperationsRepository returns MockOperationsRepository in dev/test for empty mode');
+
+    // 8.4 In production, empty mode throws an error
+    process.env.CRM_OPERATIONS_MODE = '';
+    (process.env as any).NODE_ENV = 'production';
+    let threwProd = false;
+    try {
+      await getCrmOperationsRepository();
+    } catch (err: any) {
+      if (err.message.includes('CRM_OPERATIONS_MODE must be explicitly configured')) {
+        threwProd = true;
+      }
+    }
+    assert(threwProd, 'getCrmOperationsRepository throws in production for empty mode');
+
+    // 8.5 Invalid mode throws explicitly
+    process.env.CRM_OPERATIONS_MODE = 'invalid-mode';
+    (process.env as any).NODE_ENV = 'test';
+    let threwInvalid = false;
+    try {
+      await getCrmOperationsRepository();
+    } catch (err: any) {
+      if (err.message.includes('Invalid CRM_OPERATIONS_MODE')) {
+        threwInvalid = true;
+      }
+    }
+    assert(threwInvalid, 'getCrmOperationsRepository throws for invalid mode');
+
+    // Restore env
+    process.env.CRM_OPERATIONS_MODE = originalEnv;
+    (process.env as any).NODE_ENV = originalNodeEnv;
   }
 
   console.log('🎉 All Operational CRM Subfase 2.0 tests passed successfully!');

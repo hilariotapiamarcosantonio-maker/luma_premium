@@ -59,13 +59,11 @@ export interface UpdateOperationInput {
   last_contact_at?: string | null;
   lost_reason?: string | null;
   expected_version: number;
-  updated_by: string;
 }
 
 export interface CreateNoteInput {
   lead_id: string;
   body: string;
-  created_by: string;
 }
 
 export interface OperationsFilters {

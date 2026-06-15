@@ -54,6 +54,12 @@
    - Normalización de emails y validación condicional estricta mediante esquemas Zod con preprocesamiento.
    - Repositorio mock aislado mediante `static reset()` en pruebas unitarias.
 
+6. **Restauración de AGENTS.md**
+   - git restore AGENTS.md eliminó un cambio local menor.
+   - Blob recuperable: `32f8b7ef5e601dc706cb36a06234fdc14d1efe6a`
+   - Contenido detectado: `## Imported Claude Cowork project instructions`
+   - Se mantiene intacto el archivo sin tocarlo ni versionarlo.
+
 ---
 
 ## Errores y Soluciones

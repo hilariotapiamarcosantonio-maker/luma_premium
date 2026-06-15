@@ -9,7 +9,7 @@ import {
   CreateNoteInput,
   OperationsFilters
 } from './operations-types';
-import { UpdateOperationSchema, CreateNoteSchema } from './operations-schemas';
+import { UpdateOperationSchema, CreateNoteSchema, ActorEmailSchema } from './operations-schemas';
 
 // In-memory global state databases for the mock layer
 const mockOperations = new Map<string, CrmLeadOperation>();
@@ -69,8 +69,9 @@ export class MockOperationsRepository implements CrmOperationsRepository {
     return list;
   }
 
-  async upsertOperation(input: UpdateOperationInput): Promise<CrmLeadOperation> {
+  async upsertOperation(input: UpdateOperationInput, actorEmail: string): Promise<CrmLeadOperation> {
     const validated = UpdateOperationSchema.parse(input);
+    const validatedActor = ActorEmailSchema.parse(actorEmail);
     const leadId = validated.lead_id;
     const now = new Date().toISOString();
 
@@ -109,7 +110,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
       if (changes.length > 0) {
         current.version += 1;
         current.updated_at = now;
-        current.updated_by = validated.updated_by;
+        current.updated_by = validatedActor;
         current.write_token = randomUUID();
 
         // Write activity logs for each field updated
@@ -122,7 +123,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
             previous_value: change.prev,
             new_value: change.next,
             metadata: null,
-            created_by: validated.updated_by,
+            created_by: validatedActor,
             created_at: now,
           };
           logs.push(logEntry);
@@ -147,7 +148,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
         write_token: randomUUID(),
         created_at: now,
         updated_at: now,
-        updated_by: validated.updated_by,
+        updated_by: validatedActor,
       };
 
       mockOperations.set(leadId, newOp);
@@ -160,7 +161,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
         previous_value: null,
         new_value: newOp.crm_status,
         metadata: null,
-        created_by: validated.updated_by,
+        created_by: validatedActor,
         created_at: now,
       };
       mockLogs.set(leadId, [logEntry]);
@@ -175,8 +176,9 @@ export class MockOperationsRepository implements CrmOperationsRepository {
     return [...notes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }
 
-  async createNote(input: CreateNoteInput): Promise<CrmLeadNote> {
+  async createNote(input: CreateNoteInput, actorEmail: string): Promise<CrmLeadNote> {
     const validated = CreateNoteSchema.parse(input);
+    const validatedActor = ActorEmailSchema.parse(actorEmail);
     const leadId = validated.lead_id;
     const now = new Date().toISOString();
 
@@ -184,7 +186,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
       id: randomUUID(),
       lead_id: leadId,
       body: validated.body,
-      created_by: validated.created_by,
+      created_by: validatedActor,
       created_at: now,
       updated_at: null,
     };
@@ -202,7 +204,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
       previous_value: null,
       new_value: validated.body.slice(0, 50),
       metadata: JSON.stringify({ note_id: noteEntry.id }),
-      created_by: validated.created_by,
+      created_by: validatedActor,
       created_at: now,
     };
     logs.push(logEntry);
