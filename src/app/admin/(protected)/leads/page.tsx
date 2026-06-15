@@ -1,7 +1,7 @@
 import { proxyAdmin } from '@/proxy';
 import { getCrmRepository } from '@/lib/crm/repository';
 import { LeadFiltersSchema } from '@/lib/crm/schemas';
-import { getCountryLabel } from '@/lib/crm/normalizers';
+import { getCountryLabel, getPlatformLabel, getChannelLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { ChevronRight, Filter, Search, Globe, ChevronLeft, Layers } from 'lucide-react';
 
@@ -249,8 +249,8 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 font-medium capitalize bg-amber-950/20 px-2 py-0.5 rounded border border-amber-900/20">
-                    {lead.platform} / {lead.channel.replace('_', ' ')}
+                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 font-medium bg-amber-950/20 px-2 py-0.5 rounded border border-amber-900/20">
+                    {getPlatformLabel(lead.platform)} / {getChannelLabel(lead.channel)}
                   </span>
                   <Link
                     href={`/admin/leads/${lead.id}`}
@@ -297,12 +297,12 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                     <td className="py-4 px-6 text-neutral-400 uppercase">{getCountryLabel(lead.country) || 'N/A'}</td>
                     <td className="py-4 px-6 text-neutral-400">
                       <span className="inline-flex flex-col">
-                        <span className="font-semibold text-neutral-200 capitalize flex items-center gap-1">
+                        <span className="font-semibold text-neutral-200 flex items-center gap-1">
                           <Layers className="h-3 w-3 text-amber-500" />
-                          {lead.platform}
+                          {getPlatformLabel(lead.platform)}
                         </span>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wide">
-                          {lead.channel.replace('_', ' ')}
+                        <span className="text-[10px] text-neutral-500 tracking-wide">
+                          {getChannelLabel(lead.channel)}
                         </span>
                       </span>
                     </td>

@@ -7,22 +7,23 @@ import { LeadPlatform, LeadChannel } from './types';
 export function fixUtf8Encoding(text: string): string {
   if (!text) return '';
   return text
-    .replace(/Produccin/g, 'Producción')
     .replace(/Producci\uFFFDn/g, 'Producción')
-    .replace(/Espaol/g, 'Español')
+    .replace(/Produccin/g, 'Producción')
+    .replace(/Espa\uFFFDol/g, 'Español')
     .replace(/Espa\uFFFDl/g, 'Español')
-    .replace(/S/g, 'Sí')
+    .replace(/Espaol/g, 'Español')
     .replace(/S\uFFFD/g, 'Sí');
 }
 
 /**
  * Normalizes country strings to ISO stable codes.
+ * Prioritizes US checks over DO to avoid partial matches, though they are distinct.
  */
 export function normalizeCountryCode(country: string): string {
   if (!country) return '';
   const c = country.trim().toUpperCase();
-  if (c === 'DO' || c.includes('DOMINICANA') || c.includes('DOM. REP')) return 'DO';
-  if (c === 'US' || c === 'USA' || c.includes('ESTADOS UNIDOS') || c.includes('UNITED STATES')) return 'US';
+  if (c === 'US' || c === 'USA' || c.includes('ESTADOS UNIDOS') || c.includes('UNITED STATES') || c.includes('U.S.')) return 'US';
+  if (c === 'DO' || c.includes('DOMINICANA') || c.includes('DOM. REP') || c.includes('REP. DOM')) return 'DO';
   if (c === 'MX' || c.includes('MEXICO') || c.includes('MÉXICO')) return 'MX';
   if (c === 'ES' || c.includes('ESPAÑA') || c.includes('SPAIN')) return 'ES';
   if (c === 'CO' || c.includes('COLOMBIA')) return 'CO';
@@ -44,6 +45,45 @@ export function getCountryLabel(code: string): string {
 }
 
 /**
+ * Translates platforms to Spanish.
+ */
+export function getPlatformLabel(platform: string): string {
+  const p = (platform || '').trim().toLowerCase();
+  const mapping: Record<string, string> = {
+    meta: 'Meta',
+    google: 'Google',
+    linkedin: 'LinkedIn',
+    tiktok: 'TikTok',
+    web: 'Web',
+    whatsapp: 'WhatsApp',
+    referral: 'Referidos',
+    outbound: 'Prospección saliente',
+    manual: 'Manual',
+    other: 'Otros',
+  };
+  return mapping[p] || platform;
+}
+
+/**
+ * Translates channels to Spanish.
+ */
+export function getChannelLabel(channel: string): string {
+  const c = (channel || '').trim().toLowerCase();
+  const mapping: Record<string, string> = {
+    paid_social: 'Redes sociales de pago',
+    paid_search: 'Búsqueda de pago',
+    organic_social: 'Redes sociales orgánicas',
+    organic_search: 'Búsqueda orgánica',
+    direct: 'Directo',
+    referral: 'Referidos',
+    partner: 'Aliados',
+    outbound: 'Prospección saliente',
+    unknown: 'Desconocido',
+  };
+  return mapping[c] || channel;
+}
+
+/**
  * Normalizes investment ranges to official ranges.
  * Ambiguous historical values like '1k-5k' or '1k–5k' map to 'legacy_review'.
  */
@@ -51,74 +91,84 @@ export function normalizeInvestmentRange(range: string): string {
   if (!range) return 'Necesito diagnóstico antes de definirlo';
   
   const clean = range.trim().replace(/\s+/g, ' ');
-  const standardized = clean.replace(/–/g, '-');
+  const standardized = clean.replace(/–/g, '-').replace(/\s*-\s*/g, '-');
 
-  // Exact mappings
-  if (standardized === 'US$1,500-3,000' || standardized === 'US$1,500 - US$3,000') {
-    return 'US$1,500–3,000';
-  }
-  if (standardized === 'US$1,000-3,000' || standardized === 'US$1,000 - US$3,000') {
-    return 'US$1,500–3,000';
-  }
-  if (
-    standardized.toLowerCase().includes('menos de us$1,500') || 
-    standardized.toLowerCase().includes('menos de 1500') || 
-    standardized.toLowerCase().includes('menos de 1,500')
-  ) {
-    return 'US$1,500–3,000';
-  }
-  
-  // Historical range mapping to legacy_review
-  if (standardized === '1k-5k' || standardized === '1k–5k') {
+  // Rango histórico ambiguo
+  if (standardized === '1k-5k' || standardized.toLowerCase() === '1k-5k') {
     return 'legacy_review';
   }
 
-  if (standardized === 'US$3,000-5,000' || standardized === 'US$3,000 - US$5,000') {
-    return 'US$3,000–5,000';
-  }
-  if (standardized === 'US$3,000 - US$6,500' || standardized === 'US$3,000–6,500') {
-    return 'US$3,000–5,000';
-  }
+  // Mapeos a US$1,500–3,000
   if (
-    standardized === 'US$5,000-10,000' || 
-    standardized === 'US$5,000 - US$10,000' || 
-    standardized === '5k-10k' || 
-    standardized === '5k–10k'
+    standardized === 'US$1,000-3,000' ||
+    standardized === 'US$1,000 - US$3,000' ||
+    standardized === 'US$1,000-US$3,000' ||
+    standardized === '1,000-3,000' ||
+    standardized === '1000-3000' ||
+    standardized.toLowerCase() === '1k-3k' ||
+    standardized.toLowerCase().includes('menos de us$1,500') ||
+    standardized.toLowerCase().includes('menos de 1,500') ||
+    standardized.toLowerCase().includes('menos de 1500') ||
+    standardized === 'US$1,500-3,000' ||
+    standardized === 'US$1,500 - US$3,000'
+  ) {
+    return 'US$1,500–3,000';
+  }
+
+  // Otros rangos oficiales
+  if (standardized === 'US$3,000-5,000' || standardized === 'US$3,000 - US$5,000' || standardized === 'US$3,000-US$5,000') {
+    return 'US$3,000–5,000';
+  }
+  if (standardized === 'US$3,000 - US$6,500' || standardized === 'US$3,000-6,500' || standardized === 'US$3,000-US$6,500') {
+    return 'US$3,000–5,000';
+  }
+
+  if (
+    standardized === 'US$5,000-10,000' ||
+    standardized === 'US$5,000 - US$10,000' ||
+    standardized === 'US$5,000-US$10,000' ||
+    standardized.toLowerCase() === '5k-10k'
   ) {
     return 'US$5,000–10,000';
   }
-  if (standardized === 'US$6,500 - US$12,000' || standardized === 'US$6,500-12,000') {
+  if (standardized === 'US$6,500 - US$12,000' || standardized === 'US$6,500-12,000' || standardized === 'US$6,500-US$12,000') {
     return 'US$5,000–10,000';
   }
+
   if (
-    standardized === 'US$10,000-25,000' || 
-    standardized === 'US$10,000 - US$25,000' || 
-    standardized === '10k-25k' || 
-    standardized === '10k–25k' || 
-    standardized === 'US$10,000-20,000' || 
-    standardized === 'US$10,000 - US$20,000'
+    standardized === 'US$10,000-20,000' ||
+    standardized === 'US$10,000 - US$20,000' ||
+    standardized === 'US$10,000-US$20,000' ||
+    standardized === 'US$10,000-25,000' ||
+    standardized === 'US$10,000 - US$25,000' ||
+    standardized === 'US$10,000-US$25,000' ||
+    standardized.toLowerCase() === '10k-20k' ||
+    standardized.toLowerCase() === '10k-25k'
   ) {
     return 'US$10,000–20,000';
   }
-  if (standardized === 'US$12,000+' || standardized === 'US$12,000 +') {
+  if (standardized === 'US$12,000+' || standardized === 'US$12,000 +' || standardized.toLowerCase() === '12k+') {
     return 'US$10,000–20,000';
   }
+
   if (
-    standardized === 'US$25,000-50,000' || 
-    standardized === 'US$25,000 - US$50,000' || 
-    standardized === 'US$50,000+' || 
-    standardized === '25k+' || 
-    standardized === '25k +' || 
+    standardized === 'US$25,000-50,000' ||
+    standardized === 'US$25,000 - US$50,000' ||
+    standardized === 'US$25,000-US$50,000' ||
+    standardized === 'US$50,000+' ||
+    standardized === 'US$50,000 +' ||
     standardized === 'US$20,000+' ||
-    standardized === 'US$20,000 +'
+    standardized === 'US$20,000 +' ||
+    standardized.toLowerCase() === '25k+' ||
+    standardized.toLowerCase() === '20k+'
   ) {
     return 'US$20,000+';
   }
 
   if (
-    standardized.toLowerCase().includes('diagnóstico') || 
-    standardized.toLowerCase().includes('assessment') || 
-    standardized.toLowerCase().includes('definiendo') || 
+    standardized.toLowerCase().includes('diagnóstico') ||
+    standardized.toLowerCase().includes('assessment') ||
+    standardized.toLowerCase().includes('definiendo') ||
     standardized.toLowerCase().includes('evaluando') ||
     standardized.toLowerCase().includes('select a range') ||
     standardized.toLowerCase().includes('seleccione')

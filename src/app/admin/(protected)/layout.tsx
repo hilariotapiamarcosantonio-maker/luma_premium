@@ -78,7 +78,7 @@ export default async function ProtectedLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col md:pl-64">
+      <div className="flex flex-1 flex-col md:pl-64 min-w-0 w-full">
         {/* Mobile Header */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-neutral-800 bg-neutral-950/80 px-4 backdrop-blur-md md:hidden">
           <div className="flex items-center gap-2">

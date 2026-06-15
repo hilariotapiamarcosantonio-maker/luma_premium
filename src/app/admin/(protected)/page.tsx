@@ -1,6 +1,6 @@
 import { proxyAdmin } from '@/proxy';
 import { getCrmRepository } from '@/lib/crm/repository';
-import { getCountryLabel } from '@/lib/crm/normalizers';
+import { getCountryLabel, getPlatformLabel, getChannelLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { 
   Users, 
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
           <ul className="mt-4 space-y-3">
             {metrics.byPlatform.map((item) => (
               <li key={item.platform} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-400 capitalize">{item.platform}</span>
+                <span className="text-neutral-400">{getPlatformLabel(item.platform)}</span>
                 <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
                   {item.count}
                 </span>
@@ -127,8 +127,8 @@ export default async function DashboardPage() {
           <ul className="mt-4 space-y-3">
             {metrics.byChannel.map((item) => (
               <li key={item.channel} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-400 uppercase text-xs">
-                  {item.channel.replace('_', ' ')}
+                <span className="text-neutral-400 text-xs">
+                  {getChannelLabel(item.channel)}
                 </span>
                 <span className="font-semibold bg-neutral-800 px-2 py-0.5 rounded text-xs">
                   {item.count}

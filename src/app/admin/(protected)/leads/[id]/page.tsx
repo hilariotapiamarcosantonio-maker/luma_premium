@@ -1,6 +1,6 @@
 import { proxyAdmin } from '@/proxy';
 import { getCrmRepository } from '@/lib/crm/repository';
-import { getCountryLabel } from '@/lib/crm/normalizers';
+import { getCountryLabel, getPlatformLabel, getChannelLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { 
@@ -156,11 +156,14 @@ export default async function LeadDetailPage({ params }: PageProps) {
               <div>
                 <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Industria</label>
                 <p className="mt-1 text-sm text-neutral-200 font-medium">{lead.industry || 'No especificada'}</p>
-                {lead.raw_industry !== lead.industry && (
-                  <span className="text-[10px] text-neutral-500 block">Original recibido: &ldquo;{lead.raw_industry || '—'}&rdquo;</span>
+                {lead.raw_industry && lead.raw_industry !== lead.industry && (
+                  <span className="text-[10px] text-neutral-500 block">Original recibido: {lead.raw_industry}</span>
                 )}
                 {lead.industry_detail && (
-                  <p className="mt-1 text-xs text-neutral-400 italic">&ldquo;{lead.industry_detail}&rdquo;</p>
+                  <div className="mt-1.5 text-xs">
+                    <span className="text-neutral-500 font-medium">Detalle de industria: </span>
+                    <span className="text-neutral-400 italic">{lead.industry_detail}</span>
+                  </div>
                 )}
               </div>
 
@@ -196,8 +199,8 @@ export default async function LeadDetailPage({ params }: PageProps) {
                     ? 'US$1,500–5,000 (histórico)' 
                     : lead.investment_range || 'No especificado'}
                 </p>
-                {lead.raw_investment_range !== lead.investment_range && (
-                  <span className="text-[10px] text-neutral-500 block">Original recibido: &ldquo;{lead.raw_investment_range || '—'}&rdquo;</span>
+                {lead.raw_investment_range && lead.raw_investment_range !== lead.investment_range && (
+                  <span className="text-[10px] text-neutral-500 block">Original recibido: {lead.raw_investment_range}</span>
                 )}
               </div>
 
@@ -244,11 +247,11 @@ export default async function LeadDetailPage({ params }: PageProps) {
                 <div className="space-y-3 bg-neutral-950/20 p-4 border border-neutral-900 rounded-lg">
                   <div>
                     <span className="text-neutral-500 text-[10px] uppercase tracking-wider block">Plataforma</span>
-                    <span className="text-amber-400 font-semibold capitalize text-sm">{lead.platform}</span>
+                    <span className="text-amber-400 font-semibold text-sm">{getPlatformLabel(lead.platform)}</span>
                   </div>
                   <div>
                     <span className="text-neutral-500 text-[10px] uppercase tracking-wider block">Canal Comercial</span>
-                    <span className="text-neutral-200 font-medium uppercase text-xs tracking-wider">{lead.channel.replace('_', ' ')}</span>
+                    <span className="text-neutral-200 font-medium text-xs tracking-wider">{getChannelLabel(lead.channel)}</span>
                   </div>
                 </div>
               </div>
@@ -283,7 +286,18 @@ export default async function LeadDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <span className="text-neutral-500 font-semibold block uppercase tracking-wider mb-1">Landing / Página Origen</span>
-                <span className="text-neutral-300 font-mono break-all">{lead.raw_page_origin || lead.page_origin || '—'}</span>
+                {(lead.raw_page_origin || lead.page_origin) ? (
+                  <a
+                    href={lead.raw_page_origin || lead.page_origin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-500 hover:underline font-mono text-xs break-all block max-w-full"
+                  >
+                    {lead.raw_page_origin || lead.page_origin}
+                  </a>
+                ) : (
+                  <span className="text-neutral-300 font-mono">—</span>
+                )}
               </div>
             </div>
           </div>
