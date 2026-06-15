@@ -27,7 +27,8 @@ export class MockOperationsRepository implements CrmOperationsRepository {
   }
 
   async getOperationByLeadId(leadId: string): Promise<CrmLeadOperation | null> {
-    return mockOperations.get(leadId) || null;
+    const op = mockOperations.get(leadId);
+    return op ? { ...op } : null;
   }
 
   async listOperations(filters?: OperationsFilters): Promise<CrmLeadOperation[]> {
@@ -38,7 +39,11 @@ export class MockOperationsRepository implements CrmOperationsRepository {
         list = list.filter((o) => o.crm_status === filters.crm_status);
       }
       if (filters.owner_email) {
-        list = list.filter((o) => o.owner_email === filters.owner_email);
+        const normalizedFilter = filters.owner_email.trim().toLowerCase();
+        list = list.filter((o) => {
+          if (!o.owner_email) return false;
+          return o.owner_email === normalizedFilter;
+        });
       }
       if (filters.priority) {
         list = list.filter((o) => o.priority === filters.priority);
@@ -66,7 +71,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
       }
     }
 
-    return list;
+    return list.map((o) => ({ ...o }));
   }
 
   async upsertOperation(input: UpdateOperationInput, actorEmail: string): Promise<CrmLeadOperation> {
@@ -83,19 +88,21 @@ export class MockOperationsRepository implements CrmOperationsRepository {
         throw new Error('CONCURRENCY_ERROR');
       }
 
+      // Clone target object to avoid mutating internal state in map before saving
+      const updated = { ...current };
       const changes: { field: string; prev: string | null; next: string | null }[] = [];
 
       const updateField = <K extends keyof CrmLeadOperation>(
         field: K,
         nextVal: CrmLeadOperation[K]
       ) => {
-        if (nextVal !== undefined && nextVal !== current[field]) {
+        if (nextVal !== undefined && nextVal !== updated[field]) {
           changes.push({
             field: String(field),
-            prev: current[field] === null ? null : String(current[field]),
+            prev: updated[field] === null ? null : String(updated[field]),
             next: nextVal === null ? null : String(nextVal),
           });
-          current[field] = nextVal;
+          updated[field] = nextVal;
         }
       };
 
@@ -108,13 +115,14 @@ export class MockOperationsRepository implements CrmOperationsRepository {
       if (validated.lost_reason !== undefined) updateField('lost_reason', validated.lost_reason);
 
       if (changes.length > 0) {
-        current.version += 1;
-        current.updated_at = now;
-        current.updated_by = validatedActor;
-        current.write_token = randomUUID();
+        updated.version += 1;
+        updated.updated_at = now;
+        updated.updated_by = validatedActor;
+        updated.write_token = randomUUID();
 
         // Write activity logs for each field updated
         const logs = mockLogs.get(leadId) || [];
+        const newLogs = [...logs];
         changes.forEach((change) => {
           const logEntry: CrmActivityLog = {
             id: randomUUID(),
@@ -126,13 +134,13 @@ export class MockOperationsRepository implements CrmOperationsRepository {
             created_by: validatedActor,
             created_at: now,
           };
-          logs.push(logEntry);
+          newLogs.push(logEntry);
         });
-        mockLogs.set(leadId, logs);
+        mockLogs.set(leadId, newLogs);
       }
 
-      mockOperations.set(leadId, current);
-      return current;
+      mockOperations.set(leadId, { ...updated });
+      return { ...updated };
     } else {
       // Create new lead operations record
       const newOp: CrmLeadOperation = {
@@ -151,7 +159,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
         updated_by: validatedActor,
       };
 
-      mockOperations.set(leadId, newOp);
+      mockOperations.set(leadId, { ...newOp });
 
       // Log initial operation creation
       const logEntry: CrmActivityLog = {
@@ -166,14 +174,16 @@ export class MockOperationsRepository implements CrmOperationsRepository {
       };
       mockLogs.set(leadId, [logEntry]);
 
-      return newOp;
+      return { ...newOp };
     }
   }
 
   async listNotes(leadId: string): Promise<CrmLeadNote[]> {
     const notes = mockNotes.get(leadId) || [];
-    // Sort: newest first (created_at desc)
-    return [...notes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // Sort: newest first (created_at desc) and return cloned objects
+    return [...notes]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .map(n => ({ ...n }));
   }
 
   async createNote(input: CreateNoteInput, actorEmail: string): Promise<CrmLeadNote> {
@@ -192,11 +202,12 @@ export class MockOperationsRepository implements CrmOperationsRepository {
     };
 
     const notes = mockNotes.get(leadId) || [];
-    notes.push(noteEntry);
-    mockNotes.set(leadId, notes);
+    const newNotes = [...notes, { ...noteEntry }];
+    mockNotes.set(leadId, newNotes);
 
     // Log note creation in activity log
     const logs = mockLogs.get(leadId) || [];
+    const newLogs = [...logs];
     const logEntry: CrmActivityLog = {
       id: randomUUID(),
       lead_id: leadId,
@@ -207,15 +218,17 @@ export class MockOperationsRepository implements CrmOperationsRepository {
       created_by: validatedActor,
       created_at: now,
     };
-    logs.push(logEntry);
-    mockLogs.set(leadId, logs);
+    newLogs.push(logEntry);
+    mockLogs.set(leadId, newLogs);
 
-    return noteEntry;
+    return { ...noteEntry };
   }
 
   async listActivity(leadId: string): Promise<CrmActivityLog[]> {
     const logs = mockLogs.get(leadId) || [];
-    // Sort: newest first (created_at desc)
-    return [...logs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // Sort: newest first (created_at desc) and return cloned objects
+    return [...logs]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .map(l => ({ ...l }));
   }
 }

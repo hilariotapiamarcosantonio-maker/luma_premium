@@ -244,11 +244,6 @@ async function runRepoTests() {
   console.log('🎉 All repository integration mapping tests passed successfully!');
 }
 
-runRepoTests().catch((err) => {
-  console.error('❌ Repository Integration Tests failed:', err);
-  process.exit(1);
-});
-
 async function runOperationsTests() {
   console.log('Running Operational CRM Subfase 2.0 tests...');
 
@@ -457,58 +452,144 @@ async function runOperationsTests() {
     const originalEnv = process.env.CRM_OPERATIONS_MODE;
     const originalNodeEnv = process.env.NODE_ENV;
 
-    // 8.1 Mode 'sheets' throws not implemented
-    process.env.CRM_OPERATIONS_MODE = 'sheets';
-    let threwSheets = false;
     try {
-      await getCrmOperationsRepository();
+      // 8.1 Mode 'sheets' throws not implemented
+      process.env.CRM_OPERATIONS_MODE = 'sheets';
+      let threwSheets = false;
+      try {
+        await getCrmOperationsRepository();
+      } catch (err: any) {
+        if (err.message.includes('GoogleSheetsOperationsRepository is not implemented')) {
+          threwSheets = true;
+        }
+      }
+      assert(threwSheets, 'getCrmOperationsRepository throws not implemented for sheets');
+
+      // 8.2 Mode 'mock' returns MockOperationsRepository
+      process.env.CRM_OPERATIONS_MODE = 'mock';
+      const repoMock = await getCrmOperationsRepository();
+      assert(repoMock instanceof MockOperationsRepository, 'getCrmOperationsRepository returns MockOperationsRepository for mock mode');
+
+      // 8.3 In development/test, empty mode returns MockOperationsRepository
+      process.env.CRM_OPERATIONS_MODE = '';
+      (process.env as any).NODE_ENV = 'test';
+      const repoDev = await getCrmOperationsRepository();
+      assert(repoDev instanceof MockOperationsRepository, 'getCrmOperationsRepository returns MockOperationsRepository in dev/test for empty mode');
+
+      // 8.4 In production, empty mode throws an error
+      process.env.CRM_OPERATIONS_MODE = '';
+      (process.env as any).NODE_ENV = 'production';
+      let threwProd = false;
+      try {
+        await getCrmOperationsRepository();
+      } catch (err: any) {
+        if (err.message.includes('CRM_OPERATIONS_MODE must be explicitly configured')) {
+          threwProd = true;
+        }
+      }
+      assert(threwProd, 'getCrmOperationsRepository throws in production for empty mode');
+
+      // 8.5 Invalid mode throws explicitly
+      process.env.CRM_OPERATIONS_MODE = 'invalid-mode';
+      (process.env as any).NODE_ENV = 'test';
+      let threwInvalid = false;
+      try {
+        await getCrmOperationsRepository();
+      } catch (err: any) {
+        if (err.message.includes('Invalid CRM_OPERATIONS_MODE')) {
+          threwInvalid = true;
+        }
+      }
+      assert(threwInvalid, 'getCrmOperationsRepository throws for invalid mode');
+    } finally {
+      // Restore env
+      process.env.CRM_OPERATIONS_MODE = originalEnv;
+      (process.env as any).NODE_ENV = originalNodeEnv;
+    }
+  }
+
+  // Test 9: Immutability / Cloning of Returned Mock Objects
+  MockOperationsRepository.reset();
+  if (lead) {
+    const originalOp = await mockOpsRepo.upsertOperation({
+      lead_id: lead.id,
+      crm_status: 'contacted',
+      owner_email: 'william@example.com',
+      priority: 'high',
+      expected_version: 1,
+    }, 'marcos@example.com');
+
+    // Attempt to mutate the returned reference
+    originalOp.priority = 'low';
+    originalOp.owner_email = 'hacked@example.com';
+
+    // Retrieve again from repository
+    const fetchedOp = await mockOpsRepo.getOperationByLeadId(lead.id);
+    assert(fetchedOp !== null, 'Operation exists');
+    if (fetchedOp) {
+      assert(fetchedOp.priority === 'high', 'Repository return value is immutable (cloned) - priority remains high');
+      assert(fetchedOp.owner_email === 'william@example.com', 'Repository return value is immutable (cloned) - owner remains william@example.com');
+    }
+
+    // Mutate returned list elements
+    const list = await mockOpsRepo.listOperations({ crm_status: 'contacted' });
+    assert(list.length === 1, 'Operation is listed');
+    list[0].crm_status = 'won';
+
+    const fetchedAgain = await mockOpsRepo.getOperationByLeadId(lead.id);
+    assert(fetchedAgain?.crm_status === 'contacted', 'Repository returned list is immutable (cloned) - status remains contacted');
+  }
+
+  // Test 10: Owner Filter Normalization (capitalization and spaces)
+  MockOperationsRepository.reset();
+  if (lead) {
+    await mockOpsRepo.upsertOperation({
+      lead_id: lead.id,
+      crm_status: 'qualified',
+      owner_email: 'william@example.com',
+      priority: 'high',
+      expected_version: 1,
+    }, 'marcos@example.com');
+
+    // Search using filter with capitalization and spaces
+    const found = await mockOpsRepo.listOperations({
+      owner_email: '   WILLIAM@EXAMPLE.COM   '
+    });
+    assert(found.length === 1, 'listOperations finds owner with leading/trailing spaces and uppercase');
+    assert(found[0].lead_id === lead.id, 'Found correct lead ID');
+
+    // Search using filter with non-matching email
+    const notFound = await mockOpsRepo.listOperations({
+      owner_email: 'different@example.com'
+    });
+    assert(notFound.length === 0, 'listOperations does not find operations for non-matching owner');
+  }
+
+  // Test 11: Env variable restoration verification
+  {
+    const originalEnv = process.env.CRM_OPERATIONS_MODE;
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    // Simulate failure inside env change block
+    let threwAndRestored = false;
+    try {
+      try {
+        process.env.CRM_OPERATIONS_MODE = 'sheets';
+        (process.env as any).NODE_ENV = 'production';
+        throw new Error('SIMULATED_FAIL');
+      } finally {
+        process.env.CRM_OPERATIONS_MODE = originalEnv;
+        (process.env as any).NODE_ENV = originalNodeEnv;
+      }
     } catch (err: any) {
-      if (err.message.includes('GoogleSheetsOperationsRepository is not implemented')) {
-        threwSheets = true;
+      if (err.message === 'SIMULATED_FAIL') {
+        threwAndRestored = true;
       }
     }
-    assert(threwSheets, 'getCrmOperationsRepository throws not implemented for sheets');
 
-    // 8.2 Mode 'mock' returns MockOperationsRepository
-    process.env.CRM_OPERATIONS_MODE = 'mock';
-    const repoMock = await getCrmOperationsRepository();
-    assert(repoMock instanceof MockOperationsRepository, 'getCrmOperationsRepository returns MockOperationsRepository for mock mode');
-
-    // 8.3 In development/test, empty mode returns MockOperationsRepository
-    process.env.CRM_OPERATIONS_MODE = '';
-    (process.env as any).NODE_ENV = 'test';
-    const repoDev = await getCrmOperationsRepository();
-    assert(repoDev instanceof MockOperationsRepository, 'getCrmOperationsRepository returns MockOperationsRepository in dev/test for empty mode');
-
-    // 8.4 In production, empty mode throws an error
-    process.env.CRM_OPERATIONS_MODE = '';
-    (process.env as any).NODE_ENV = 'production';
-    let threwProd = false;
-    try {
-      await getCrmOperationsRepository();
-    } catch (err: any) {
-      if (err.message.includes('CRM_OPERATIONS_MODE must be explicitly configured')) {
-        threwProd = true;
-      }
-    }
-    assert(threwProd, 'getCrmOperationsRepository throws in production for empty mode');
-
-    // 8.5 Invalid mode throws explicitly
-    process.env.CRM_OPERATIONS_MODE = 'invalid-mode';
-    (process.env as any).NODE_ENV = 'test';
-    let threwInvalid = false;
-    try {
-      await getCrmOperationsRepository();
-    } catch (err: any) {
-      if (err.message.includes('Invalid CRM_OPERATIONS_MODE')) {
-        threwInvalid = true;
-      }
-    }
-    assert(threwInvalid, 'getCrmOperationsRepository throws for invalid mode');
-
-    // Restore env
-    process.env.CRM_OPERATIONS_MODE = originalEnv;
-    (process.env as any).NODE_ENV = originalNodeEnv;
+    assert(threwAndRestored, 'Simulated failure inside env block caught successfully');
+    assert(process.env.CRM_OPERATIONS_MODE === originalEnv, 'CRM_OPERATIONS_MODE restored after failure');
+    assert(process.env.NODE_ENV === originalNodeEnv, 'NODE_ENV restored after failure');
   }
 
   console.log('🎉 All Operational CRM Subfase 2.0 tests passed successfully!');
