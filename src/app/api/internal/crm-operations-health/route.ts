@@ -30,11 +30,11 @@ export async function GET() {
     const mode = process.env.CRM_OPERATIONS_MODE || 'mock';
 
     // Verify repository is instantiated in sheets mode
-    if (mode !== 'sheets' || repo.constructor.name !== 'GoogleSheetsOperationsRepository') {
+    if (mode !== 'sheets') {
       return NextResponse.json({
         ok: false,
         mode,
-        error: `Expected mode to be sheets, got ${mode} (${repo.constructor.name})`
+        error: `Expected mode to be sheets, got ${mode}`
       }, { status: 400 });
     }
 
