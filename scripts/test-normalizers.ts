@@ -606,9 +606,95 @@ async function runOperationsTests() {
   console.log('🎉 All Operational CRM Subfase 2.0 tests passed successfully!');
 }
 
+async function runAuthTests() {
+  console.log('Running Auth authorized-users tests...');
+  const { normalizeEnvEmails, getAuthorizedUser } = await import('../src/lib/auth/authorized-users');
+
+  // 1. Un solo correo
+  {
+    const emails = normalizeEnvEmails('admin@example.com');
+    assert(emails.size === 1, 'Un solo correo: size');
+    assert(emails.has('admin@example.com'), 'Un solo correo: content');
+  }
+
+  // 2. Correos separados por coma
+  {
+    const emails = normalizeEnvEmails('admin1@example.com,admin2@example.com');
+    assert(emails.size === 2, 'Correos separados por coma: size');
+    assert(emails.has('admin1@example.com') && emails.has('admin2@example.com'), 'Correos separados por coma: content');
+  }
+
+  // 3. Espacios alrededor
+  {
+    const emails = normalizeEnvEmails('  admin1@example.com  ,  admin2@example.com  ');
+    assert(emails.size === 2, 'Espacios alrededor: size');
+    assert(emails.has('admin1@example.com') && emails.has('admin2@example.com'), 'Espacios alrededor: content');
+  }
+
+  // 4. Valor completo rodeado por comillas
+  {
+    const emails = normalizeEnvEmails('"admin1@example.com,admin2@example.com"');
+    assert(emails.size === 2, 'Valor completo rodeado por comillas: size');
+    assert(emails.has('admin1@example.com') && emails.has('admin2@example.com'), 'Valor completo rodeado por comillas: content');
+  }
+
+  // 5. Cada correo rodeado por comillas
+  {
+    const emails = normalizeEnvEmails('"admin1@example.com","admin2@example.com"');
+    assert(emails.size === 2, 'Cada correo rodeado por comillas: size');
+    assert(emails.has('admin1@example.com') && emails.has('admin2@example.com'), 'Cada correo rodeado por comillas: content');
+  }
+
+  // 6. Mayúsculas/minúsculas
+  {
+    const emails = normalizeEnvEmails('Admin1@Example.com,ADMIN2@example.com');
+    assert(emails.size === 2, 'Mayúsculas/minúsculas: size');
+    assert(emails.has('admin1@example.com') && emails.has('admin2@example.com'), 'Mayúsculas/minúsculas: content');
+  }
+
+  // 7. Entradas vacías
+  {
+    const emails = normalizeEnvEmails('admin1@example.com,,admin2@example.com, ,');
+    assert(emails.size === 2, 'Entradas vacías: size');
+    assert(emails.has('admin1@example.com') && emails.has('admin2@example.com'), 'Entradas vacías: content');
+  }
+
+  // 8. Correos duplicados
+  {
+    const emails = normalizeEnvEmails('admin1@example.com,admin1@example.com,admin2@example.com');
+    assert(emails.size === 2, 'Correos duplicados: size');
+    assert(emails.has('admin1@example.com') && emails.has('admin2@example.com'), 'Correos duplicados: content');
+  }
+
+  // 9. marcoshilario@lumapremium.com resuelve como Admin
+  {
+    const originalAdminEnv = process.env.CRM_ADMIN_EMAILS;
+    const originalSalesEnv = process.env.CRM_SALES_EMAILS;
+
+    try {
+      process.env.CRM_ADMIN_EMAILS = '"marcoshilario@lumapremium.com,admin2@example.com"';
+      process.env.CRM_SALES_EMAILS = 'sales@example.com';
+
+      const user = getAuthorizedUser('marcoshilario@lumapremium.com');
+      assert(user !== null, 'marcoshilario@lumapremium.com is authorized');
+      assert(user?.role === 'admin', 'marcoshilario@lumapremium.com is Admin');
+
+      // 10. Un correo no autorizado continúa siendo rechazado
+      const rejectedUser = getAuthorizedUser('notauthorized@example.com');
+      assert(rejectedUser === null, 'Un correo no autorizado continúa siendo rechazado');
+    } finally {
+      process.env.CRM_ADMIN_EMAILS = originalAdminEnv;
+      process.env.CRM_SALES_EMAILS = originalSalesEnv;
+    }
+  }
+
+  console.log('🎉 All Auth authorized-users tests passed successfully!');
+}
+
 async function runAll() {
   await runRepoTests();
   await runOperationsTests();
+  await runAuthTests();
 }
 
 runAll().catch((err) => {

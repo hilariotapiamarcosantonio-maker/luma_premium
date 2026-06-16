@@ -9,6 +9,7 @@ export interface AuthorizedUser {
 
 /**
  * Normalizes an email address.
+ * For the email received from Google, use only email.trim().toLowerCase().
  */
 export function normalizeEmail(email: string | null | undefined): string {
   if (!email) return '';
@@ -16,29 +17,78 @@ export function normalizeEmail(email: string | null | undefined): string {
 }
 
 /**
+ * Normalizes email lists from environment variables.
+ * For each entry obtained from env vars:
+ * - split using the separator ','
+ * - apply trim()
+ * - remove outer single or double quotes
+ * - convert to lowercase
+ * - remove empty entries
+ * - deduplicate (Set)
+ */
+export function normalizeEnvEmails(envVal: string | null | undefined): Set<string> {
+  if (!envVal) return new Set();
+
+  const parts = envVal.split(',');
+  const result = new Set<string>();
+
+  for (const part of parts) {
+    let trimmed = part.trim();
+
+    // Remove outer single or double quotes
+    if (
+      (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+      trimmed = trimmed.slice(1, -1);
+    } else {
+      if (trimmed.startsWith('"') || trimmed.startsWith("'")) {
+        trimmed = trimmed.slice(1);
+      }
+      if (trimmed.endsWith('"') || trimmed.endsWith("'")) {
+        trimmed = trimmed.slice(0, -1);
+      }
+    }
+
+    trimmed = trimmed.trim().toLowerCase();
+    if (trimmed.length > 0) {
+      result.add(trimmed);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Gets the allowlist of administrators from the environment.
  */
-function getAdminEmails(): Set<string> {
+export function getAdminEmails(): Set<string> {
   const envVal = process.env.CRM_ADMIN_EMAILS || '';
-  return new Set(
-    envVal
-      .split(',')
-      .map(normalizeEmail)
-      .filter((email) => email.length > 0)
-  );
+  return normalizeEnvEmails(envVal);
 }
 
 /**
  * Gets the allowlist of sales agents from the environment.
  */
-function getSalesEmails(): Set<string> {
+export function getSalesEmails(): Set<string> {
   const envVal = process.env.CRM_SALES_EMAILS || '';
-  return new Set(
-    envVal
-      .split(',')
-      .map(normalizeEmail)
-      .filter((email) => email.length > 0)
-  );
+  return normalizeEnvEmails(envVal);
+}
+
+/**
+ * Safely masks an email for logging purposes without exposing PII.
+ */
+export function maskEmail(email: string | null | undefined): string {
+  if (!email) return 'none';
+  const trimmed = email.trim();
+  const parts = trimmed.split('@');
+  if (parts.length !== 2) return 'invalid-email-format';
+  const name = parts[0];
+  const domain = parts[1];
+  if (name.length <= 2) {
+    return `${name.slice(0, 1)}*@${domain}`;
+  }
+  return `${name.slice(0, 2)}***@${domain}`;
 }
 
 /**

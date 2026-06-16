@@ -1,6 +1,12 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { getAuthorizedUser } from './lib/auth/authorized-users';
+import {
+  getAuthorizedUser,
+  getAdminEmails,
+  getSalesEmails,
+  normalizeEmail,
+  maskEmail
+} from './lib/auth/authorized-users';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -26,6 +32,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Profile details returned by Google
       const email = profile?.email;
       const emailVerified = profile?.email_verified;
+
+      // Log diagnostics securely if in Vercel Preview
+      if (process.env.VERCEL_ENV === 'preview') {
+        const adminEnvPresent = !!process.env.CRM_ADMIN_EMAILS;
+        const admins = getAdminEmails();
+        const sales = getSalesEmails();
+        const googleEmailMasked = maskEmail(email);
+        const normalizedEmailMasked = maskEmail(normalizeEmail(email));
+        const authUser = getAuthorizedUser(email);
+
+        console.log('[auth:diagnostics]', {
+          adminEnvPresent,
+          adminCount: admins.size,
+          salesCount: sales.size,
+          googleEmailMasked,
+          normalizedEmailMasked,
+          emailVerified: emailVerified !== undefined ? String(emailVerified) : 'undefined',
+          authorizationResult: !!authUser,
+          resolvedRole: authUser ? authUser.role : null,
+        });
+      }
 
       // Ensure the email is verified by Google
       if (!emailVerified) {
