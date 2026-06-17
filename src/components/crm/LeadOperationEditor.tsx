@@ -15,35 +15,56 @@ interface LeadOperationEditorProps {
   canEdit: boolean;
 }
 
-// Helper to convert ISO date string to local datetime-local string (YYYY-MM-DDTHH:mm)
-function toDatetimeLocal(isoString: string | null | undefined): string {
-  if (!isoString) return '';
+// Helper to split ISO string to local date (YYYY-MM-DD) and time (HH:mm) parts
+export function splitIsoDateTime(isoString: string | null | undefined): { date: string; time: string } {
+  if (!isoString) return { date: '', time: '' };
   try {
     const d = new Date(isoString);
-    if (isNaN(d.getTime())) return '';
+    if (isNaN(d.getTime())) return { date: '', time: '' };
     const pad = (num: number) => String(num).padStart(2, '0');
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    const hours = pad(d.getHours());
-    const minutes = pad(d.getMinutes());
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    // Must use browser local timezone methods
+    const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const timePart = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return { date: datePart, time: timePart };
   } catch {
-    return '';
+    return { date: '', time: '' };
   }
 }
 
-// Helper to convert datetime-local input string to ISO string
-function toIsoString(localDateTime: string | null | undefined): string | null {
-  if (!localDateTime || localDateTime.trim() === '') return null;
-  try {
-    const d = new Date(localDateTime);
-    if (isNaN(d.getTime())) return null;
-    return d.toISOString();
-  } catch {
+// Helper to join date and time parts to an ISO string
+export function joinDateTimeToIso(date: string | null | undefined, time: string | null | undefined): string | null {
+  const dTrim = (date || '').trim();
+  const tTrim = (time || '').trim();
+
+  if (dTrim === '' && tTrim === '') {
     return null;
   }
+
+  if (dTrim === '' || tTrim === '') {
+    return 'INVALID_DATE';
+  }
+
+  try {
+    const d = new Date(`${dTrim}T${tTrim}`);
+    if (isNaN(d.getTime())) {
+      return 'INVALID_DATE';
+    }
+    const parts = dTrim.split('-');
+    if (parts.length !== 3) {
+      return 'INVALID_DATE';
+    }
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const day = Number(parts[2]);
+    if (d.getFullYear() !== y || (d.getMonth() + 1) !== m || d.getDate() !== day) {
+      return 'INVALID_DATE';
+    }
+    return d.toISOString();
+  } catch {
+    return 'INVALID_DATE';
+  }
 }
+
 
 const CRM_STATUSES = [
   { value: 'new', label: 'Nuevo' },
@@ -73,13 +94,20 @@ export default function LeadOperationEditor({
 }: LeadOperationEditorProps) {
   const [operation, setOperation] = useState<LeadOperationClientDto | null>(currentOperation);
 
-  // Form Field States initialized from operation
+  // Form Field States
   const [crmStatus, setCrmStatus] = useState<string>(currentOperation?.crm_status ?? 'new');
   const [priority, setPriority] = useState<string>(currentOperation?.priority ?? 'medium');
   const [ownerEmail, setOwnerEmail] = useState<string>(currentOperation?.owner_email ?? '');
   const [nextActionType, setNextActionType] = useState<string>(currentOperation?.next_action_type ?? '');
-  const [nextActionAt, setNextActionAt] = useState<string>(toDatetimeLocal(currentOperation?.next_action_at));
-  const [lastContactAt, setLastContactAt] = useState<string>(toDatetimeLocal(currentOperation?.last_contact_at));
+
+  const initialNextAction = splitIsoDateTime(currentOperation?.next_action_at);
+  const [nextActionDate, setNextActionDate] = useState<string>(initialNextAction.date);
+  const [nextActionTime, setNextActionTime] = useState<string>(initialNextAction.time);
+
+  const initialLastContact = splitIsoDateTime(currentOperation?.last_contact_at);
+  const [lastContactDate, setLastContactDate] = useState<string>(initialLastContact.date);
+  const [lastContactTime, setLastContactTime] = useState<string>(initialLastContact.time);
+
   const [lostReason, setLostReason] = useState<string>(currentOperation?.lost_reason ?? '');
 
   // UI Flow States
@@ -87,6 +115,61 @@ export default function LeadOperationEditor({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localValidationError, setLocalValidationError] = useState<string | null>(null);
+
+  // Client-side inline validation helpers
+  const getNextActionError = (): string | null => {
+    const dTrim = (nextActionDate || '').trim();
+    const tTrim = (nextActionTime || '').trim();
+    if (dTrim && !tTrim) {
+      return 'Selecciona una hora para completar la fecha.';
+    }
+    if (!dTrim && tTrim) {
+      return 'Selecciona una fecha para completar este campo.';
+    }
+    if (dTrim && tTrim) {
+      const iso = joinDateTimeToIso(dTrim, tTrim);
+      if (iso === 'INVALID_DATE') {
+        return 'Revisa la fecha y la hora antes de guardar.';
+      }
+    }
+    return null;
+  };
+
+  const getLastContactError = (): string | null => {
+    const dTrim = (lastContactDate || '').trim();
+    const tTrim = (lastContactTime || '').trim();
+    if (dTrim && !tTrim) {
+      return 'Selecciona una hora para completar la fecha.';
+    }
+    if (!dTrim && tTrim) {
+      return 'Selecciona una fecha para completar este campo.';
+    }
+    if (dTrim && tTrim) {
+      const iso = joinDateTimeToIso(dTrim, tTrim);
+      if (iso === 'INVALID_DATE') {
+        return 'Revisa la fecha y la hora antes de guardar.';
+      }
+    }
+    return null;
+  };
+
+  // Next action date change handler (set 09:00 default time)
+  const handleNextActionDateChange = (val: string) => {
+    setNextActionDate(val);
+    if (val && !nextActionTime) {
+      setNextActionTime('09:00');
+    }
+  };
+
+  // Last contact 'Marcar ahora' button handler
+  const handleSetLastContactNow = () => {
+    const now = new Date();
+    const pad = (num: number) => String(num).padStart(2, '0');
+    const dStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const tStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    setLastContactDate(dStr);
+    setLastContactTime(tStr);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +181,15 @@ export default function LeadOperationEditor({
     setErrorMessage(null);
     setLocalValidationError(null);
 
+    // Validate date/time pairs first
+    const nextActionErr = getNextActionError();
+    const lastContactErr = getLastContactError();
+    if (nextActionErr || lastContactErr) {
+      setErrorMessage('Revisa la fecha y la hora antes de guardar.');
+      setIsSaving(false);
+      return;
+    }
+
     // Client-side validation for lost_reason
     if (crmStatus === 'lost' && (!lostReason || lostReason.trim().length === 0)) {
       setLocalValidationError('El motivo de pérdida es obligatorio.');
@@ -106,14 +198,17 @@ export default function LeadOperationEditor({
     }
 
     try {
+      const nextActionIso = joinDateTimeToIso(nextActionDate, nextActionTime);
+      const lastContactIso = joinDateTimeToIso(lastContactDate, lastContactTime);
+
       // Build clean explicit payload
       const payload: Record<string, unknown> = {
         lead_id: leadId,
         crm_status: crmStatus,
         priority: priority,
         next_action_type: nextActionType.trim() || null,
-        next_action_at: toIsoString(nextActionAt),
-        last_contact_at: toIsoString(lastContactAt),
+        next_action_at: nextActionIso,
+        last_contact_at: lastContactIso,
         expected_version: operation?.version ?? 0,
       };
 
@@ -137,8 +232,15 @@ export default function LeadOperationEditor({
         setPriority(op.priority ?? 'medium');
         setOwnerEmail(op.owner_email ?? '');
         setNextActionType(op.next_action_type ?? '');
-        setNextActionAt(toDatetimeLocal(op.next_action_at));
-        setLastContactAt(toDatetimeLocal(op.last_contact_at));
+
+        const nextActionSplit = splitIsoDateTime(op.next_action_at);
+        setNextActionDate(nextActionSplit.date);
+        setNextActionTime(nextActionSplit.time);
+
+        const lastContactSplit = splitIsoDateTime(op.last_contact_at);
+        setLastContactDate(lastContactSplit.date);
+        setLastContactTime(lastContactSplit.time);
+
         setLostReason(op.lost_reason ?? '');
 
         setSuccessMessage('Operación guardada con éxito.');
@@ -198,7 +300,7 @@ export default function LeadOperationEditor({
         </div>
       )}
 
-      <form onSubmit={handleSave} className="space-y-5">
+      <form onSubmit={handleSave} noValidate className="space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           {/* CRM Status */}
           <div>
@@ -261,7 +363,7 @@ export default function LeadOperationEditor({
                 )}
               </select>
             ) : (
-              <div className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2.5 text-sm text-neutral-450">
+              <div className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2.5 text-sm text-neutral-400">
                 <span className="truncate">{ownerEmail || 'Sin asignar'}</span>
                 <Lock className="h-3.5 w-3.5 text-neutral-600" />
               </div>
@@ -285,31 +387,72 @@ export default function LeadOperationEditor({
           </div>
 
           {/* Next Action Date */}
-          <div>
-            <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider">
               Fecha Próxima Acción
             </label>
-            <input
-              type="datetime-local"
-              value={nextActionAt}
-              onChange={(e) => setNextActionAt(e.target.value)}
-              disabled={!canEdit}
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
-            />
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={nextActionDate}
+                onChange={(e) => handleNextActionDateChange(e.target.value)}
+                disabled={!canEdit}
+                className="w-2/3 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+              />
+              <input
+                type="time"
+                value={nextActionTime}
+                onChange={(e) => setNextActionTime(e.target.value)}
+                disabled={!canEdit}
+                className="w-1/3 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+              />
+            </div>
+            {getNextActionError() && (
+              <p className="text-xs text-red-400 flex items-center gap-1.5 mt-1 select-none">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                {getNextActionError()}
+              </p>
+            )}
           </div>
 
           {/* Last Contact Date */}
-          <div>
-            <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
-              Último Contacto
-            </label>
-            <input
-              type="datetime-local"
-              value={lastContactAt}
-              onChange={(e) => setLastContactAt(e.target.value)}
-              disabled={!canEdit}
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
-            />
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                Último Contacto
+              </label>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleSetLastContactNow}
+                  className="text-[11px] font-semibold text-amber-500 hover:text-amber-400 hover:underline select-none"
+                >
+                  Marcar ahora
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={lastContactDate}
+                onChange={(e) => setLastContactDate(e.target.value)}
+                disabled={!canEdit}
+                className="w-2/3 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+              />
+              <input
+                type="time"
+                value={lastContactTime}
+                onChange={(e) => setLastContactTime(e.target.value)}
+                disabled={!canEdit}
+                className="w-1/3 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+              />
+            </div>
+            {getLastContactError() && (
+              <p className="text-xs text-red-400 flex items-center gap-1.5 mt-1 select-none">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                {getLastContactError()}
+              </p>
+            )}
           </div>
         </div>
 

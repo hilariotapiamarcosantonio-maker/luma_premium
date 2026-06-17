@@ -1202,6 +1202,38 @@ async function runTests() {
     assert(formattedDate === '17/06/2026', `formatCrmDate('2026-06-18T02:30:00.000Z') should return '17/06/2026', got '${formattedDate}'`);
 
     console.log('✅ CrmReadService & Combined Read Layer tests completed successfully!\n');
+
+    // 13. Pruebas de LeadOperationEditor Helpers (splitIsoDateTime y joinDateTimeToIso)
+    console.log('Running LeadOperationEditor date helper tests...');
+    const { splitIsoDateTime, joinDateTimeToIso } = await import('../src/components/crm/LeadOperationEditor');
+
+    // ambos vacíos -> null
+    assert(joinDateTimeToIso('', '') === null, 'joinDateTimeToIso("", "") should return null');
+    assert(joinDateTimeToIso(null, undefined) === null, 'joinDateTimeToIso(null, undefined) should return null');
+
+    // fecha + hora -> ISO válido
+    const isoResult = joinDateTimeToIso('2026-06-17', '12:00');
+    assert(isoResult !== null && isoResult !== 'INVALID_DATE', 'joinDateTimeToIso with date and time should return a valid ISO string');
+    assert(new Date(isoResult!).toISOString() === isoResult, 'Result is a valid ISO string');
+
+    // splitIsoDateTime con el ISO anterior debe retornar la fecha y hora local original
+    const splitResult = splitIsoDateTime(isoResult);
+    assert(splitResult.date === '2026-06-17', `splitIsoDateTime date should be '2026-06-17', got '${splitResult.date}'`);
+    assert(splitResult.time === '12:00', `splitIsoDateTime time should be '12:00', got '${splitResult.time}'`);
+
+    // fecha sin hora -> INVALID_DATE
+    assert(joinDateTimeToIso('2026-06-17', '') === 'INVALID_DATE', 'joinDateTimeToIso with date but empty time should return INVALID_DATE');
+    assert(joinDateTimeToIso('2026-06-17', null) === 'INVALID_DATE', 'joinDateTimeToIso with date but null time should return INVALID_DATE');
+
+    // hora sin fecha -> INVALID_DATE
+    assert(joinDateTimeToIso('', '12:00') === 'INVALID_DATE', 'joinDateTimeToIso with empty date but time should return INVALID_DATE');
+    assert(joinDateTimeToIso(null, '12:00') === 'INVALID_DATE', 'joinDateTimeToIso with null date but time should return INVALID_DATE');
+
+    // valor inválido -> INVALID_DATE
+    assert(joinDateTimeToIso('2026-02-31', '12:00') === 'INVALID_DATE', 'joinDateTimeToIso with invalid date (Feb 31) should return INVALID_DATE');
+    assert(joinDateTimeToIso('invalid-date', '12:00') === 'INVALID_DATE', 'joinDateTimeToIso with invalid date string should return INVALID_DATE');
+
+    console.log('✅ LeadOperationEditor date helper tests completed successfully!\n');
   }
 
   console.log('🎉 All Google Sheets Operations Repository offline tests passed successfully!');
