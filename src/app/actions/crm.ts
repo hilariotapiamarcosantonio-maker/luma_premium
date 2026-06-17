@@ -2,7 +2,25 @@
 
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
-import { executeUpdateLeadOperation, ActionResponse } from '@/lib/crm/update-lead-operation-service';
+import { executeUpdateLeadOperation } from '@/lib/crm/update-lead-operation-service';
+import { toLeadOperationClientDto } from '@/lib/crm/operations-dto';
+import type { LeadOperationClientDto } from '@/lib/crm/operations-dto';
+
+export type UpdateLeadOperationClientResult =
+  | {
+      success: true;
+      operation: LeadOperationClientDto;
+    }
+  | {
+      success: false;
+      error:
+        | 'UNAUTHENTICATED'
+        | 'UNAUTHORIZED'
+        | 'VALIDATION_ERROR'
+        | 'CONCURRENCY_ERROR'
+        | 'LEAD_NOT_FOUND'
+        | 'INTERNAL_ERROR';
+    };
 
 /**
  * Server Action to securely update CRM operations for a lead.
@@ -11,7 +29,7 @@ import { executeUpdateLeadOperation, ActionResponse } from '@/lib/crm/update-lea
  */
 export async function updateLeadOperationAction(
   rawInput: unknown
-): Promise<ActionResponse> {
+): Promise<UpdateLeadOperationClientResult> {
   const session = await auth();
 
   if (!session?.user?.email) {
@@ -23,7 +41,14 @@ export async function updateLeadOperationAction(
   if (result.success && result.operation) {
     revalidatePath('/admin/leads');
     revalidatePath(`/admin/leads/${result.operation.lead_id}`);
+    return {
+      success: true,
+      operation: toLeadOperationClientDto(result.operation),
+    };
   }
 
-  return result;
+  return {
+    success: false,
+    error: result.error ?? 'INTERNAL_ERROR',
+  };
 }

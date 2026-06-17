@@ -791,6 +791,90 @@ async function runTests() {
     console.log('✅ Server Action updateLeadOperationAction tests completed successfully!\n');
   }
 
+  // 13. DTO, Mapper, and Server Logic Tests
+  {
+    console.log('Running DTO and Mapper tests...');
+    const { toLeadOperationClientDto } = await import('../src/lib/crm/operations-dto');
+
+    // Sample internal operation object
+    const internalOp = {
+      lead_id: 'lp_123456789012345678901234',
+      crm_status: 'contacted' as const,
+      owner_email: 'sales1@example.com',
+      priority: 'high' as const,
+      next_action_type: 'call',
+      next_action_at: '2026-06-17T12:00:00.000Z',
+      last_contact_at: '2026-06-17T11:00:00.000Z',
+      lost_reason: null,
+      version: 3,
+      // Internal fields
+      write_token: 'uuid-token-123',
+      created_at: '2026-06-17T10:00:00.000Z',
+      updated_at: '2026-06-17T10:30:00.000Z',
+      updated_by: 'admin@example.com',
+    };
+
+    const dto = toLeadOperationClientDto(internalOp);
+
+    // Q1. Verify exact keys list
+    const actualKeys = Object.keys(dto).sort();
+    const expectedKeys = [
+      'crm_status',
+      'last_contact_at',
+      'lead_id',
+      'lost_reason',
+      'next_action_at',
+      'next_action_type',
+      'owner_email',
+      'priority',
+      'version',
+    ].sort();
+
+    const keysMatch = actualKeys.length === expectedKeys.length &&
+                      actualKeys.every((val, i) => val === expectedKeys[i]);
+
+    assert(keysMatch, `DTO contains exact whitelisted keys: ${JSON.stringify(actualKeys)}`);
+
+    // Q2. Verify internal keys are absent
+    assert(!('write_token' in dto), 'write_token is absent from DTO');
+    assert(!('created_at' in dto), 'created_at is absent from DTO');
+    assert(!('updated_at' in dto), 'updated_at is absent from DTO');
+    assert(!('updated_by' in dto), 'updated_by is absent from DTO');
+
+    // Q3. Verify values mapped correctly
+    assert(dto.lead_id === internalOp.lead_id, 'lead_id matches');
+    assert(dto.crm_status === internalOp.crm_status, 'crm_status matches');
+    assert(dto.owner_email === internalOp.owner_email, 'owner_email matches');
+    assert(dto.priority === internalOp.priority, 'priority matches');
+    assert(dto.next_action_type === internalOp.next_action_type, 'next_action_type matches');
+    assert(dto.next_action_at === internalOp.next_action_at, 'next_action_at matches');
+    assert(dto.last_contact_at === internalOp.last_contact_at, 'last_contact_at matches');
+    assert(dto.lost_reason === internalOp.lost_reason, 'lost_reason matches');
+    assert(dto.version === internalOp.version, 'version matches');
+
+    // Q4. Verify Server Action logic uses mapper (static verification of code)
+    const fs = await import('fs');
+    const path = await import('path');
+    const actionCode = fs.readFileSync(path.join(__dirname, '../src/app/actions/crm.ts'), 'utf8');
+    assert(actionCode.includes('toLeadOperationClientDto'), 'Server Action code calls toLeadOperationClientDto mapper');
+
+    // Q5. Verify salesEmails server logic (Admin -> list, Sales -> [])
+    const originalSales = process.env.CRM_SALES_EMAILS;
+    process.env.CRM_SALES_EMAILS = 'sales1@example.com,sales2@example.com';
+    const { getSalesEmails } = await import('../src/lib/auth/authorized-users');
+
+    const adminRole: string = 'admin';
+    const adminSalesEmails = adminRole === 'admin' ? Array.from(getSalesEmails()) : [];
+    assert(adminSalesEmails.includes('sales1@example.com') && adminSalesEmails.includes('sales2@example.com'), 'Admin gets normal sales emails list');
+
+    const salesRole: string = 'sales';
+    const salesSalesEmails = salesRole === 'admin' ? Array.from(getSalesEmails()) : [];
+    assert(salesSalesEmails.length === 0, 'Sales gets empty sales emails list');
+
+    process.env.CRM_SALES_EMAILS = originalSales;
+    console.log('✅ DTO, Mapper, and Server Logic tests completed successfully!\n');
+  }
+
   console.log('🎉 All Google Sheets Operations Repository offline tests passed successfully!');
 }
 

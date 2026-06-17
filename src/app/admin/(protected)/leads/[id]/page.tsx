@@ -1,16 +1,20 @@
 import { proxyAdmin } from '@/proxy';
 import { getCrmRepository } from '@/lib/crm/repository';
+import { getCrmOperationsRepository } from '@/lib/crm/operations-repository-factory';
+import { getSalesEmails } from '@/lib/auth/authorized-users';
+import { toLeadOperationClientDto } from '@/lib/crm/operations-dto';
+import LeadOperationEditor from '@/components/crm/LeadOperationEditor';
 import { getCountryLabel, getPlatformLabel, getChannelLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  MessageSquare, 
-  Mail, 
-  Globe, 
-  MapPin, 
-  Calendar, 
-  Cpu, 
+import {
+  ArrowLeft,
+  MessageSquare,
+  Mail,
+  Globe,
+  MapPin,
+  Calendar,
+  Cpu,
   FileText
 } from 'lucide-react';
 
@@ -31,8 +35,8 @@ function getWhatsAppLink(phone: string): string | null {
 }
 
 export default async function LeadDetailPage({ params }: PageProps) {
-  // Enforces auth proxy
-  await proxyAdmin();
+  // Enforces auth proxy and retrieves session user details
+  const { user: currentUser } = await proxyAdmin();
 
   const resolvedParams = await params;
   const leadId = resolvedParams.id;
@@ -43,6 +47,19 @@ export default async function LeadDetailPage({ params }: PageProps) {
   if (!lead) {
     notFound();
   }
+
+  // Retrieve current operation state
+  const opsRepo = await getCrmOperationsRepository();
+  const currentOp = await opsRepo.getOperationByLeadId(leadId);
+  const clientOperation = currentOp ? toLeadOperationClientDto(currentOp) : null;
+
+  // Compute permissions on the server
+  const currentUserEmail = currentUser.email.toLowerCase().trim();
+  const currentUserRole = currentUser.role;
+  const currentOwner = currentOp?.owner_email?.toLowerCase().trim() || null;
+
+  const canEdit = currentUserRole === 'admin' || (currentUserRole === 'sales' && currentOwner === currentUserEmail);
+  const salesEmails = currentUserRole === 'admin' ? Array.from(getSalesEmails()) : [];
 
   const waLink = getWhatsAppLink(lead.phone);
   const mailLink = lead.email ? `mailto:${lead.email.trim()}` : null;
@@ -141,6 +158,14 @@ export default async function LeadDetailPage({ params }: PageProps) {
 
         {/* Right Side: Detailed Questionnaire & Data Sections */}
         <div className="lg:col-span-2 space-y-6">
+          <LeadOperationEditor
+            leadId={leadId}
+            currentOperation={clientOperation}
+            currentUserRole={currentUserRole}
+            currentUserEmail={currentUserEmail}
+            salesEmails={salesEmails}
+            canEdit={canEdit}
+          />
 
           {/* Card 1: Ficha Operativa (Datos Normalizados) */}
           <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 space-y-6">
