@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { Filter, X, Search } from 'lucide-react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { INDUSTRY_TAXONOMY } from '@/lib/crm/normalizers';
+import { CRM_STATUS_LIST } from '@/lib/crm/crm-status-display';
 
 interface MobileFiltersDrawerProps {
   activeFilters: Record<string, string | number | undefined>;
-  campaigns: { campaign: string; count: number }[];
+  campaigns: string[];
 }
 
 export default function MobileFiltersDrawer({ activeFilters, campaigns }: MobileFiltersDrawerProps) {
@@ -135,9 +136,11 @@ export default function MobileFiltersDrawer({ activeFilters, campaigns }: Mobile
               className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-3 text-base text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium min-h-[44px]"
             >
               <option value="">Todos</option>
-              <option value="nuevo">Nuevo</option>
-              <option value="por_contactar">Por contactar</option>
-              <option value="contactado">Contactado</option>
+              {CRM_STATUS_LIST.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -260,9 +263,9 @@ export default function MobileFiltersDrawer({ activeFilters, campaigns }: Mobile
               className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-3 text-base text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium min-h-[44px]"
             >
               <option value="">Todos</option>
-              {campaigns.map((item) => (
-                <option key={item.campaign} value={item.campaign}>
-                  {item.campaign}
+              {campaigns.map((camp) => (
+                <option key={camp} value={camp}>
+                  {camp}
                 </option>
               ))}
             </select>

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CrmStatusEnum } from './operations-schemas';
 
 export const LeadFiltersSchema = z.object({
   status: z.string().optional(),
@@ -14,6 +15,14 @@ export const LeadFiltersSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   page_size: z.coerce.number().int().positive().max(100).default(25),
 });
+
+export const CrmLeadReadFiltersSchema = LeadFiltersSchema
+  .omit({ status: true })
+  .extend({
+    status: CrmStatusEnum.optional(),
+  });
+
+export type CrmLeadReadFilters = z.infer<typeof CrmLeadReadFiltersSchema>;
 
 /**
  * Maps to the exactly A:AC columns structure of Luma Leads V2.

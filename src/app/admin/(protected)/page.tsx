@@ -1,5 +1,5 @@
 import { proxyAdmin } from '@/proxy';
-import { getCrmRepository } from '@/lib/crm/repository';
+import { getCrmReadService } from '@/lib/crm/crm-read-service';
 import { getCountryLabel, getPlatformLabel, getChannelLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { 
@@ -23,8 +23,8 @@ export default async function DashboardPage() {
   // Enforces session check
   await proxyAdmin();
 
-  const repository = await getCrmRepository();
-  const metrics = await repository.getDashboardMetrics();
+  const readService = await getCrmReadService();
+  const metrics = await readService.getDashboardMetrics();
 
   const phonePercentage = metrics.totalLeads > 0 
     ? ((metrics.leadsWithPhone / metrics.totalLeads) * 100).toFixed(0) 

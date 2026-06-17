@@ -875,6 +875,335 @@ async function runTests() {
     console.log('✅ DTO, Mapper, and Server Logic tests completed successfully!\n');
   }
 
+  // 14. CrmReadService & Combined Read Layer Tests
+  {
+    console.log('Running CrmReadService & Combined Read Layer tests...');
+
+    const { CrmLeadReadFiltersSchema } = await import('../src/lib/crm/schemas');
+    const { CrmReadService } = await import('../src/lib/crm/crm-read-service');
+
+    type LeadDetail = import('../src/lib/crm/types').LeadDetail;
+    type PaginatedLeads = import('../src/lib/crm/types').PaginatedLeads;
+    type LeadFilters = import('../src/lib/crm/types').LeadFilters;
+    type CrmLeadOperation = import('../src/lib/crm/operations-types').CrmLeadOperation;
+    type CrmStatus = import('../src/lib/crm/operations-types').CrmStatus;
+    type CrmLeadReadModel = import('../src/lib/crm/crm-read-service').CrmLeadReadModel;
+    type CrmRepository = import('../src/lib/crm/repository').CrmRepository;
+    type CrmOperationsRepository = import('../src/lib/crm/operations-repository').CrmOperationsRepository;
+    type OperationsFilters = import('../src/lib/crm/operations-types').OperationsFilters;
+    type UpdateOperationInput = import('../src/lib/crm/operations-types').UpdateOperationInput;
+    type CrmLeadNote = import('../src/lib/crm/operations-types').CrmLeadNote;
+    type CreateNoteInput = import('../src/lib/crm/operations-types').CreateNoteInput;
+    type CrmActivityLog = import('../src/lib/crm/operations-types').CrmActivityLog;
+
+    class FakeCrmRepository implements CrmRepository {
+      constructor(public leads: LeadDetail[]) {}
+      async listLeads(filters: LeadFilters): Promise<PaginatedLeads> {
+        let filtered = [...this.leads];
+        if (filters.locale) {
+          filtered = filtered.filter((l) => l.locale === filters.locale);
+        }
+        const page = filters.page || 1;
+        const pageSize = filters.page_size || 25;
+        const totalCount = filtered.length;
+        const totalPages = Math.ceil(totalCount / pageSize);
+        const startIdx = (page - 1) * pageSize;
+        const paginatedLeads = filtered.slice(startIdx, startIdx + pageSize);
+        return {
+          leads: paginatedLeads,
+          totalCount,
+          page,
+          page_size: pageSize,
+          totalPages,
+        };
+      }
+      async getLeadById(leadId: string): Promise<LeadDetail | null> {
+        return this.leads.find((l) => l.id === leadId) || null;
+      }
+      async getDashboardMetrics(): Promise<import('../src/lib/crm/types').DashboardMetrics> {
+        const campaignMap: Record<string, number> = {};
+        this.leads.forEach((l) => {
+          if (l.utm_campaign) {
+            campaignMap[l.utm_campaign] = (campaignMap[l.utm_campaign] || 0) + 1;
+          }
+        });
+        const byCampaign = Object.entries(campaignMap).map(([campaign, count]) => ({ campaign, count }));
+        return {
+          totalLeads: this.leads.length,
+          newLeads: 0,
+          leadsWithPhone: 0,
+          leadsWithBudget: 0,
+          byLocale: [],
+          byCountry: [],
+          byIndustry: [],
+          byInvestmentRange: [],
+          byCampaign,
+          byPlatform: [],
+          byChannel: [],
+          recentLeads: this.leads.slice(0, 5),
+        };
+      }
+    }
+
+    class FakeCrmOperationsRepository implements CrmOperationsRepository {
+      constructor(public operations: CrmLeadOperation[]) {}
+      async listOperations(filters?: OperationsFilters): Promise<CrmLeadOperation[]> {
+        if (filters?.owner_email) {
+          return this.operations.filter((op) => op.owner_email === filters.owner_email);
+        }
+        return this.operations;
+      }
+      async getOperationByLeadId(leadId: string): Promise<CrmLeadOperation | null> {
+        return this.operations.find((op) => op.lead_id === leadId) || null;
+      }
+      async upsertOperation(input: UpdateOperationInput, actorEmail: string): Promise<CrmLeadOperation> {
+        throw new Error(`Not implemented for actor ${actorEmail} and lead ${input.lead_id}`);
+      }
+      async listNotes(leadId: string): Promise<CrmLeadNote[]> {
+        throw new Error(`Not implemented for lead ${leadId}`);
+      }
+      async createNote(input: CreateNoteInput, actorEmail: string): Promise<CrmLeadNote> {
+        throw new Error(`Not implemented for actor ${actorEmail} and lead ${input.lead_id}`);
+      }
+      async listActivity(leadId: string): Promise<CrmActivityLog[]> {
+        throw new Error(`Not implemented for lead ${leadId}`);
+      }
+    }
+
+    // 1. El esquema de la página acepta los nueve estados
+    const validStatuses: CrmStatus[] = [
+      'new',
+      'contacted',
+      'qualified',
+      'meeting_scheduled',
+      'proposal_sent',
+      'negotiation',
+      'won',
+      'lost',
+      'nurture'
+    ];
+    for (const status of validStatuses) {
+      const parse = CrmLeadReadFiltersSchema.safeParse({ status });
+      assert(parse.success, `Schema should accept status "${status}"`);
+      assert(parse.data?.status === status, `Parsed status should match "${status}"`);
+    }
+    const invalidParse = CrmLeadReadFiltersSchema.safeParse({ status: 'invalid_status' });
+    assert(!invalidParse.success, 'Schema should reject invalid status');
+
+    // 2. Generar 205 leads para probar que se leen todos y se evita page_size: 100000
+    const fakeLeads: LeadDetail[] = Array.from({ length: 205 }, (_, i) => {
+      const idNum = String(i + 1).padStart(24, '0');
+      return {
+        id: `lp_${idNum}`,
+        schema_version: '2',
+        created_at: new Date().toISOString(),
+        locale: 'es',
+        country: 'DO',
+        full_name: `Lead ${i + 1}`,
+        email: `lead${i + 1}@example.com`,
+        phone: '8095551234',
+        company: 'Luma',
+        role: 'CEO',
+        industry: 'Real Estate',
+        industry_detail: 'Sales',
+        team_size: '1-10',
+        lead_volume: '1-10',
+        acquisition_channels: 'google',
+        advertising_status: 'yes',
+        current_tools: 'sheets',
+        main_bottleneck: 'time',
+        desired_outcome: 'grow',
+        solution_interest: 'crm',
+        timeline: 'now',
+        investment_range: 'US$1,500–3,000',
+        source: 'web',
+        page_origin: 'lp',
+        utm_source: 'google',
+        utm_medium: 'cpc',
+        utm_campaign: 'brand',
+        utm_content: 'ad1',
+        utm_term: 'luma',
+        status: 'nuevo',
+        platform: 'google',
+        channel: 'paid_search',
+        raw_investment_range: 'US$1,500–3,000',
+        raw_industry: 'Real Estate',
+        raw_country: 'DO',
+        raw_source: 'web',
+        raw_utm_source: 'google',
+        raw_utm_medium: 'cpc',
+        raw_utm_campaign: 'brand',
+        raw_page_origin: 'lp',
+      };
+    });
+
+    const fakeLeadRepo: CrmRepository = new FakeCrmRepository(fakeLeads);
+    const fakeOpsRepo: CrmOperationsRepository = new FakeCrmOperationsRepository([]);
+    const testService = new CrmReadService(fakeLeadRepo, fakeOpsRepo);
+
+    // Más de 100 leads se recopilan completamente sin quedar truncados en 100
+    const listRes = await testService.listLeads({ page: 1, page_size: 25 });
+    assert(listRes.leads.length === 25, `Should return first page of 25 leads, got ${listRes.leads.length}`);
+    assert(listRes.totalCount === 205, `totalCount should be 205, got ${listRes.totalCount}`);
+
+    // 3. Un lead operativo después de la primera página (e.g. index 204 en la página 3) puede filtrarse
+    const leadId205 = fakeLeads[204].id;
+    const fakeOps: CrmLeadOperation[] = [
+      {
+        lead_id: leadId205,
+        crm_status: 'negotiation',
+        priority: 'high',
+        owner_email: 'sales1@example.com',
+        next_action_at: null,
+        next_action_type: null,
+        last_contact_at: null,
+        lost_reason: null,
+        version: 1,
+        write_token: 'uuid-token',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        updated_by: 'admin@example.com',
+      }
+    ];
+    const fakeOpsRepoWithOp: CrmOperationsRepository = new FakeCrmOperationsRepository(fakeOps);
+    const testServiceWithOp = new CrmReadService(fakeLeadRepo, fakeOpsRepoWithOp);
+
+    const filterRes = await testServiceWithOp.listLeads({ status: 'negotiation', page: 1, page_size: 10 });
+    // 4. El total filtrado es correcto
+    assert(filterRes.totalCount === 1, `Filtered totalCount should be 1, got ${filterRes.totalCount}`);
+    assert(filterRes.leads.length === 1, `Filtered leads length should be 1, got ${filterRes.leads.length}`);
+    assert(filterRes.leads[0].id === leadId205, `Should find lead 205, got ${filterRes.leads[0].id}`);
+
+    // 5. La paginación ocurre después del filtro
+    const contactedLeadIds = [fakeLeads[5].id, fakeLeads[50].id, fakeLeads[120].id, fakeLeads[150].id, fakeLeads[200].id];
+    const contactedOps: CrmLeadOperation[] = contactedLeadIds.map(leadId => ({
+      lead_id: leadId,
+      crm_status: 'contacted',
+      priority: 'low',
+      owner_email: 'sales2@example.com',
+      next_action_at: null,
+      next_action_type: null,
+      last_contact_at: null,
+      lost_reason: null,
+      version: 1,
+      write_token: 'token',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      updated_by: 'admin@example.com',
+    }));
+    const fakeOpsRepoContacted: CrmOperationsRepository = new FakeCrmOperationsRepository(contactedOps);
+    const testServiceContacted = new CrmReadService(fakeLeadRepo, fakeOpsRepoContacted);
+
+    const p1 = await testServiceContacted.listLeads({ status: 'contacted', page: 1, page_size: 2 });
+    assert(p1.totalCount === 5, `Total count of contacted should be 5, got ${p1.totalCount}`);
+    assert(p1.leads.length === 2, `Page 1 should have 2 leads, got ${p1.leads.length}`);
+
+    const p3 = await testServiceContacted.listLeads({ status: 'contacted', page: 3, page_size: 2 });
+    assert(p3.totalCount === 5, `Total count remains 5, got ${p3.totalCount}`);
+    assert(p3.leads.length === 1, `Page 3 should have 1 lead, got ${p3.leads.length}`);
+
+    // 6. byCrmStatus cuenta los nueve estados
+    const statuses: CrmStatus[] = [
+      'new', 'contacted', 'qualified', 'meeting_scheduled',
+      'proposal_sent', 'negotiation', 'won', 'lost', 'nurture'
+    ];
+    const nineOps: CrmLeadOperation[] = statuses.map((status, index) => ({
+      lead_id: fakeLeads[index].id,
+      crm_status: status,
+      priority: 'low',
+      owner_email: 'sales@example.com',
+      next_action_at: null,
+      next_action_type: null,
+      last_contact_at: null,
+      lost_reason: status === 'lost' ? 'Too expensive' : null,
+      version: 1,
+      write_token: 'token',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      updated_by: 'admin@example.com',
+    }));
+
+    const fakeOpsRepoNine: CrmOperationsRepository = new FakeCrmOperationsRepository(nineOps);
+    const testServiceNine = new CrmReadService(fakeLeadRepo, fakeOpsRepoNine);
+    const metricsRes = await testServiceNine.getDashboardMetrics();
+
+    assert(metricsRes.byCrmStatus.new === 197, `byCrmStatus.new should be 197, got ${metricsRes.byCrmStatus.new}`);
+    assert(metricsRes.byCrmStatus.contacted === 1, `byCrmStatus.contacted should be 1, got ${metricsRes.byCrmStatus.contacted}`);
+    assert(metricsRes.byCrmStatus.qualified === 1, `byCrmStatus.qualified should be 1, got ${metricsRes.byCrmStatus.qualified}`);
+    assert(metricsRes.byCrmStatus.meeting_scheduled === 1, `byCrmStatus.meeting_scheduled should be 1, got ${metricsRes.byCrmStatus.meeting_scheduled}`);
+    assert(metricsRes.byCrmStatus.proposal_sent === 1, `byCrmStatus.proposal_sent should be 1, got ${metricsRes.byCrmStatus.proposal_sent}`);
+    assert(metricsRes.byCrmStatus.negotiation === 1, `byCrmStatus.negotiation should be 1, got ${metricsRes.byCrmStatus.negotiation}`);
+    assert(metricsRes.byCrmStatus.won === 1, `byCrmStatus.won should be 1, got ${metricsRes.byCrmStatus.won}`);
+    assert(metricsRes.byCrmStatus.lost === 1, `byCrmStatus.lost should be 1, got ${metricsRes.byCrmStatus.lost}`);
+    assert(metricsRes.byCrmStatus.nurture === 1, `byCrmStatus.nurture should be 1, got ${metricsRes.byCrmStatus.nurture}`);
+
+    // 7. Solo una llamada a listOperations() por método
+    let listOpsCount = 0;
+    const countingOpsRepo: CrmOperationsRepository = new class extends FakeCrmOperationsRepository {
+      async listOperations(filters?: OperationsFilters) {
+        listOpsCount++;
+        return super.listOperations(filters);
+      }
+    }([]);
+
+    const testServiceCounting = new CrmReadService(fakeLeadRepo, countingOpsRepo);
+
+    listOpsCount = 0;
+    await testServiceCounting.listLeads({ page: 1, page_size: 10 });
+    assert(listOpsCount === 1, `listLeads should call listOperations exactly once, got ${listOpsCount}`);
+
+    listOpsCount = 0;
+    await testServiceCounting.getDashboardMetrics();
+    assert(listOpsCount === 1, `getDashboardMetrics should call listOperations exactly once, got ${listOpsCount}`);
+
+    // 8. El modelo combinado no contiene write_token
+    const listModel = await testServiceNine.listLeads({ page: 1, page_size: 25 });
+    listModel.leads.forEach((l: CrmLeadReadModel) => {
+      assert(!('write_token' in l), 'write_token should not be present in read model from listLeads');
+    });
+
+    const singleModel = await testServiceNine.getLeadById(fakeLeads[0].id);
+    assert(singleModel !== null, 'singleModel exists');
+    assert(!('write_token' in singleModel!), 'write_token should not be present in read model from getLeadById');
+
+    // 9. Los repositorios originales permanecen puros
+    const originalLead = await fakeLeadRepo.getLeadById(fakeLeads[0].id);
+    assert(originalLead !== null, 'original lead exists');
+    assert(!('crm_status' in originalLead!), 'crm_status should not exist in original repository lead');
+    assert(!('priority' in originalLead!), 'priority should not exist in original repository lead');
+
+    // 10. Prueba de lectura operativa por página (listLeads + getSourceCampaignOptions -> total listOperations = 1)
+    listOpsCount = 0;
+    await Promise.all([
+      testServiceCounting.listLeads({ page: 1, page_size: 10 }),
+      testServiceCounting.getSourceCampaignOptions(),
+    ]);
+    assert(listOpsCount === 1, `listLeads + getSourceCampaignOptions together should trigger listOperations exactly once, got ${listOpsCount}`);
+
+    // 11. Confirmar getSourceCampaignOptions() no llama a listOperations(), devuelve campañas únicas
+    listOpsCount = 0;
+    const campaignsOnly = await testServiceCounting.getSourceCampaignOptions();
+    assert(listOpsCount === 0, `getSourceCampaignOptions alone should trigger listOperations zero times, got ${listOpsCount}`);
+    assert(Array.isArray(campaignsOnly), 'getSourceCampaignOptions returns an array');
+    const isUnique = new Set(campaignsOnly).size === campaignsOnly.length;
+    assert(isUnique, 'getSourceCampaignOptions returns unique campaign names');
+
+    // 12. Pruebas de fecha en crm-date-display.ts
+    const { formatCrmDate } = await import('../src/lib/crm/crm-date-display');
+
+    // Valor null -> null
+    assert(formatCrmDate(null) === null, 'formatCrmDate(null) should return null');
+
+    // Valor inválido -> null
+    assert(formatCrmDate('not-a-date') === null, 'formatCrmDate(invalid) should return null');
+
+    // 2026-06-18T02:30:00.000Z -> fecha del 17 de junio en America/Santo_Domingo (17/06/2026)
+    const formattedDate = formatCrmDate('2026-06-18T02:30:00.000Z');
+    assert(formattedDate === '17/06/2026', `formatCrmDate('2026-06-18T02:30:00.000Z') should return '17/06/2026', got '${formattedDate}'`);
+
+    console.log('✅ CrmReadService & Combined Read Layer tests completed successfully!\n');
+  }
+
   console.log('🎉 All Google Sheets Operations Repository offline tests passed successfully!');
 }
 

@@ -1,10 +1,12 @@
 import { proxyAdmin } from '@/proxy';
-import { getCrmRepository } from '@/lib/crm/repository';
-import { LeadFiltersSchema } from '@/lib/crm/schemas';
+import { getCrmReadService } from '@/lib/crm/crm-read-service';
+import { CrmLeadReadFiltersSchema } from '@/lib/crm/schemas';
 import { getCountryLabel, getPlatformLabel, getChannelLabel, INDUSTRY_TAXONOMY } from '@/lib/crm/normalizers';
+import { CRM_STATUS_LIST, CRM_STATUS_CONFIGS, CRM_PRIORITY_CONFIGS } from '@/lib/crm/crm-status-display';
 import Link from 'next/link';
 import { ChevronRight, Filter, Search, Globe, ChevronLeft, Layers } from 'lucide-react';
 import MobileFiltersDrawer from '@/components/crm/MobileFiltersDrawer';
+import { formatCrmDate } from '@/lib/crm/crm-date-display';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -21,7 +23,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
   const rawParams = await searchParams;
 
   // Safe parsing parameters with Zod
-  const filterParse = LeadFiltersSchema.safeParse({
+  const filterParse = CrmLeadReadFiltersSchema.safeParse({
     status: typeof rawParams.status === 'string' ? rawParams.status : undefined,
     industry: typeof rawParams.industry === 'string' ? rawParams.industry : undefined,
     country: typeof rawParams.country === 'string' ? rawParams.country : undefined,
@@ -38,9 +40,11 @@ export default async function LeadsPage({ searchParams }: PageProps) {
 
   const activeFilters = filterParse.success ? filterParse.data : { page: 1, page_size: 25 };
 
-  const repository = await getCrmRepository();
-  const paginatedResult = await repository.listLeads(activeFilters);
-  const metrics = await repository.getDashboardMetrics(); // for dynamic campaign list
+  const readService = await getCrmReadService();
+  const [paginatedResult, campaigns] = await Promise.all([
+    readService.listLeads(activeFilters),
+    readService.getSourceCampaignOptions(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -55,7 +59,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
       {/* Mobile Drawer trigger */}
       <MobileFiltersDrawer
         activeFilters={activeFilters}
-        campaigns={metrics.byCampaign}
+        campaigns={campaigns}
       />
 
       {/* HTML native GET Filter Form (Desktop view) */}
@@ -75,9 +79,11 @@ export default async function LeadsPage({ searchParams }: PageProps) {
               className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
             >
               <option value="">Todos</option>
-              <option value="nuevo">Nuevo</option>
-              <option value="por_contactar">Por contactar</option>
-              <option value="contactado">Contactado</option>
+              {CRM_STATUS_LIST.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -200,9 +206,9 @@ export default async function LeadsPage({ searchParams }: PageProps) {
               className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
             >
               <option value="">Todos</option>
-              {metrics.byCampaign.map((item) => (
-                <option key={item.campaign} value={item.campaign}>
-                  {item.campaign}
+              {campaigns.map((camp) => (
+                <option key={camp} value={camp}>
+                  {camp}
                 </option>
               ))}
             </select>
@@ -243,10 +249,30 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                     <h3 className="font-semibold text-neutral-100">{lead.full_name || 'Sin nombre'}</h3>
                     <p className="text-xs text-neutral-400">{lead.company || 'Sin empresa'}</p>
                   </div>
-                  <span className="inline-flex items-center rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-amber-500 uppercase">
-                    {lead.status}
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${CRM_STATUS_CONFIGS[lead.crm_status]?.badgeClass || 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>
+                    {CRM_STATUS_CONFIGS[lead.crm_status]?.label || lead.crm_status}
                   </span>
                 </div>
+
+                {(lead.priority || lead.owner_email || lead.next_action_at) && (
+                  <div className="flex flex-wrap gap-2 pt-1 pb-1 text-[10px]">
+                    {lead.priority && lead.priority !== 'medium' && (
+                      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold border ${CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.badgeClass}`}>
+                        {CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.label}
+                      </span>
+                    )}
+                    {lead.owner_email && (
+                      <span className="bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded text-neutral-400">
+                        Resp: {lead.owner_email.split('@')[0]}
+                      </span>
+                    )}
+                    {lead.next_action_at && (
+                      <span className="bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded text-neutral-400 font-mono">
+                        Acción: {formatCrmDate(lead.next_action_at)}
+                      </span>
+                    )}
+                  </div>
+                )}
                 
                 <div className="flex items-center justify-between text-xs text-neutral-500">
                   <div className="flex flex-col gap-0.5">
@@ -327,11 +353,28 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                     <td className="py-4 px-6 text-neutral-400 truncate max-w-[180px]" title={lead.industry}>
                       {lead.industry || 'No especificada'}
                     </td>
-                    <td className="py-4 px-6 text-neutral-400">
-                      <span className="inline-flex items-center rounded-full bg-neutral-900 border border-neutral-800 px-2.5 py-0.5 text-xs font-medium text-amber-500 capitalize">
-                        {lead.status}
-                      </span>
-                    </td>
+                     <td className="py-4 px-6 text-neutral-400">
+                       <div className="flex flex-col gap-1.5 items-start">
+                         <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${CRM_STATUS_CONFIGS[lead.crm_status]?.badgeClass || 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>
+                           {CRM_STATUS_CONFIGS[lead.crm_status]?.label || lead.crm_status}
+                         </span>
+                         {lead.priority && lead.priority !== 'medium' && (
+                           <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold border ${CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.badgeClass}`}>
+                             {CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.label}
+                           </span>
+                         )}
+                         {lead.owner_email && (
+                           <span className="text-[10px] text-neutral-500 truncate max-w-[120px]" title={lead.owner_email}>
+                             Resp: {lead.owner_email.split('@')[0]}
+                           </span>
+                         )}
+                         {lead.next_action_at && (
+                           <span className="text-[10px] text-neutral-500 font-mono">
+                             Acción: {formatCrmDate(lead.next_action_at)}
+                           </span>
+                         )}
+                       </div>
+                     </td>
                     <td className="py-4 px-6 text-neutral-400">
                       {new Date(lead.created_at).toLocaleDateString('es-ES')}
                     </td>
