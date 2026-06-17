@@ -21,7 +21,8 @@ export const ActorEmailSchema = z.preprocess(
   z.string().email('Email de actor inválido')
 );
 
-export const UpdateOperationSchema = z.object({
+// Base object schema shared between repository validation and Server Action validation
+export const UpdateOperationObjectSchema = z.object({
   lead_id: LeadIdSchema,
   crm_status: CrmStatusEnum.optional(),
   owner_email: z.preprocess(
@@ -32,9 +33,18 @@ export const UpdateOperationSchema = z.object({
   next_action_type: z.string().nullable().optional(),
   next_action_at: z.string().datetime({ message: 'Fecha next_action_at inválida' }).nullable().optional(),
   last_contact_at: z.string().datetime({ message: 'Fecha last_contact_at inválida' }).nullable().optional(),
-  lost_reason: z.string().nullable().optional().transform((val) => (val && val.trim().length > 0 ? val.trim() : null)),
-  expected_version: z.number().int().positive(),
-}).superRefine((data, ctx) => {
+  lost_reason: z.string().nullable().optional().transform((val) => {
+    if (val === undefined) return undefined;
+    return val && val.trim().length > 0 ? val.trim() : null;
+  }),
+  expected_version: z.number().int().nonnegative(),
+});
+
+// Shared refinement function to avoid duplicating business logic for lost_reason validation
+export const refineOperationStatus = (
+  data: { crm_status?: string; lost_reason?: string | null },
+  ctx: z.RefinementCtx
+) => {
   if (data.crm_status === 'lost') {
     if (!data.lost_reason || data.lost_reason.trim().length === 0) {
       ctx.addIssue({
@@ -52,7 +62,9 @@ export const UpdateOperationSchema = z.object({
       });
     }
   }
-});
+};
+
+export const UpdateOperationSchema = UpdateOperationObjectSchema.superRefine(refineOperationStatus);
 
 export const CreateNoteSchema = z.object({
   lead_id: LeadIdSchema,
