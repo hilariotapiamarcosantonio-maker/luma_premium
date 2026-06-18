@@ -60,7 +60,7 @@ Tras una auditoría exhaustiva del código fuente, el historial de confirmacione
 | Escenario / Usuario | Entrada Esperada | Comportamiento Observado | Estado |
 |---|---|---|---|
 | **Marcos (`admin`)** | Correo `marcos-ficticio@example.com` en allowlist | Acceso completo. El layout obtiene el rol `admin` y renderiza el perfil con las siglas `MA` y la etiqueta `ADMIN`. | **PASSED** |
-| **William (`sales`)** | Correo `william-ficticio@example.com` en allowlist | Acceso completo. El layout obtiene el rol `sales` y renderiza el perfil con la etiqueta `SALES`. | **PASSED** |
+| **William (`sales`)** | Correo `blaancoperla@gmail.com` en allowlist | Acceso completo. El layout obtiene el rol `sales` y renderiza el perfil con la etiqueta `SALES`. | **PASSED** |
 | **Usuario Externo No Autorizado** | Cualquier cuenta de Google externa a la allowlist | El callback `signIn` intercepta la autenticación, retorna `false` y redirige silenciosamente al formulario de inicio de sesión con el parámetro `?error=AccessDenied`. | **PASSED** |
 | **Acceso a Rutas Protegidas sin Sesión** | Intento de cargar `/admin/leads` directamente | El middleware proxy intercepta el request y redirige inmediatamente al login (`/admin/login`). Adicionalmente, los componentes llaman a `proxyAdmin()` en el servidor arrojando una redirección de seguridad. | **PASSED** |
 | **Flujo de Logout** | Clic en "Cerrar Sesión" en la barra lateral | Ejecuta el Server Action nativo `signOut` en Next.js, destruyendo el JWT session cookie y redirigiendo limpiamente a `/admin/login`. | **PASSED** |

@@ -381,7 +381,7 @@ async function runOperationsTests() {
     const createdOp = await mockOpsRepo.upsertOperation({
       lead_id: lead.id,
       crm_status: 'contacted',
-      owner_email: 'william@example.com',
+      owner_email: 'blaancoperla@gmail.com',
       priority: 'high',
       expected_version: 1,
     }, 'marcos@example.com');
@@ -404,8 +404,8 @@ async function runOperationsTests() {
         crm_status: 'proposal_sent',
         expected_version: 1, // expected 2
       }, 'marcos@example.com');
-    } catch (err: any) {
-      if (err.message === 'CONCURRENCY_ERROR') {
+    } catch (err: unknown) {
+      if ((err as Error).message === 'CONCURRENCY_ERROR') {
         threwConcurrency = true;
       }
     }
@@ -425,14 +425,14 @@ async function runOperationsTests() {
     await mockOpsRepo.createNote({
       lead_id: lead.id,
       body: 'Nota antigua',
-    }, 'william@example.com');
+    }, 'blaancoperla@gmail.com');
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     await mockOpsRepo.createNote({
       lead_id: lead.id,
       body: 'Nota nueva',
-    }, 'william@example.com');
+    }, 'blaancoperla@gmail.com');
 
     const notes = await mockOpsRepo.listNotes(lead.id);
     assert(notes.length === 2, 'Two notes created successfully');
@@ -461,8 +461,8 @@ async function runOperationsTests() {
       let threwConfigError = false;
       try {
         await getCrmOperationsRepository();
-      } catch (err: any) {
-        if (err.message.includes('LUMA_CRM_OPS_SPREADSHEET_ID')) {
+      } catch (err: unknown) {
+        if ((err as Error).message.includes('LUMA_CRM_OPS_SPREADSHEET_ID')) {
           threwConfigError = true;
         }
       }
@@ -483,18 +483,18 @@ async function runOperationsTests() {
 
       // 8.3 In development/test, empty mode returns MockOperationsRepository
       process.env.CRM_OPERATIONS_MODE = '';
-      (process.env as any).NODE_ENV = 'test';
+      (process.env as Record<string, string | undefined>).NODE_ENV = 'test';
       const repoDev = await getCrmOperationsRepository();
       assert(repoDev instanceof MockOperationsRepository, 'getCrmOperationsRepository returns MockOperationsRepository in dev/test for empty mode');
 
       // 8.4 In production, empty mode throws an error
       process.env.CRM_OPERATIONS_MODE = '';
-      (process.env as any).NODE_ENV = 'production';
+      (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
       let threwProd = false;
       try {
         await getCrmOperationsRepository();
-      } catch (err: any) {
-        if (err.message.includes('CRM_OPERATIONS_MODE must be explicitly configured')) {
+      } catch (err: unknown) {
+        if ((err as Error).message.includes('CRM_OPERATIONS_MODE must be explicitly configured')) {
           threwProd = true;
         }
       }
@@ -502,12 +502,12 @@ async function runOperationsTests() {
 
       // 8.5 Invalid mode throws explicitly
       process.env.CRM_OPERATIONS_MODE = 'invalid-mode';
-      (process.env as any).NODE_ENV = 'test';
+      (process.env as Record<string, string | undefined>).NODE_ENV = 'test';
       let threwInvalid = false;
       try {
         await getCrmOperationsRepository();
-      } catch (err: any) {
-        if (err.message.includes('Invalid CRM_OPERATIONS_MODE')) {
+      } catch (err: unknown) {
+        if ((err as Error).message.includes('Invalid CRM_OPERATIONS_MODE')) {
           threwInvalid = true;
         }
       }
@@ -515,7 +515,7 @@ async function runOperationsTests() {
     } finally {
       // Restore env
       process.env.CRM_OPERATIONS_MODE = originalEnv;
-      (process.env as any).NODE_ENV = originalNodeEnv;
+      (process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv;
     }
   }
 
@@ -525,7 +525,7 @@ async function runOperationsTests() {
     const originalOp = await mockOpsRepo.upsertOperation({
       lead_id: lead.id,
       crm_status: 'contacted',
-      owner_email: 'william@example.com',
+      owner_email: 'blaancoperla@gmail.com',
       priority: 'high',
       expected_version: 1,
     }, 'marcos@example.com');
@@ -539,7 +539,7 @@ async function runOperationsTests() {
     assert(fetchedOp !== null, 'Operation exists');
     if (fetchedOp) {
       assert(fetchedOp.priority === 'high', 'Repository return value is immutable (cloned) - priority remains high');
-      assert(fetchedOp.owner_email === 'william@example.com', 'Repository return value is immutable (cloned) - owner remains william@example.com');
+      assert(fetchedOp.owner_email === 'blaancoperla@gmail.com', 'Repository return value is immutable (cloned) - owner remains blaancoperla@gmail.com');
     }
 
     // Mutate returned list elements
@@ -557,14 +557,14 @@ async function runOperationsTests() {
     await mockOpsRepo.upsertOperation({
       lead_id: lead.id,
       crm_status: 'qualified',
-      owner_email: 'william@example.com',
+      owner_email: 'blaancoperla@gmail.com',
       priority: 'high',
       expected_version: 1,
     }, 'marcos@example.com');
 
     // Search using filter with capitalization and spaces
     const found = await mockOpsRepo.listOperations({
-      owner_email: '   WILLIAM@EXAMPLE.COM   '
+      owner_email: '   BLAANCOPERLA@GMAIL.COM   '
     });
     assert(found.length === 1, 'listOperations finds owner with leading/trailing spaces and uppercase');
     assert(found[0].lead_id === lead.id, 'Found correct lead ID');
@@ -586,14 +586,14 @@ async function runOperationsTests() {
     try {
       try {
         process.env.CRM_OPERATIONS_MODE = 'sheets';
-        (process.env as any).NODE_ENV = 'production';
+        (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
         throw new Error('SIMULATED_FAIL');
       } finally {
         process.env.CRM_OPERATIONS_MODE = originalEnv;
-        (process.env as any).NODE_ENV = originalNodeEnv;
+        (process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv;
       }
-    } catch (err: any) {
-      if (err.message === 'SIMULATED_FAIL') {
+    } catch (err: unknown) {
+      if ((err as Error).message === 'SIMULATED_FAIL') {
         threwAndRestored = true;
       }
     }

@@ -3,11 +3,11 @@ import 'server-only';
 import { getAuthorizedUser } from '@/lib/auth/authorized-users';
 import { getCrmOperationsRepository } from '@/lib/crm/operations-repository-factory';
 import { getCrmRepository } from '@/lib/crm/repository';
-import { UpdateOperationObjectSchema, refineOperationStatus } from './operations-schemas';
+import { UpdateOperationObjectSchema, refineUpdateOperation } from './operations-schemas';
 import { CrmLeadOperation } from './operations-types';
 
 // Build the strict schema reusing the base object schema and refinement
-const StrictUpdateActionSchema = UpdateOperationObjectSchema.strict().superRefine(refineOperationStatus);
+const StrictUpdateActionSchema = UpdateOperationObjectSchema.strict().superRefine(refineUpdateOperation);
 
 export interface ActionResponse {
   success: boolean;

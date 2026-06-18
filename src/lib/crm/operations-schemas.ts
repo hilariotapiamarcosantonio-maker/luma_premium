@@ -31,7 +31,7 @@ export const UpdateOperationObjectSchema = z.object({
   ),
   priority: CrmPriorityEnum.optional(),
   next_action_type: z.string().nullable().optional(),
-  next_action_at: z.string().datetime({ message: 'Fecha next_action_at inválida' }).nullable().optional(),
+  next_action_at: z.string().nullable().optional(),
   last_contact_at: z.string().datetime({ message: 'Fecha last_contact_at inválida' }).nullable().optional(),
   lost_reason: z.string().nullable().optional().transform((val) => {
     if (val === undefined) return undefined;
@@ -64,7 +64,84 @@ export const refineOperationStatus = (
   }
 };
 
-export const UpdateOperationSchema = UpdateOperationObjectSchema.superRefine(refineOperationStatus);
+// Refinement for next action type, date, and time consistency
+export const refineNextActionFields = (
+  data: { next_action_type?: string | null; next_action_at?: string | null },
+  ctx: z.RefinementCtx
+) => {
+  const type = data.next_action_type ? data.next_action_type.trim() : '';
+  const at = data.next_action_at ? data.next_action_at.trim() : '';
+
+  if (!type && !at) {
+    return;
+  }
+
+  if (type && !at) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['next_action_at'],
+      message: 'Selecciona la fecha de la próxima acción.',
+    });
+    return;
+  }
+
+  if (at && !type) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['next_action_type'],
+      message: 'Selecciona el tipo de próxima acción.',
+    });
+    return;
+  }
+
+  if (at) {
+    const timestamp = Date.parse(at);
+    if (isNaN(timestamp)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['next_action_at'],
+        message: 'Selecciona la fecha de la próxima acción.',
+      });
+      return;
+    }
+
+    const hasTime = /\d{2}:\d{2}/.test(at);
+    if (!hasTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['next_action_at'],
+        message: 'Selecciona una hora para completar la próxima acción.',
+      });
+      return;
+    }
+
+    const isoCheck = z.string().datetime().safeParse(at);
+    if (!isoCheck.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['next_action_at'],
+        message: 'Selecciona la fecha de la próxima acción.',
+      });
+      return;
+    }
+  }
+};
+
+// Combined update refinement
+export const refineUpdateOperation = (
+  data: {
+    crm_status?: string;
+    lost_reason?: string | null;
+    next_action_type?: string | null;
+    next_action_at?: string | null;
+  },
+  ctx: z.RefinementCtx
+) => {
+  refineOperationStatus(data, ctx);
+  refineNextActionFields(data, ctx);
+};
+
+export const UpdateOperationSchema = UpdateOperationObjectSchema.superRefine(refineUpdateOperation);
 
 export const CreateNoteSchema = z.object({
   lead_id: LeadIdSchema,

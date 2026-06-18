@@ -1196,7 +1196,7 @@ async function runTests() {
           lead_id: fakeLeads[0].id,
           crm_status: 'qualified',
           priority: 'high',
-          owner_email: 'william-ficticio@luma.com',
+          owner_email: 'blaancoperla@gmail.com',
           next_action_type: 'Demo',
           next_action_at: '2026-06-24T12:00:00.000Z',
           last_contact_at: null,
@@ -1229,7 +1229,7 @@ async function runTests() {
       assert(matchedLead!.next_action_type === 'Demo', `next_action_type should merge correctly, expected 'Demo', got '${matchedLead!.next_action_type}'`);
       assert(matchedLead!.crm_status === 'qualified', 'crm_status merges correctly');
       assert(matchedLead!.priority === 'high', 'priority merges correctly');
-      assert(matchedLead!.owner_email === 'william-ficticio@luma.com', 'owner_email merges correctly');
+      assert(matchedLead!.owner_email === 'blaancoperla@gmail.com', 'owner_email merges correctly');
       assert(!('write_token' in matchedLead!), 'write_token remains absent in listLeads output');
 
       // Verify getLeadById merges next_action_type and write_token is absent
@@ -1286,6 +1286,339 @@ async function runTests() {
     assert(joinDateTimeToIso('invalid-date', '12:00') === 'INVALID_DATE', 'joinDateTimeToIso with invalid date string should return INVALID_DATE');
 
     console.log('✅ LeadOperationEditor date helper tests completed successfully!\n');
+
+    // 14. Combined Filter tests (Calificado + Inglés)
+    {
+      console.log('Running Combined Filter tests (Calificado + Inglés)...');
+      const customLeads: LeadDetail[] = [
+        {
+          id: 'lp_000000000000000000000001',
+          schema_version: '2',
+          created_at: new Date().toISOString(),
+          locale: 'en',
+          country: 'US',
+          full_name: 'English Qualified Lead',
+          email: 'en_qualified@example.com',
+          phone: '1234567890',
+          company: 'Luma',
+          role: 'CEO',
+          industry: 'Real Estate',
+          industry_detail: 'Sales',
+          team_size: '1-10',
+          lead_volume: '1-10',
+          acquisition_channels: 'web',
+          advertising_status: 'yes',
+          current_tools: 'none',
+          main_bottleneck: 'none',
+          desired_outcome: 'none',
+          solution_interest: 'Luma Estate OS',
+          timeline: '1 month',
+          investment_range: '5k-10k',
+          source: 'web',
+          page_origin: 'lp',
+          utm_source: 'google',
+          utm_medium: 'cpc',
+          utm_campaign: 'brand',
+          utm_content: 'ad',
+          utm_term: 'luma',
+          status: 'nuevo',
+          platform: 'google',
+          channel: 'paid_search',
+          raw_investment_range: '5k-10k',
+          raw_industry: 'Real Estate',
+          raw_country: 'US',
+          raw_source: 'web',
+          raw_utm_source: 'google',
+          raw_utm_medium: 'cpc',
+          raw_utm_campaign: 'brand',
+          raw_page_origin: 'lp',
+        },
+        {
+          id: 'lp_000000000000000000000002',
+          schema_version: '2',
+          created_at: new Date().toISOString(),
+          locale: 'es',
+          country: 'DO',
+          full_name: 'Spanish Qualified Lead',
+          email: 'es_qualified@example.com',
+          phone: '8095551234',
+          company: 'Luma',
+          role: 'CEO',
+          industry: 'Real Estate',
+          industry_detail: 'Sales',
+          team_size: '1-10',
+          lead_volume: '1-10',
+          acquisition_channels: 'web',
+          advertising_status: 'yes',
+          current_tools: 'none',
+          main_bottleneck: 'none',
+          desired_outcome: 'none',
+          solution_interest: 'Luma Estate OS',
+          timeline: '1 month',
+          investment_range: '5k-10k',
+          source: 'web',
+          page_origin: 'lp',
+          utm_source: 'google',
+          utm_medium: 'cpc',
+          utm_campaign: 'brand',
+          utm_content: 'ad',
+          utm_term: 'luma',
+          status: 'nuevo',
+          platform: 'google',
+          channel: 'paid_search',
+          raw_investment_range: '5k-10k',
+          raw_industry: 'Real Estate',
+          raw_country: 'DO',
+          raw_source: 'web',
+          raw_utm_source: 'google',
+          raw_utm_medium: 'cpc',
+          raw_utm_campaign: 'brand',
+          raw_page_origin: 'lp',
+        }
+      ];
+
+      const customOps: CrmLeadOperation[] = [
+        {
+          lead_id: 'lp_000000000000000000000001',
+          crm_status: 'qualified',
+          priority: 'high',
+          owner_email: 'blaancoperla@gmail.com',
+          next_action_type: null,
+          next_action_at: null,
+          last_contact_at: null,
+          lost_reason: null,
+          version: 1,
+          write_token: 'token1',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          updated_by: 'admin@example.com',
+        },
+        {
+          lead_id: 'lp_000000000000000000000002',
+          crm_status: 'qualified',
+          priority: 'high',
+          owner_email: 'blaancoperla@gmail.com',
+          next_action_type: null,
+          next_action_at: null,
+          last_contact_at: null,
+          lost_reason: null,
+          version: 1,
+          write_token: 'token2',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          updated_by: 'admin@example.com',
+        }
+      ];
+
+      const customLeadRepo = new FakeCrmRepository(customLeads);
+      const customOpsRepo = new FakeCrmOperationsRepository(customOps);
+      const customReadService = new CrmReadService(customLeadRepo, customOpsRepo);
+
+      // Verify combined filter crm_status=qualified & locale=en
+      {
+        const parse = CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'en' });
+        const res = await customReadService.listLeads(parse);
+        assert(res.totalCount === 1, `Combined filter totalCount should be 1, got ${res.totalCount}`);
+        assert(res.leads[0].id === 'lp_000000000000000000000001', 'Should match the English lead');
+      }
+
+      // Verify combined filter with status=calificado (Spanish) & locale=EN (uppercase)
+      {
+        const parse = CrmLeadReadFiltersSchema.parse({ status: 'Calificado', locale: 'EN' });
+        assert(parse.status === 'qualified', `Should preprocess 'Calificado' to 'qualified'`);
+        assert(parse.locale === 'en', `Should preprocess 'EN' to 'en'`);
+        const res = await customReadService.listLeads(parse);
+        assert(res.totalCount === 1, `Combined filter with preprocessed fields totalCount should be 1, got ${res.totalCount}`);
+      }
+
+      // Verify combined filter with status=Calificado & locale=english
+      {
+        const parse = CrmLeadReadFiltersSchema.parse({ status: 'calificado', locale: 'english' });
+        assert(parse.locale === 'en', `Should preprocess 'english' to 'en'`);
+        const res = await customReadService.listLeads(parse);
+        assert(res.totalCount === 1, `Combined filter with 'english' totalCount should be 1, got ${res.totalCount}`);
+      }
+
+      // Verify combined filter with zero results
+      {
+        const parse = CrmLeadReadFiltersSchema.parse({ status: 'won', locale: 'en' });
+        const res = await customReadService.listLeads(parse);
+        assert(res.totalCount === 0, `Combined filter with zero results should return 0, got ${res.totalCount}`);
+        assert(res.leads.length === 0, 'Leads array should be empty');
+      }
+      console.log('✅ Combined filter tests passed successfully!');
+    }
+
+    // 15. Next Action Validation schema tests
+    {
+      console.log('Running Next Action Validation schema tests...');
+      const { UpdateOperationSchema } = await import('../src/lib/crm/operations-schemas');
+
+      // Tipo vacío + fecha vacía = válido
+      const v1 = UpdateOperationSchema.safeParse({
+        lead_id: 'lp_000000000000000000000001',
+        expected_version: 0,
+        next_action_type: '',
+        next_action_at: null,
+      });
+      assert(v1.success, 'Tipo vacío + fecha vacía should be valid');
+
+      const v1b = UpdateOperationSchema.safeParse({
+        lead_id: 'lp_000000000000000000000001',
+        expected_version: 0,
+        next_action_type: null,
+        next_action_at: null,
+      });
+      assert(v1b.success, 'Tipo null + fecha null should be valid');
+
+      // Tipo presente + fecha y hora presentes = válido
+      const v2 = UpdateOperationSchema.safeParse({
+        lead_id: 'lp_000000000000000000000001',
+        expected_version: 0,
+        next_action_type: 'Demo',
+        next_action_at: '2026-06-18T12:00:00.000Z',
+      });
+      assert(v2.success, 'Tipo presente + fecha y hora presentes should be valid');
+
+      // Combinaciones inválidas:
+
+      // Tipo presente + fecha vacía = inválido
+      const iv1 = UpdateOperationSchema.safeParse({
+        lead_id: 'lp_000000000000000000000001',
+        expected_version: 0,
+        next_action_type: 'Demo',
+        next_action_at: null,
+      });
+      assert(!iv1.success, 'Tipo presente + fecha vacía should be invalid');
+      if (!iv1.success) {
+        const err = iv1.error.flatten().fieldErrors.next_action_at;
+        assert(!!(err && err.includes('Selecciona la fecha de la próxima acción.')), 'Should return correct error message for missing date');
+      }
+
+      // Fecha presente + tipo vacío = inválido
+      const iv2 = UpdateOperationSchema.safeParse({
+        lead_id: 'lp_000000000000000000000001',
+        expected_version: 0,
+        next_action_type: '',
+        next_action_at: '2026-06-18T12:00:00.000Z',
+      });
+      assert(!iv2.success, 'Fecha presente + tipo vacío should be invalid');
+      if (!iv2.success) {
+        const err = iv2.error.flatten().fieldErrors.next_action_type;
+        assert(!!(err && err.includes('Selecciona el tipo de próxima acción.')), 'Should return correct error message for missing type');
+      }
+
+      // Texto de fecha inválido = inválido
+      const iv4 = UpdateOperationSchema.safeParse({
+        lead_id: 'lp_000000000000000000000001',
+        expected_version: 0,
+        next_action_type: 'Demo',
+        next_action_at: 'not-a-date',
+      });
+      assert(!iv4.success, 'Texto de fecha inválido should be invalid');
+
+      console.log('✅ Next Action Validation schema tests passed successfully!');
+    }
+
+    // 16. Locale preprocessor and LeadFiltersSchema tests
+    {
+      const { LeadFiltersSchema, CrmLeadReadFiltersSchema } = await import('../src/lib/crm/schemas');
+
+      // Canonical filter: qualified + en — must parse correctly
+      const canonical = CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'en' });
+      assert(canonical.status === 'qualified', 'Canonical: status=qualified passes through');
+      assert(canonical.locale === 'en', 'Canonical: locale=en passes through');
+
+      // Calificado → qualified (preprocessStatus on CrmLeadReadFiltersSchema)
+      const esStatus = CrmLeadReadFiltersSchema.parse({ status: 'Calificado' });
+      assert(esStatus.status === 'qualified', 'Calificado → qualified via preprocessStatus');
+
+      // Inglés → en (preprocessLocale)
+      const esLocale = CrmLeadReadFiltersSchema.parse({ locale: 'Inglés' });
+      assert(esLocale.locale === 'en', 'Inglés → en via preprocessLocale');
+
+      // Unknown locale → rejected by CrmLeadReadFiltersSchema
+      const unknownLocale = CrmLeadReadFiltersSchema.safeParse({ locale: 'zulu' });
+      assert(!unknownLocale.success, 'Unknown locale value should be rejected by CrmLeadReadFiltersSchema');
+
+      // LeadFiltersSchema.status accepts free text (not normalized)
+      const freeStatus = LeadFiltersSchema.parse({ status: 'Calificado' });
+      assert(freeStatus.status === 'Calificado', 'LeadFiltersSchema.status passes free text unchanged');
+
+      // qualified + en with results (using custom lead data)
+      {
+        const customLeads2: LeadDetail[] = [
+          {
+            id: 'lp_cfl_001',
+            schema_version: '2',
+            created_at: new Date().toISOString(),
+            locale: 'en',
+            country: 'US',
+            full_name: 'Canonical Filter Lead',
+            email: 'cfl@example.com',
+            phone: '1234567890',
+            company: 'Test Co',
+            role: 'CEO',
+            industry: 'Real Estate',
+            industry_detail: '',
+            team_size: '1-10',
+            lead_volume: '1-10',
+            acquisition_channels: '',
+            advertising_status: '',
+            current_tools: '',
+            main_bottleneck: '',
+            desired_outcome: '',
+            solution_interest: '',
+            timeline: '',
+            investment_range: '',
+            source: '',
+            page_origin: '',
+            utm_source: '',
+            utm_medium: '',
+            utm_campaign: '',
+            utm_content: '',
+            utm_term: '',
+            status: 'nuevo',
+            platform: 'other',
+            channel: 'unknown',
+            raw_investment_range: '',
+            raw_industry: '',
+            raw_country: '',
+            raw_source: '',
+            raw_utm_source: '',
+            raw_utm_medium: '',
+            raw_utm_campaign: '',
+            raw_page_origin: '',
+          }
+        ];
+        const customOps2: CrmLeadOperation[] = [{
+          lead_id: 'lp_cfl_001',
+          crm_status: 'qualified',
+          priority: 'high',
+          owner_email: 'marcos@example.com',
+          next_action_type: null,
+          next_action_at: null,
+          last_contact_at: null,
+          lost_reason: null,
+          version: 1,
+          write_token: 'tok',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          updated_by: 'marcos@example.com',
+        }];
+        const repo2 = new FakeCrmRepository(customLeads2);
+        const ops2  = new FakeCrmOperationsRepository(customOps2);
+        const svc2  = new CrmReadService(repo2, ops2);
+        const resWithResults = await svc2.listLeads(CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'en' }));
+        assert(resWithResults.totalCount === 1, `qualified + en with results: totalCount should be 1, got ${resWithResults.totalCount}`);
+
+        // qualified + en without results (no english leads)
+        const resNoResults = await svc2.listLeads(CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'es' }));
+        assert(resNoResults.totalCount === 0, `qualified + es without results: totalCount should be 0, got ${resNoResults.totalCount}`);
+      }
+
+      console.log('✅ Locale preprocessor and LeadFiltersSchema tests passed successfully!');
+    }
   }
 
   console.log('🎉 All Google Sheets Operations Repository offline tests passed successfully!');

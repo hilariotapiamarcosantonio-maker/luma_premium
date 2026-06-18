@@ -118,16 +118,32 @@ export default function LeadOperationEditor({
 
   // Client-side inline validation helpers
   const getNextActionError = (): string | null => {
-    const dTrim = (nextActionDate || '').trim();
-    const tTrim = (nextActionTime || '').trim();
-    if (dTrim && !tTrim) {
-      return 'Selecciona una hora para completar la fecha.';
+    const type = (nextActionType || '').trim();
+    const date = (nextActionDate || '').trim();
+    const time = (nextActionTime || '').trim();
+
+    if (!type && !date && !time) {
+      return null;
     }
-    if (!dTrim && tTrim) {
-      return 'Selecciona una fecha para completar este campo.';
+
+    if (type && !date) {
+      return 'Selecciona la fecha de la próxima acción.';
     }
-    if (dTrim && tTrim) {
-      const iso = joinDateTimeToIso(dTrim, tTrim);
+
+    if (date && !type) {
+      return 'Selecciona el tipo de próxima acción.';
+    }
+
+    if (date && !time) {
+      return 'Selecciona una hora para completar la próxima acción.';
+    }
+
+    if (!date && time) {
+      return 'Selecciona la fecha de la próxima acción.';
+    }
+
+    if (date && time) {
+      const iso = joinDateTimeToIso(date, time);
       if (iso === 'INVALID_DATE') {
         return 'Revisa la fecha y la hora antes de guardar.';
       }
@@ -185,7 +201,7 @@ export default function LeadOperationEditor({
     const nextActionErr = getNextActionError();
     const lastContactErr = getLastContactError();
     if (nextActionErr || lastContactErr) {
-      setErrorMessage('Revisa la fecha y la hora antes de guardar.');
+      setErrorMessage(nextActionErr || lastContactErr || 'Revisa la fecha y la hora antes de guardar.');
       setIsSaving(false);
       return;
     }

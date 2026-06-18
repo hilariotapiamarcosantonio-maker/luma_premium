@@ -1,11 +1,55 @@
 import { z } from 'zod';
 import { CrmStatusEnum } from './operations-schemas';
 
+const SPANISH_STATUS_MAP: Record<string, string> = {
+  nuevo: 'new',
+  contactado: 'contacted',
+  calificado: 'qualified',
+  'reunión programada': 'meeting_scheduled',
+  'reunion programada': 'meeting_scheduled',
+  'propuesta enviada': 'proposal_sent',
+  negociación: 'negotiation',
+  negociacion: 'negotiation',
+  ganado: 'won',
+  perdido: 'lost',
+  'en seguimiento': 'nurture',
+};
+
+const LOCALE_ALIASES: Record<string, 'es' | 'en'> = {
+  en: 'en',
+  english: 'en',
+  ingles: 'en',
+  inglés: 'en',
+  es: 'es',
+  spanish: 'es',
+  espanol: 'es',
+  español: 'es',
+};
+
+export const preprocessLocale = (val: unknown) => {
+  if (typeof val !== 'string') return val;
+  const clean = val.trim().toLowerCase();
+  if (!clean) return undefined;
+  const mapped = LOCALE_ALIASES[clean];
+  if (mapped) return mapped;
+  return val; // unknown → pass through so Zod rejects it
+};
+
+export const preprocessStatus = (val: unknown) => {
+  if (typeof val !== 'string') return val;
+  const clean = val.trim().toLowerCase();
+  if (!clean) return undefined;
+  if (SPANISH_STATUS_MAP[clean]) {
+    return SPANISH_STATUS_MAP[clean];
+  }
+  return clean;
+};
+
 export const LeadFiltersSchema = z.object({
   status: z.string().optional(),
   industry: z.string().optional(),
   country: z.string().optional(),
-  locale: z.enum(['es', 'en']).optional(),
+  locale: z.preprocess(preprocessLocale, z.enum(['es', 'en']).optional()),
   investment_range: z.string().optional(),
   utm_campaign: z.string().optional(),
   platform: z.string().optional(),
@@ -19,7 +63,7 @@ export const LeadFiltersSchema = z.object({
 export const CrmLeadReadFiltersSchema = LeadFiltersSchema
   .omit({ status: true })
   .extend({
-    status: CrmStatusEnum.optional(),
+    status: z.preprocess(preprocessStatus, CrmStatusEnum.optional()),
   });
 
 export type CrmLeadReadFilters = z.infer<typeof CrmLeadReadFiltersSchema>;
@@ -32,7 +76,7 @@ export const SheetRowSchema = z.object({
   created_at: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: 'Invalid ISO created_at date',
   }),
-  locale: z.enum(['es', 'en']).default('es'),
+  locale: z.preprocess(preprocessLocale, z.enum(['es', 'en']).default('es')),
   country: z.string().default(''),
   full_name: z.string().default(''),
   email: z.string().email().or(z.literal('')).default(''),
