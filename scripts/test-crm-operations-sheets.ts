@@ -1188,6 +1188,58 @@ async function runTests() {
     const isUnique = new Set(campaignsOnly).size === campaignsOnly.length;
     assert(isUnique, 'getSourceCampaignOptions returns unique campaign names');
 
+    // 11.5 Visual Fixes validation: next_action_type, listOperations once, write_token absence
+    {
+      console.log('Testing visual fixes combined layer...');
+      const customOps: CrmLeadOperation[] = [
+        {
+          lead_id: fakeLeads[0].id,
+          crm_status: 'qualified',
+          priority: 'high',
+          owner_email: 'william-ficticio@luma.com',
+          next_action_type: 'Demo',
+          next_action_at: '2026-06-24T12:00:00.000Z',
+          last_contact_at: null,
+          lost_reason: null,
+          version: 1,
+          write_token: 'secret_token_123',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          updated_by: 'admin@luma.com',
+        }
+      ];
+
+      let listOpsCountLocal = 0;
+      const localCountingOpsRepo = new class extends FakeCrmOperationsRepository {
+        async listOperations(filters?: OperationsFilters) {
+          listOpsCountLocal++;
+          return super.listOperations(filters);
+        }
+      }(customOps);
+
+      const localReadService = new CrmReadService(fakeLeadRepo, localCountingOpsRepo);
+
+      // Verify listLeads merges next_action_type and calls listOperations exactly once
+      listOpsCountLocal = 0;
+      const result = await localReadService.listLeads({ page: 1, page_size: 10 });
+      assert(listOpsCountLocal === 1, `listLeads should call listOperations exactly once, got ${listOpsCountLocal}`);
+
+      const matchedLead = result.leads.find(l => l.id === fakeLeads[0].id);
+      assert(matchedLead !== undefined, 'Matched lead exists');
+      assert(matchedLead!.next_action_type === 'Demo', `next_action_type should merge correctly, expected 'Demo', got '${matchedLead!.next_action_type}'`);
+      assert(matchedLead!.crm_status === 'qualified', 'crm_status merges correctly');
+      assert(matchedLead!.priority === 'high', 'priority merges correctly');
+      assert(matchedLead!.owner_email === 'william-ficticio@luma.com', 'owner_email merges correctly');
+      assert(!('write_token' in matchedLead!), 'write_token remains absent in listLeads output');
+
+      // Verify getLeadById merges next_action_type and write_token is absent
+      const singleLead = await localReadService.getLeadById(fakeLeads[0].id);
+      assert(singleLead !== null, 'singleLead exists');
+      assert(singleLead!.next_action_type === 'Demo', `next_action_type should merge in getLeadById, got '${singleLead!.next_action_type}'`);
+      assert(!('write_token' in singleLead!), 'write_token remains absent in getLeadById output');
+      console.log('✅ Visual fixes combined layer tests passed successfully!');
+    }
+
     // 12. Pruebas de fecha en crm-date-display.ts
     const { formatCrmDate } = await import('../src/lib/crm/crm-date-display');
 

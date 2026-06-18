@@ -11,6 +11,7 @@ export interface CrmLeadReadModel extends LeadDetail {
   crm_status: CrmStatus;
   priority: CrmPriority | null;
   owner_email: string | null;
+  next_action_type: string | null;
   next_action_at: string | null;
 }
 
@@ -36,6 +37,7 @@ export class CrmReadService {
       crm_status: op ? op.crm_status : 'new',
       priority: op ? op.priority : null,
       owner_email: op ? op.owner_email : null,
+      next_action_type: op ? op.next_action_type : null,
       next_action_at: op ? op.next_action_at : null,
     };
   }

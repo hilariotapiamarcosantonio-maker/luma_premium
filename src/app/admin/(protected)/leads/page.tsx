@@ -15,6 +15,12 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
+function getOwnerDisplayName(email: string | null): string | null {
+  if (!email) return null;
+  const localPart = email.split('@')[0]?.trim();
+  return localPart || null;
+}
+
 export default async function LeadsPage({ searchParams }: PageProps) {
   // Enforces route check
   await proxyAdmin();
@@ -242,63 +248,74 @@ export default async function LeadsPage({ searchParams }: PageProps) {
           {paginatedResult.leads.length === 0 ? (
             <div className="p-8 text-center text-sm text-neutral-500">No se encontraron leads.</div>
           ) : (
-            paginatedResult.leads.map((lead) => (
-              <div key={lead.id} className="p-4 space-y-2 hover:bg-neutral-900/20 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-neutral-100">{lead.full_name || 'Sin nombre'}</h3>
-                    <p className="text-xs text-neutral-400">{lead.company || 'Sin empresa'}</p>
-                  </div>
-                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${CRM_STATUS_CONFIGS[lead.crm_status]?.badgeClass || 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>
-                    {CRM_STATUS_CONFIGS[lead.crm_status]?.label || lead.crm_status}
-                  </span>
-                </div>
+            paginatedResult.leads.map((lead) => {
+              const ownerDisplayName = getOwnerDisplayName(lead.owner_email);
+              const priorityLabel = lead.priority && CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.label;
+              const nextActionDate = lead.next_action_at ? formatCrmDate(lead.next_action_at) : null;
+              const nextActionType = lead.next_action_type?.trim();
+              const nextActionLine = [nextActionType, nextActionDate].filter(Boolean).join(' · ');
 
-                {(lead.priority || lead.owner_email || lead.next_action_at) && (
-                  <div className="flex flex-wrap gap-2 pt-1 pb-1 text-[10px]">
-                    {lead.priority && lead.priority !== 'medium' && (
-                      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold border ${CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.badgeClass}`}>
-                        {CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.label}
-                      </span>
-                    )}
-                    {lead.owner_email && (
-                      <span className="bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded text-neutral-400">
-                        Resp: {lead.owner_email.split('@')[0]}
-                      </span>
-                    )}
-                    {lead.next_action_at && (
-                      <span className="bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded text-neutral-400 font-mono">
-                        Acción: {formatCrmDate(lead.next_action_at)}
-                      </span>
-                    )}
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between text-xs text-neutral-500">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-semibold text-neutral-300">{getCountryLabel(lead.country) || 'País no especificado'}</span>
-                    <span className="text-[11px] text-amber-500/80 font-medium">
-                      {lead.investment_range === 'legacy_review'
-                        ? 'US$1,500–5,000 (histórico)'
-                        : lead.investment_range || 'Presupuesto no especificado'}
+              return (
+                <div key={lead.id} className="p-4 space-y-3 hover:bg-neutral-900/20 transition-colors min-w-0 break-words">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-neutral-100 truncate">{lead.full_name || 'Sin nombre'}</h3>
+                      <p className="text-xs text-neutral-400 truncate">{lead.company || 'Sin empresa'}</p>
+                    </div>
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 ${CRM_STATUS_CONFIGS[lead.crm_status]?.badgeClass || 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>
+                      {CRM_STATUS_CONFIGS[lead.crm_status]?.label || lead.crm_status}
                     </span>
                   </div>
-                  <span className="text-[11px]">{new Date(lead.created_at).toLocaleDateString('es-ES')}</span>
-                </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <span className="inline-flex items-center gap-1 text-[10px] text-neutral-300 font-semibold bg-neutral-900 border border-neutral-800 px-2 py-1 rounded">
-                    {getPlatformLabel(lead.platform)} • {getChannelLabel(lead.channel)}
-                  </span>
-                  <Link
-                    href={`/admin/leads/${lead.id}`}
-                    className="flex h-11 items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-4 text-xs text-amber-500 font-semibold hover:bg-neutral-800 hover:text-amber-400 min-h-[44px]"
-                  >
-                    Detalle <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
+                  {(priorityLabel || ownerDisplayName) && (
+                    <div className="flex items-center gap-2 text-xs">
+                      {priorityLabel && (
+                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.badgeClass}`}>
+                          {priorityLabel}
+                        </span>
+                      )}
+                      {ownerDisplayName && (
+                        <span className="text-[11px] text-neutral-400">
+                          Resp: <span className="font-medium text-neutral-300">{ownerDisplayName}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {nextActionLine && (
+                    <div className="text-[11px] text-neutral-400 bg-neutral-950/40 border border-neutral-800/60 rounded-lg p-2 font-mono flex items-center gap-1.5 min-w-0 break-words">
+                      <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider shrink-0">Próxima acción:</span>
+                      <span className="text-neutral-300 truncate">{nextActionLine}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-2 text-xs text-neutral-500">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="font-semibold text-neutral-300 truncate">{getCountryLabel(lead.country) || 'País no especificado'}</span>
+                      <span className="text-[11px] text-amber-500/80 font-medium truncate">
+                        {lead.investment_range === 'legacy_review'
+                          ? 'US$1,500–5,000 (histórico)'
+                          : lead.investment_range || 'Presupuesto no especificado'}
+                      </span>
+                    </div>
+                    <span className="text-[11px] shrink-0 font-mono">{new Date(lead.created_at).toLocaleDateString('es-ES')}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="inline-flex items-center gap-1 text-[10px] text-neutral-300 font-semibold bg-neutral-900 border border-neutral-800 px-2 py-1 rounded truncate">
+                      {getPlatformLabel(lead.platform)} • {getChannelLabel(lead.channel)}
+                    </span>
+                    <Link
+                      href={`/admin/leads/${lead.id}`}
+                      className="flex h-11 items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-4 text-xs text-amber-500 font-semibold hover:bg-neutral-800 hover:text-amber-400 min-h-[44px]"
+                      aria-label={`Abrir lead ${lead.full_name || 'sin nombre'}`}
+                    >
+                      Detalle <ChevronRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -311,11 +328,11 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                 <th className="py-4 px-6">Empresa</th>
                 <th className="py-4 px-6">País</th>
                 <th className="py-4 px-6">Atribución (Plataforma/Canal)</th>
-                <th className="py-4 px-6">Idioma</th>
+                <th className="py-4 px-6 hidden xl:table-cell">Idioma</th>
                 <th className="py-4 px-6">Industria</th>
                 <th className="py-4 px-6">Estado</th>
                 <th className="py-4 px-6">Fecha</th>
-                <th className="py-4 px-6 text-right">Acción</th>
+                <th className="py-4 px-6 text-center sticky right-0 z-10 bg-neutral-950 border-l border-b border-neutral-800 whitespace-nowrap min-w-[100px]">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-900 text-sm">
@@ -327,62 +344,72 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                 </tr>
               ) : (
                 paginatedResult.leads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-neutral-900/30 transition-colors">
-                    <td className="py-4 px-6 font-medium text-neutral-200">{lead.full_name || 'Sin nombre'}</td>
-                    <td className="py-4 px-6 text-neutral-400 truncate max-w-[150px]" title={lead.company}>
+                  <tr key={lead.id} className="group hover:bg-neutral-900/30 transition-colors">
+                    <td className="py-4 px-6 font-medium text-neutral-200 truncate max-w-[130px]">{lead.full_name || 'Sin nombre'}</td>
+                    <td className="py-4 px-6 text-neutral-400 truncate max-w-[120px]">
                       {lead.company || 'Sin empresa'}
                     </td>
-                    <td className="py-4 px-6 text-neutral-400 uppercase">{getCountryLabel(lead.country) || 'N/A'}</td>
+                    <td className="py-4 px-6 text-neutral-400 uppercase whitespace-nowrap">
+                      <span className="lg:hidden">{lead.country}</span>
+                      <span className="hidden lg:inline">{getCountryLabel(lead.country) || 'N/A'}</span>
+                    </td>
                     <td className="py-4 px-6 text-neutral-400">
                       <span className="inline-flex flex-col">
-                        <span className="font-semibold text-neutral-200 flex items-center gap-1">
+                        <span className="font-semibold text-neutral-200 flex items-center gap-1 whitespace-nowrap">
                           <Layers className="h-3 w-3 text-amber-500" />
                           {getPlatformLabel(lead.platform)}
                         </span>
-                        <span className="text-[10px] text-neutral-500 tracking-wide">
+                        <span className="text-[10px] text-neutral-500 tracking-wide whitespace-nowrap">
                           {getChannelLabel(lead.channel)}
                         </span>
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-neutral-400">
-                      <span className="flex items-center gap-1.5">
+                    <td className="py-4 px-6 text-neutral-400 hidden xl:table-cell">
+                      <span className="flex items-center gap-1.5 whitespace-nowrap">
                         <Globe className="h-3.5 w-3.5 text-neutral-500" />
                         {lead.locale === 'es' ? 'ES' : 'EN'}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-neutral-400 truncate max-w-[180px]" title={lead.industry}>
+                    <td className="py-4 px-6 text-neutral-400 truncate max-w-[130px]">
                       {lead.industry || 'No especificada'}
                     </td>
-                     <td className="py-4 px-6 text-neutral-400">
-                       <div className="flex flex-col gap-1.5 items-start">
-                         <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${CRM_STATUS_CONFIGS[lead.crm_status]?.badgeClass || 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>
-                           {CRM_STATUS_CONFIGS[lead.crm_status]?.label || lead.crm_status}
-                         </span>
-                         {lead.priority && lead.priority !== 'medium' && (
-                           <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold border ${CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.badgeClass}`}>
-                             {CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.label}
-                           </span>
-                         )}
-                         {lead.owner_email && (
-                           <span className="text-[10px] text-neutral-500 truncate max-w-[120px]" title={lead.owner_email}>
-                             Resp: {lead.owner_email.split('@')[0]}
-                           </span>
-                         )}
-                         {lead.next_action_at && (
-                           <span className="text-[10px] text-neutral-500 font-mono">
-                             Acción: {formatCrmDate(lead.next_action_at)}
-                           </span>
-                         )}
-                       </div>
-                     </td>
                     <td className="py-4 px-6 text-neutral-400">
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${CRM_STATUS_CONFIGS[lead.crm_status]?.badgeClass || 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>
+                          {CRM_STATUS_CONFIGS[lead.crm_status]?.label || lead.crm_status}
+                        </span>
+
+                        {(() => {
+                          const priorityLabel = lead.priority && CRM_PRIORITY_CONFIGS[lead.priority as 'low' | 'medium' | 'high']?.label;
+                          const ownerDisplayName = getOwnerDisplayName(lead.owner_email);
+                          const ownershipLine = [priorityLabel, ownerDisplayName].filter(Boolean).join(' · ');
+                          return ownershipLine ? (
+                            <span className="text-[10px] text-neutral-400 whitespace-nowrap">
+                              {ownershipLine}
+                            </span>
+                          ) : null;
+                        })()}
+
+                        {(() => {
+                          const nextActionDate = lead.next_action_at ? formatCrmDate(lead.next_action_at) : null;
+                          const nextActionType = lead.next_action_type?.trim();
+                          const nextActionLine = [nextActionType, nextActionDate].filter(Boolean).join(' · ');
+                          return nextActionLine ? (
+                            <span className="text-[10px] text-neutral-500 font-mono whitespace-nowrap">
+                              {nextActionLine}
+                            </span>
+                          ) : null;
+                        })()}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-neutral-400 whitespace-nowrap">
                       {new Date(lead.created_at).toLocaleDateString('es-ES')}
                     </td>
-                    <td className="py-4 px-6 text-right">
+                    <td className="py-4 px-6 sticky right-0 z-10 bg-neutral-950 group-hover:bg-neutral-900 border-l border-b border-neutral-900 text-center transition-colors min-w-[100px] whitespace-nowrap">
                       <Link
                         href={`/admin/leads/${lead.id}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-800 hover:bg-neutral-800 text-neutral-300 hover:text-white"
-                        title="Ver detalle del lead"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-800 text-neutral-300 hover:text-white transition-colors"
+                        aria-label={`Abrir lead ${lead.full_name || 'sin nombre'}`}
                       >
                         <ChevronRight className="h-4 w-4" />
                       </Link>
