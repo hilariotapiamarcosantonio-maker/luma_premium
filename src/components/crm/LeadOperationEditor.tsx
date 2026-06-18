@@ -407,20 +407,20 @@ export default function LeadOperationEditor({
             <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider">
               Fecha Próxima Acción
             </label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(150px,170px)] gap-2">
               <input
                 type="date"
                 value={nextActionDate}
                 onChange={(e) => handleNextActionDateChange(e.target.value)}
                 disabled={!canEdit}
-                className="w-2/3 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
               />
               <input
                 type="time"
                 value={nextActionTime}
                 onChange={(e) => setNextActionTime(e.target.value)}
                 disabled={!canEdit}
-                className="w-1/3 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+                className="w-full min-w-[150px] rounded-lg border border-neutral-800 bg-neutral-950 px-3 pr-10 py-2 text-sm text-neutral-100 [color-scheme:dark] focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
               />
             </div>
             {getNextActionError() && (
@@ -447,20 +447,20 @@ export default function LeadOperationEditor({
                 </button>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(150px,170px)] gap-2">
               <input
                 type="date"
                 value={lastContactDate}
                 onChange={(e) => setLastContactDate(e.target.value)}
                 disabled={!canEdit}
-                className="w-2/3 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
               />
               <input
                 type="time"
                 value={lastContactTime}
                 onChange={(e) => setLastContactTime(e.target.value)}
                 disabled={!canEdit}
-                className="w-1/3 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+                className="w-full min-w-[150px] rounded-lg border border-neutral-800 bg-neutral-950 px-3 pr-10 py-2 text-sm text-neutral-100 [color-scheme:dark] focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
               />
             </div>
             {getLastContactError() && (
