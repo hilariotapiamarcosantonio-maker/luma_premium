@@ -85,9 +85,12 @@ export default async function LeadDetailPage({ params }: PageProps) {
         <div className="lg:col-span-1 space-y-6">
           <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 space-y-6">
             <div className="space-y-2">
-              <span className="inline-flex items-center rounded-full bg-neutral-800 border border-neutral-700 px-2.5 py-0.5 text-xs font-semibold text-amber-500 uppercase tracking-wider">
-                {lead.status}
-              </span>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-neutral-400 font-medium">Estado de captura:</span>
+                <span className="inline-flex items-center rounded-full bg-neutral-800 border border-neutral-700 px-2.5 py-0.5 font-semibold text-amber-500 uppercase tracking-wider">
+                  {lead.status}
+                </span>
+              </div>
               <h1 className="text-2xl font-bold tracking-tight text-neutral-100 break-words">
                 {lead.full_name || 'Sin nombre'}
               </h1>
