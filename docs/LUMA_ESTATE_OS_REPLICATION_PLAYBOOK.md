@@ -66,6 +66,14 @@ Filtra prospectos para asegurar que solo tratemos con clientes calificados (C-Le
   4. Mantener `.env.local` fuera de Git. Solo versionar `.env.example` limpio.
   5. Probar captura de datos localmente antes de Vercel.
 
+### 12. CRM Operativo - Contratos de Dominio y Repositorio Mock (Subfase 2.0)
+Para habilitar la operatividad comercial sin comprometer la base de datos de captación ni incurrir en costes de infraestructura iniciales, se replica el siguiente patrón de arquitectura desacoplada:
+- **Contratos de Dominio Desacoplados (`operations-types.ts`, `operations-repository.ts`):** Definición estricta de interfaces para operaciones, notas inmutables y logs de actividad. Contratos definidos mediante interfaces TypeScript en lugar de clases concretas para permitir el intercambio transparente entre hojas de cálculo y bases de datos SQL (Supabase).
+- **Fábrica de Repositorios Dinámica (`operations-repository-factory.ts`):** Carga dinámica del repositorio concreto basada en variables de entorno (`CRM_OPERATIONS_MODE` = `mock` | `sheets`). Evita problemas de compilación en fases tempranas y facilita pruebas de integración ágiles.
+- **Capa de Composición (`crm-lead-service.ts`):** Orquesta la combinación de datos inmutables de captación con el estado operativo de los leads. Aplica valores por defecto seguros (`crm_status` = `new`, `owner_email` = `null`) y realiza filtros/paginación en memoria.
+- **Validación Estricta y Normalización (`operations-schemas.ts`):** Esquemas Zod que preprocesan correos electrónicos para limpiarlos (trim) y normalizarlos a minúsculas antes de la validación. Reglas de negocio condicionales estrictas (ej. `lost_reason` obligatorio únicamente si el estado es `lost`, y prohibido en otros casos).
+- **Aislamiento en Pruebas Unitarias (`mock-operations-repository.ts`):** Implementación en memoria con un método estático `reset()` para limpiar mapas de almacenamiento y evitar contaminación de datos entre ejecuciones de pruebas.
+
 ### Proceso para Adaptar a Otro Sector
 1. **Identificar la fuga de leads** en ese sector (Ej. concesionarios de lujo).
 2. **Renombrar el producto** si es necesario (Ej. Luma Auto OS).
