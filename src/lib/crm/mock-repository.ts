@@ -299,8 +299,18 @@ const MOCK_LEADS: LeadDetail[] = MOCK_LEADS_RAW.map((raw) => {
 });
 
 export class MockCrmRepository implements CrmRepository {
+  static mockLeads: LeadDetail[] | null = null;
+
+  static reset() {
+    MockCrmRepository.mockLeads = null;
+  }
+
+  private getLeads(): LeadDetail[] {
+    return MockCrmRepository.mockLeads || MOCK_LEADS;
+  }
+
   async listLeads(filters: LeadFilters): Promise<PaginatedLeads> {
-    let filtered = [...MOCK_LEADS];
+    let filtered = [...this.getLeads()];
 
     // Apply filters
     if (filters.status) {
@@ -360,17 +370,18 @@ export class MockCrmRepository implements CrmRepository {
 
   async getLeadById(leadId: string): Promise<LeadDetail | null> {
     if (!isValidLeadId(leadId)) return null;
-    const lead = MOCK_LEADS.find((l) => l.id === leadId);
+    const lead = this.getLeads().find((l) => l.id === leadId);
     return lead || null;
   }
 
   async getDashboardMetrics(): Promise<DashboardMetrics> {
-    const totalLeads = MOCK_LEADS.length;
-    const newLeads = MOCK_LEADS.filter((l) => l.status === 'nuevo').length;
+    const leads = this.getLeads();
+    const totalLeads = leads.length;
+    const newLeads = leads.filter((l) => l.status === 'nuevo').length;
 
     // Real metrics computed on the fly
-    const leadsWithPhone = MOCK_LEADS.filter((l) => l.phone && l.phone.trim() !== '').length;
-    const leadsWithBudget = MOCK_LEADS.filter((l) => l.investment_range && l.investment_range !== 'Necesito diagnóstico antes de definirlo').length;
+    const leadsWithPhone = leads.filter((l) => l.phone && l.phone.trim() !== '').length;
+    const leadsWithBudget = leads.filter((l) => l.investment_range && l.investment_range !== 'Necesito diagnóstico antes de definirlo').length;
 
     const localeMap: Record<string, number> = {};
     const countryMap: Record<string, number> = {};
@@ -380,7 +391,7 @@ export class MockCrmRepository implements CrmRepository {
     const platformMap: Record<string, number> = {};
     const channelMap: Record<string, number> = {};
 
-    MOCK_LEADS.forEach((l) => {
+    leads.forEach((l) => {
       localeMap[l.locale] = (localeMap[l.locale] || 0) + 1;
       countryMap[l.country || 'N/A'] = (countryMap[l.country || 'N/A'] || 0) + 1;
       industryMap[l.industry || 'N/A'] = (industryMap[l.industry || 'N/A'] || 0) + 1;
@@ -401,7 +412,7 @@ export class MockCrmRepository implements CrmRepository {
     const byChannel = Object.entries(channelMap).map(([channel, count]) => ({ channel, count }));
 
     // Recent 5 leads
-    const recentLeads = [...MOCK_LEADS]
+    const recentLeads = [...leads]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
 

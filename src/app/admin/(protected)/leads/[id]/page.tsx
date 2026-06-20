@@ -1,6 +1,7 @@
 import { proxyAdmin } from '@/proxy';
-import { getCrmRepository } from '@/lib/crm/repository';
+import { getCrmReadService } from '@/lib/crm/crm-read-service';
 import { getCrmOperationsRepository } from '@/lib/crm/operations-repository-factory';
+import { ForbiddenError } from '@/lib/auth/permissions';
 import { getSalesEmails } from '@/lib/auth/authorized-users';
 import { toLeadOperationClientDto } from '@/lib/crm/operations-dto';
 import LeadOperationEditor from '@/components/crm/LeadOperationEditor';
@@ -36,13 +37,24 @@ function getWhatsAppLink(phone: string): string | null {
 
 export default async function LeadDetailPage({ params }: PageProps) {
   // Enforces auth proxy and retrieves session user details
-  const { user: currentUser } = await proxyAdmin();
+  const authInfo = await proxyAdmin();
+  const currentUser = authInfo.user;
 
   const resolvedParams = await params;
   const leadId = resolvedParams.id;
 
-  const repository = await getCrmRepository();
-  const lead = await repository.getLeadById(leadId);
+  const readService = await getCrmReadService();
+  // getLeadById enforces lead-level permissions: Sales may only access leads they own.
+  // A ForbiddenError is surfaced as "not found" so foreign leads never reveal their existence.
+  let lead;
+  try {
+    lead = await readService.getLeadById(leadId, currentUser);
+  } catch (err) {
+    if (err instanceof ForbiddenError) {
+      notFound();
+    }
+    throw err;
+  }
 
   if (!lead) {
     notFound();
@@ -52,6 +64,17 @@ export default async function LeadDetailPage({ params }: PageProps) {
   const opsRepo = await getCrmOperationsRepository();
   const currentOp = await opsRepo.getOperationByLeadId(leadId);
   const clientOperation = currentOp ? toLeadOperationClientDto(currentOp) : null;
+
+  // Retrieve notes for this lead. Reached only after the lead-access check above passed,
+  // so Sales can never read notes from leads they do not own. Works for both manual (lm_)
+  // and web (lp_) leads. Only safe fields (content, author, date) are exposed to the view;
+  // internal identifiers/metadata (id, lead_id, updated_at) are intentionally dropped.
+  const rawNotes = await opsRepo.listNotes(leadId);
+  const notes = rawNotes.map((n) => ({
+    author: n.created_by,
+    createdAt: n.created_at,
+    body: n.body,
+  }));
 
   // Compute permissions on the server
   const currentUserEmail = currentUser.email.toLowerCase().trim();
@@ -169,6 +192,45 @@ export default async function LeadDetailPage({ params }: PageProps) {
             salesEmails={salesEmails}
             canEdit={canEdit}
           />
+
+          {/* Card: Notas del Lead */}
+          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 space-y-5">
+            <div className="flex items-center gap-2 pb-4 border-b border-neutral-800">
+              <MessageSquare className="h-4 w-4 text-amber-500" />
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">
+                Notas
+              </h2>
+              {notes.length > 0 && (
+                <span className="ml-auto text-[10px] font-mono text-neutral-500 bg-neutral-950 px-2 py-0.5 rounded border border-neutral-800">
+                  {notes.length}
+                </span>
+              )}
+            </div>
+
+            {notes.length === 0 ? (
+              <p className="text-sm text-neutral-500 italic">
+                No hay notas registradas para este lead.
+              </p>
+            ) : (
+              <ul className="space-y-4">
+                {notes.map((note, index) => (
+                  <li
+                    key={index}
+                    className="rounded-lg border border-neutral-800 bg-neutral-950/40 p-4"
+                  >
+                    <p className="text-sm text-neutral-200 leading-relaxed whitespace-pre-wrap break-words">
+                      {note.body}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500">
+                      <span className="font-medium text-neutral-400 break-all">{note.author}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{new Date(note.createdAt).toLocaleString('es-ES')}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           {/* Card 1: Ficha Operativa (Datos Normalizados) */}
           <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 space-y-6">

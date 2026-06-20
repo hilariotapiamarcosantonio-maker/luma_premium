@@ -13,6 +13,9 @@ export interface ActionResponse {
   success: boolean;
   error?: 'UNAUTHENTICATED' | 'UNAUTHORIZED' | 'VALIDATION_ERROR' | 'CONCURRENCY_ERROR' | 'LEAD_NOT_FOUND' | 'INTERNAL_ERROR';
   operation?: CrmLeadOperation;
+  // Field-specific validation messages keyed by field name (e.g. last_contact_at, next_action_at).
+  // Lets the UI surface errors next to the offending field instead of a single generic message.
+  fieldErrors?: Record<string, string>;
 }
 
 export interface MinimalSession {
@@ -47,15 +50,31 @@ export async function executeUpdateLeadOperation(
     // 3. Zod Input Validation using the strict schema
     const parseResult = StrictUpdateActionSchema.safeParse(rawInput);
     if (!parseResult.success) {
-      return { success: false, error: 'VALIDATION_ERROR' };
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parseResult.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === 'string' && !fieldErrors[key]) {
+          fieldErrors[key] = issue.message;
+        }
+      }
+      return { success: false, error: 'VALIDATION_ERROR', fieldErrors };
     }
 
     const input = parseResult.data;
     const leadId = input.lead_id;
 
-    // 4. Verify that lead exists in original leads sheet Luma Leads V2
+    // 4. Verify that lead exists in original leads sheet Luma Leads V2 or ManualLeads
     const leadRepo = await getCrmRepository();
-    const lead = await leadRepo.getLeadById(leadId);
+    let lead = await leadRepo.getLeadById(leadId);
+    if (!lead) {
+      const { getManualLeadsRepository } = await import('./manual-leads-repository');
+      const manualLeadsRepo = await getManualLeadsRepository();
+      const manualLead = await manualLeadsRepo.getManualLeadById(leadId);
+      if (manualLead) {
+        const { mapManualLeadToLeadDetail } = await import('./normalizers');
+        lead = mapManualLeadToLeadDetail(manualLead);
+      }
+    }
     if (!lead) {
       return { success: false, error: 'LEAD_NOT_FOUND' };
     }
@@ -110,7 +129,11 @@ export async function executeUpdateLeadOperation(
           : currentOp?.lost_reason ?? null;
 
     if (effectiveStatus === 'lost' && (!effectiveLostReason || effectiveLostReason.trim().length === 0)) {
-      return { success: false, error: 'VALIDATION_ERROR' };
+      return {
+        success: false,
+        error: 'VALIDATION_ERROR',
+        fieldErrors: { lost_reason: 'El motivo de pérdida es obligatorio cuando el estado es Perdido.' },
+      };
     }
 
     // 9. Handle lost_reason state transition cleanup:

@@ -14,7 +14,8 @@ export const CrmStatusEnum = z.enum([
 
 export const CrmPriorityEnum = z.enum(['low', 'medium', 'high']);
 
-export const LeadIdSchema = z.string().regex(/^lp_[a-f0-9]{24}$/, 'Formato de Lead ID inválido');
+// Accepts both web leads (lp_) and manually-created leads (lm_), each followed by 24 hex chars.
+export const LeadIdSchema = z.string().regex(/^l[pm]_[a-f0-9]{24}$/, 'Formato de Lead ID inválido');
 
 export const ActorEmailSchema = z.preprocess(
   (val) => (typeof val === 'string' ? val.trim().toLowerCase() : val),
@@ -127,6 +128,38 @@ export const refineNextActionFields = (
   }
 };
 
+// Refinement for last_contact_at: it may be BEFORE the lead creation (the contact could have
+// happened before registering the lead in the CRM), but it must never be in the FUTURE.
+// A small skew tolerance avoids false negatives from client/server clock differences and the
+// "Marcar ahora" shortcut.
+export const refineLastContactNotFuture = (
+  data: { last_contact_at?: string | null },
+  ctx: z.RefinementCtx
+) => {
+  const at = data.last_contact_at ? data.last_contact_at.trim() : '';
+  if (!at) return;
+
+  const timestamp = Date.parse(at);
+  if (isNaN(timestamp)) {
+    // Format is already enforced by z.string().datetime(); guard defensively.
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['last_contact_at'],
+      message: 'Fecha de último contacto inválida.',
+    });
+    return;
+  }
+
+  const SKEW_TOLERANCE_MS = 5 * 60 * 1000; // 5 minutes
+  if (timestamp > Date.now() + SKEW_TOLERANCE_MS) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['last_contact_at'],
+      message: 'El último contacto no puede ser una fecha futura.',
+    });
+  }
+};
+
 // Combined update refinement
 export const refineUpdateOperation = (
   data: {
@@ -134,11 +167,13 @@ export const refineUpdateOperation = (
     lost_reason?: string | null;
     next_action_type?: string | null;
     next_action_at?: string | null;
+    last_contact_at?: string | null;
   },
   ctx: z.RefinementCtx
 ) => {
   refineOperationStatus(data, ctx);
   refineNextActionFields(data, ctx);
+  refineLastContactNotFuture(data, ctx);
 };
 
 export const UpdateOperationSchema = UpdateOperationObjectSchema.superRefine(refineUpdateOperation);

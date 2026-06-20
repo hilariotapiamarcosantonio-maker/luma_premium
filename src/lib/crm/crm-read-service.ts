@@ -6,6 +6,9 @@ import type { CrmOperationsRepository } from './operations-repository';
 import type { LeadDetail, DashboardMetrics } from './types';
 import type { CrmStatus, CrmPriority, CrmLeadOperation } from './operations-types';
 import type { CrmLeadReadFilters } from './schemas';
+import { getManualLeadsRepository } from './manual-leads-repository';
+import { mapManualLeadToLeadDetail } from './normalizers';
+import { assertAuthorized, ForbiddenError, UnauthorizedError } from '@/lib/auth/permissions';
 
 export interface CrmLeadReadModel extends LeadDetail {
   crm_status: CrmStatus;
@@ -85,35 +88,85 @@ export class CrmReadService {
    * Lists leads, combining them in-memory with operational details.
    * Applies status filter, computes total count, and then paginates.
    */
-  async listLeads(filters: CrmLeadReadFilters): Promise<{
+  async listLeads(
+    filters: CrmLeadReadFilters,
+    sessionUser: { email?: string | null }
+  ): Promise<{
     leads: CrmLeadReadModel[];
     totalCount: number;
     page: number;
     page_size: number;
     totalPages: number;
   }> {
-    // 1. Fetch all source leads (bypassing operational status filtering)
-    const rawLeads = await this.listAllSourceLeads(filters);
+    // 1. Fetch source leads (Luma Leads V2 + ManualLeads)
+    const rawLeads = await this.listAllSourceLeads({});
+    const manualLeadsRepo = await getManualLeadsRepository();
+    const manualLeads = await manualLeadsRepo.listManualLeads();
 
-    // 2. Fetch operations (exactly once per invocation)
+    // 2. Fetch operations
     const operations = await this.opsRepo.listOperations({});
     const opsMap = new Map<string, CrmLeadOperation>();
     operations.forEach((op) => {
       opsMap.set(op.lead_id, op);
     });
 
-    // 3. Merge capture data and operational data
-    let mergedLeads: CrmLeadReadModel[] = rawLeads.map((lead) => {
+    // 3. Normalización
+    const normalizedManual = manualLeads.map(lead => mapManualLeadToLeadDetail(lead));
+    const allLeads = [...rawLeads, ...normalizedManual];
+
+    // 4. Unión por lead_id
+    let mergedLeads: CrmLeadReadModel[] = allLeads.map((lead) => {
       const op = opsMap.get(lead.id) || null;
       return this.mergeLeadWithOperation(lead, op);
     });
 
-    // 4. Apply crm_status filter in memory
+    // 5. Permisos: Filtro por Sales
+    const authUser = assertAuthorized(sessionUser);
+    if (authUser.role === 'sales') {
+      mergedLeads = mergedLeads.filter((l) => l.owner_email === authUser.email);
+    }
+
+    // 6. Filtros
     if (filters.status) {
       mergedLeads = mergedLeads.filter((l) => l.crm_status === filters.status);
     }
+    if (filters.locale) {
+      mergedLeads = mergedLeads.filter((l) => l.locale === filters.locale);
+    }
+    if (filters.country) {
+      mergedLeads = mergedLeads.filter((l) => l.country === filters.country);
+    }
+    if (filters.industry) {
+      mergedLeads = mergedLeads.filter((l) => l.industry === filters.industry);
+    }
+    if (filters.investment_range) {
+      mergedLeads = mergedLeads.filter((l) => l.investment_range === filters.investment_range);
+    }
+    if (filters.utm_campaign) {
+      mergedLeads = mergedLeads.filter((l) => l.utm_campaign === filters.utm_campaign);
+    }
+    if (filters.platform) {
+      mergedLeads = mergedLeads.filter((l) => l.platform === filters.platform);
+    }
+    if (filters.channel) {
+      mergedLeads = mergedLeads.filter((l) => l.channel === filters.channel);
+    }
+    if (filters.date_from) {
+      const fromTime = new Date(filters.date_from).getTime();
+      mergedLeads = mergedLeads.filter((l) => new Date(l.created_at).getTime() >= fromTime);
+    }
+    if (filters.date_to) {
+      const toTime = new Date(filters.date_to).getTime();
+      mergedLeads = mergedLeads.filter((l) => new Date(l.created_at).getTime() <= toTime);
+    }
 
-    // 5. In-Memory Pagination after filtering
+    mergedLeads.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+    );
+
+    // 7. Paginación
     const page = filters.page || 1;
     const pageSize = filters.page_size || 25;
     const totalCount = mergedLeads.length;
@@ -133,20 +186,49 @@ export class CrmReadService {
   /**
    * Retrieves a single lead by ID, merging its operational data.
    */
-  async getLeadById(leadId: string): Promise<CrmLeadReadModel | null> {
-    const lead = await this.leadRepo.getLeadById(leadId);
+  async getLeadById(
+    leadId: string,
+    sessionUser: { email?: string | null }
+  ): Promise<CrmLeadReadModel | null> {
+    // 0. Permisos de autenticación
+    const authUser = assertAuthorized(sessionUser);
+
+    // 1. Fetch lead from Luma Leads V2
+    let lead = await this.leadRepo.getLeadById(leadId);
+
+    // 2. If not found, look up in ManualLeads
+    if (!lead) {
+      const manualLeadsRepo = await getManualLeadsRepository();
+      const manualLead = await manualLeadsRepo.getManualLeadById(leadId);
+      if (manualLead) {
+        lead = mapManualLeadToLeadDetail(manualLead);
+      }
+    }
+
     if (!lead) return null;
 
-    // Fetch operation for a single lead (exactly once)
+    // 3. Union with operations
     const op = await this.opsRepo.getOperationByLeadId(leadId);
-    return this.mergeLeadWithOperation(lead, op);
+    const merged = this.mergeLeadWithOperation(lead, op);
+
+    // 4. Permisos específicos: Sales sólo puede ver sus propios leads
+    if (authUser.role === 'sales' && merged.owner_email !== authUser.email) {
+      throw new ForbiddenError('No tienes permisos para ver este lead');
+    }
+
+    return merged;
   }
 
   /**
-   * Retrieves unique campaign names from the source capture repository without calling listOperations.
+   * Retrieves unique campaign names from the source capture repository.
    */
-  async getSourceCampaignOptions(): Promise<string[]> {
-    const metrics = await this.leadRepo.getDashboardMetrics();
+  async getSourceCampaignOptions(
+    sessionUser: { email?: string | null }
+  ): Promise<string[]> {
+    if (!sessionUser || !sessionUser.email) {
+      throw new UnauthorizedError();
+    }
+    const metrics = await this.getDashboardMetrics(sessionUser);
     const campaigns = metrics.byCampaign
       .map((item) => item.campaign)
       .filter((c): c is string => typeof c === 'string' && c.trim() !== '');
@@ -156,18 +238,28 @@ export class CrmReadService {
   /**
    * Computes dashboard metrics, combining all leads and operations.
    */
-  async getDashboardMetrics(): Promise<CrmDashboardMetrics> {
+  async getDashboardMetrics(sessionUser: { email?: string | null }): Promise<CrmDashboardMetrics> {
+    // 0. Permisos
+    const authUser = assertAuthorized(sessionUser);
+
     // 1. Fetch all leads from the capture repository
     const rawLeads = await this.listAllSourceLeads({});
 
-    // 2. Fetch all operations (exactly once)
+    // 2. Fetch all manual leads
+    const manualLeadsRepo = await getManualLeadsRepository();
+    const manualLeads = await manualLeadsRepo.listManualLeads();
+    const normalizedManual = manualLeads.map(lead => mapManualLeadToLeadDetail(lead));
+
+    const allLeads = [...rawLeads, ...normalizedManual];
+
+    // 3. Fetch all operations (exactly once)
     const operations = await this.opsRepo.listOperations({});
     const opsMap = new Map<string, CrmLeadOperation>();
     operations.forEach((op) => {
       opsMap.set(op.lead_id, op);
     });
 
-    // 3. Initialize byCrmStatus record with all 9 states
+    // 4. Initialize byCrmStatus record with all 9 states
     const byCrmStatus: Record<CrmStatus, number> = {
       new: 0,
       contacted: 0,
@@ -180,22 +272,27 @@ export class CrmReadService {
       nurture: 0,
     };
 
-    // 4. Merge and count
-    const mergedLeads: CrmLeadReadModel[] = rawLeads.map((lead) => {
+    // 5. Merge and apply sales role filtering if applicable
+    let mergedLeads: CrmLeadReadModel[] = allLeads.map((lead) => {
       const op = opsMap.get(lead.id) || null;
-      const merged = this.mergeLeadWithOperation(lead, op);
+      return this.mergeLeadWithOperation(lead, op);
+    });
 
+    if (authUser.role === 'sales') {
+      mergedLeads = mergedLeads.filter((l) => l.owner_email === authUser.email);
+    }
+
+    // Count states
+    mergedLeads.forEach((merged) => {
       if (merged.crm_status in byCrmStatus) {
         byCrmStatus[merged.crm_status]++;
       }
-
-      return merged;
     });
 
     const totalLeads = mergedLeads.length;
     const newLeads = byCrmStatus.new;
 
-    const leadsWithPhone = mergedLeads.filter((l) => l.phone && l.phone.trim() !== '').length;
+    const leadsWithPhone = mergedLeads.filter((l) => l.phone && l.phone.replace(/\D/g, '').length > 0).length;
     const leadsWithBudget = mergedLeads.filter((l) => l.investment_range && l.investment_range !== 'Necesito diagnóstico antes de definirlo').length;
 
     const localeMap: Record<string, number> = {};

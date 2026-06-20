@@ -450,3 +450,92 @@ export function mapRowArrayToNormalizedFields(
     raw_page_origin,
   };
 }
+
+export function normalizePhoneNumber(phone: string): string {
+  if (!phone) return '';
+  const clean = phone.trim();
+  const startsWithPlus = clean.startsWith('+');
+  const digits = clean.replace(/\D/g, '');
+  return startsWithPlus ? `+${digits}` : digits;
+}
+
+export function getPhoneDigits(phone: string): string {
+  if (!phone) return '';
+  return phone.replace(/\D/g, '');
+}
+
+export interface ManualLeadInputForMapping {
+  lead_id: string;
+  full_name: string;
+  phone: string;
+  email: string;
+  company: string;
+  country: string;
+  language: 'es' | 'en';
+  industry: string;
+  investment_range: string;
+  capture_channel: string;
+  campaign: string;
+  source: string;
+  capture_status: string;
+  consent_to_contact: boolean;
+  created_at: string;
+  created_by: string;
+  updated_at: string | null;
+}
+
+export function mapManualLeadToLeadDetail(lead: ManualLeadInputForMapping): LeadDetail {
+  const normalizedCountry = normalizeCountryCode(lead.country);
+  const normalizedRange = normalizeInvestmentRange(lead.investment_range);
+  const normalizedInd = normalizeIndustry(lead.industry);
+
+  const { platform, channel } = normalizeAttribution({
+    utm_source: lead.source,
+    utm_medium: lead.capture_channel,
+    utm_campaign: lead.campaign,
+    source: lead.source,
+  });
+
+  return {
+    id: lead.lead_id,
+    schema_version: 'v1',
+    created_at: lead.created_at,
+    locale: lead.language === 'en' ? 'en' : 'es',
+    country: normalizedCountry,
+    full_name: lead.full_name,
+    email: lead.email,
+    phone: lead.phone,
+    company: lead.company,
+    role: '',
+    industry: normalizedInd,
+    industry_detail: '',
+    team_size: '',
+    lead_volume: '',
+    acquisition_channels: lead.capture_channel,
+    advertising_status: '',
+    current_tools: '',
+    main_bottleneck: '',
+    desired_outcome: '',
+    solution_interest: '',
+    timeline: '',
+    investment_range: normalizedRange,
+    source: lead.source,
+    page_origin: '',
+    utm_source: lead.source,
+    utm_medium: lead.capture_channel,
+    utm_campaign: lead.campaign,
+    utm_content: '',
+    utm_term: '',
+    status: lead.capture_status,
+    platform,
+    channel,
+    raw_investment_range: lead.investment_range,
+    raw_industry: lead.industry,
+    raw_country: lead.country,
+    raw_source: lead.source,
+    raw_utm_source: lead.source,
+    raw_utm_medium: lead.capture_channel,
+    raw_utm_campaign: lead.campaign,
+    raw_page_origin: '',
+  };
+}

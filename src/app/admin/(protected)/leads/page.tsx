@@ -23,7 +23,7 @@ function getOwnerDisplayName(email: string | null): string | null {
 
 export default async function LeadsPage({ searchParams }: PageProps) {
   // Enforces route check
-  await proxyAdmin();
+  const authInfo = await proxyAdmin();
 
   // Next.js 16 searchParams resolution
   const rawParams = await searchParams;
@@ -48,18 +48,28 @@ export default async function LeadsPage({ searchParams }: PageProps) {
 
   const readService = await getCrmReadService();
   const [paginatedResult, campaigns] = await Promise.all([
-    readService.listLeads(activeFilters),
-    readService.getSourceCampaignOptions(),
+    readService.listLeads(activeFilters, authInfo.user),
+    readService.getSourceCampaignOptions(authInfo.user),
   ]);
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Leads</h1>
-        <p className="text-sm text-neutral-400">
-          Listado de prospectos captados de formularios y canales Luma Premium.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Leads</h1>
+          <p className="text-sm text-neutral-400">
+            Listado de prospectos captados de formularios y canales Luma Premium.
+          </p>
+        </div>
+        <div>
+          <Link
+            href="/admin/leads/nuevo"
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-amber-500 px-4 text-sm font-semibold text-neutral-950 hover:bg-amber-400 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 min-h-[40px]"
+          >
+            Agregar lead
+          </Link>
+        </div>
       </div>
 
       {/* Mobile Drawer trigger */}

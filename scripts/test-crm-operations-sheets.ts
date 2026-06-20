@@ -109,6 +109,8 @@ console.log('Running Google Sheets Operations Repository offline tests...');
 
 // Set temporary valid env variable for testing
 process.env.LUMA_CRM_OPS_SPREADSHEET_ID = 'test-spreadsheet-id-123';
+process.env.CRM_ADMIN_EMAILS = 'admin@example.com';
+process.env.CRM_SALES_EMAILS = 'sales1@example.com,sales2@example.com';
 
 async function runTests() {
   // 1. Schema Check & Validation
@@ -970,6 +972,8 @@ async function runTests() {
       }
     }
 
+    const testAdminUser = { email: 'admin@example.com' };
+
     // 1. El esquema de la página acepta los nueve estados
     const validStatuses: CrmStatus[] = [
       'new',
@@ -996,7 +1000,7 @@ async function runTests() {
       return {
         id: `lp_${idNum}`,
         schema_version: '2',
-        created_at: new Date().toISOString(),
+        created_at: new Date(Date.now() - i * 60000).toISOString(),
         locale: 'es',
         country: 'DO',
         full_name: `Lead ${i + 1}`,
@@ -1042,7 +1046,7 @@ async function runTests() {
     const testService = new CrmReadService(fakeLeadRepo, fakeOpsRepo);
 
     // Más de 100 leads se recopilan completamente sin quedar truncados en 100
-    const listRes = await testService.listLeads({ page: 1, page_size: 25 });
+    const listRes = await testService.listLeads({ page: 1, page_size: 25 }, testAdminUser);
     assert(listRes.leads.length === 25, `Should return first page of 25 leads, got ${listRes.leads.length}`);
     assert(listRes.totalCount === 205, `totalCount should be 205, got ${listRes.totalCount}`);
 
@@ -1068,7 +1072,7 @@ async function runTests() {
     const fakeOpsRepoWithOp: CrmOperationsRepository = new FakeCrmOperationsRepository(fakeOps);
     const testServiceWithOp = new CrmReadService(fakeLeadRepo, fakeOpsRepoWithOp);
 
-    const filterRes = await testServiceWithOp.listLeads({ status: 'negotiation', page: 1, page_size: 10 });
+    const filterRes = await testServiceWithOp.listLeads({ status: 'negotiation', page: 1, page_size: 10 }, testAdminUser);
     // 4. El total filtrado es correcto
     assert(filterRes.totalCount === 1, `Filtered totalCount should be 1, got ${filterRes.totalCount}`);
     assert(filterRes.leads.length === 1, `Filtered leads length should be 1, got ${filterRes.leads.length}`);
@@ -1094,11 +1098,11 @@ async function runTests() {
     const fakeOpsRepoContacted: CrmOperationsRepository = new FakeCrmOperationsRepository(contactedOps);
     const testServiceContacted = new CrmReadService(fakeLeadRepo, fakeOpsRepoContacted);
 
-    const p1 = await testServiceContacted.listLeads({ status: 'contacted', page: 1, page_size: 2 });
+    const p1 = await testServiceContacted.listLeads({ status: 'contacted', page: 1, page_size: 2 }, testAdminUser);
     assert(p1.totalCount === 5, `Total count of contacted should be 5, got ${p1.totalCount}`);
     assert(p1.leads.length === 2, `Page 1 should have 2 leads, got ${p1.leads.length}`);
 
-    const p3 = await testServiceContacted.listLeads({ status: 'contacted', page: 3, page_size: 2 });
+    const p3 = await testServiceContacted.listLeads({ status: 'contacted', page: 3, page_size: 2 }, testAdminUser);
     assert(p3.totalCount === 5, `Total count remains 5, got ${p3.totalCount}`);
     assert(p3.leads.length === 1, `Page 3 should have 1 lead, got ${p3.leads.length}`);
 
@@ -1125,7 +1129,7 @@ async function runTests() {
 
     const fakeOpsRepoNine: CrmOperationsRepository = new FakeCrmOperationsRepository(nineOps);
     const testServiceNine = new CrmReadService(fakeLeadRepo, fakeOpsRepoNine);
-    const metricsRes = await testServiceNine.getDashboardMetrics();
+    const metricsRes = await testServiceNine.getDashboardMetrics(testAdminUser);
 
     assert(metricsRes.byCrmStatus.new === 197, `byCrmStatus.new should be 197, got ${metricsRes.byCrmStatus.new}`);
     assert(metricsRes.byCrmStatus.contacted === 1, `byCrmStatus.contacted should be 1, got ${metricsRes.byCrmStatus.contacted}`);
@@ -1149,20 +1153,20 @@ async function runTests() {
     const testServiceCounting = new CrmReadService(fakeLeadRepo, countingOpsRepo);
 
     listOpsCount = 0;
-    await testServiceCounting.listLeads({ page: 1, page_size: 10 });
+    await testServiceCounting.listLeads({ page: 1, page_size: 10 }, testAdminUser);
     assert(listOpsCount === 1, `listLeads should call listOperations exactly once, got ${listOpsCount}`);
 
     listOpsCount = 0;
-    await testServiceCounting.getDashboardMetrics();
+    await testServiceCounting.getDashboardMetrics(testAdminUser);
     assert(listOpsCount === 1, `getDashboardMetrics should call listOperations exactly once, got ${listOpsCount}`);
 
     // 8. El modelo combinado no contiene write_token
-    const listModel = await testServiceNine.listLeads({ page: 1, page_size: 25 });
+    const listModel = await testServiceNine.listLeads({ page: 1, page_size: 25 }, testAdminUser);
     listModel.leads.forEach((l: CrmLeadReadModel) => {
       assert(!('write_token' in l), 'write_token should not be present in read model from listLeads');
     });
 
-    const singleModel = await testServiceNine.getLeadById(fakeLeads[0].id);
+    const singleModel = await testServiceNine.getLeadById(fakeLeads[0].id, testAdminUser);
     assert(singleModel !== null, 'singleModel exists');
     assert(!('write_token' in singleModel!), 'write_token should not be present in read model from getLeadById');
 
@@ -1172,18 +1176,20 @@ async function runTests() {
     assert(!('crm_status' in originalLead!), 'crm_status should not exist in original repository lead');
     assert(!('priority' in originalLead!), 'priority should not exist in original repository lead');
 
-    // 10. Prueba de lectura operativa por página (listLeads + getSourceCampaignOptions -> total listOperations = 1)
+    // 10. Prueba de lectura operativa por página (listLeads + getSourceCampaignOptions -> total listOperations = 2)
     listOpsCount = 0;
+    const testAdminEmail = process.env.CRM_ADMIN_EMAILS?.split(',')[0]?.trim() || 'admin@example.com';
+    const sheetsTestUser = { email: testAdminEmail };
     await Promise.all([
-      testServiceCounting.listLeads({ page: 1, page_size: 10 }),
-      testServiceCounting.getSourceCampaignOptions(),
+      testServiceCounting.listLeads({ page: 1, page_size: 10 }, sheetsTestUser),
+      testServiceCounting.getSourceCampaignOptions(sheetsTestUser),
     ]);
-    assert(listOpsCount === 1, `listLeads + getSourceCampaignOptions together should trigger listOperations exactly once, got ${listOpsCount}`);
+    assert(listOpsCount === 2, `listLeads + getSourceCampaignOptions together should trigger listOperations exactly twice, got ${listOpsCount}`);
 
-    // 11. Confirmar getSourceCampaignOptions() no llama a listOperations(), devuelve campañas únicas
+    // 11. Confirmar getSourceCampaignOptions() llama a listOperations() una vez para filtrar por usuario, devuelve campañas únicas
     listOpsCount = 0;
-    const campaignsOnly = await testServiceCounting.getSourceCampaignOptions();
-    assert(listOpsCount === 0, `getSourceCampaignOptions alone should trigger listOperations zero times, got ${listOpsCount}`);
+    const campaignsOnly = await testServiceCounting.getSourceCampaignOptions(sheetsTestUser);
+    assert(listOpsCount === 1, `getSourceCampaignOptions alone should trigger listOperations exactly once, got ${listOpsCount}`);
     assert(Array.isArray(campaignsOnly), 'getSourceCampaignOptions returns an array');
     const isUnique = new Set(campaignsOnly).size === campaignsOnly.length;
     assert(isUnique, 'getSourceCampaignOptions returns unique campaign names');
@@ -1221,7 +1227,7 @@ async function runTests() {
 
       // Verify listLeads merges next_action_type and calls listOperations exactly once
       listOpsCountLocal = 0;
-      const result = await localReadService.listLeads({ page: 1, page_size: 10 });
+      const result = await localReadService.listLeads({ page: 1, page_size: 10 }, testAdminUser);
       assert(listOpsCountLocal === 1, `listLeads should call listOperations exactly once, got ${listOpsCountLocal}`);
 
       const matchedLead = result.leads.find(l => l.id === fakeLeads[0].id);
@@ -1233,7 +1239,7 @@ async function runTests() {
       assert(!('write_token' in matchedLead!), 'write_token remains absent in listLeads output');
 
       // Verify getLeadById merges next_action_type and write_token is absent
-      const singleLead = await localReadService.getLeadById(fakeLeads[0].id);
+      const singleLead = await localReadService.getLeadById(fakeLeads[0].id, testAdminUser);
       assert(singleLead !== null, 'singleLead exists');
       assert(singleLead!.next_action_type === 'Demo', `next_action_type should merge in getLeadById, got '${singleLead!.next_action_type}'`);
       assert(!('write_token' in singleLead!), 'write_token remains absent in getLeadById output');
@@ -1417,7 +1423,7 @@ async function runTests() {
       // Verify combined filter crm_status=qualified & locale=en
       {
         const parse = CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'en' });
-        const res = await customReadService.listLeads(parse);
+        const res = await customReadService.listLeads(parse, testAdminUser);
         assert(res.totalCount === 1, `Combined filter totalCount should be 1, got ${res.totalCount}`);
         assert(res.leads[0].id === 'lp_000000000000000000000001', 'Should match the English lead');
       }
@@ -1427,7 +1433,7 @@ async function runTests() {
         const parse = CrmLeadReadFiltersSchema.parse({ status: 'Calificado', locale: 'EN' });
         assert(parse.status === 'qualified', `Should preprocess 'Calificado' to 'qualified'`);
         assert(parse.locale === 'en', `Should preprocess 'EN' to 'en'`);
-        const res = await customReadService.listLeads(parse);
+        const res = await customReadService.listLeads(parse, testAdminUser);
         assert(res.totalCount === 1, `Combined filter with preprocessed fields totalCount should be 1, got ${res.totalCount}`);
       }
 
@@ -1435,14 +1441,14 @@ async function runTests() {
       {
         const parse = CrmLeadReadFiltersSchema.parse({ status: 'calificado', locale: 'english' });
         assert(parse.locale === 'en', `Should preprocess 'english' to 'en'`);
-        const res = await customReadService.listLeads(parse);
+        const res = await customReadService.listLeads(parse, testAdminUser);
         assert(res.totalCount === 1, `Combined filter with 'english' totalCount should be 1, got ${res.totalCount}`);
       }
 
       // Verify combined filter with zero results
       {
         const parse = CrmLeadReadFiltersSchema.parse({ status: 'won', locale: 'en' });
-        const res = await customReadService.listLeads(parse);
+        const res = await customReadService.listLeads(parse, testAdminUser);
         assert(res.totalCount === 0, `Combined filter with zero results should return 0, got ${res.totalCount}`);
         assert(res.leads.length === 0, 'Leads array should be empty');
       }
@@ -1609,11 +1615,11 @@ async function runTests() {
         const repo2 = new FakeCrmRepository(customLeads2);
         const ops2  = new FakeCrmOperationsRepository(customOps2);
         const svc2  = new CrmReadService(repo2, ops2);
-        const resWithResults = await svc2.listLeads(CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'en' }));
+        const resWithResults = await svc2.listLeads(CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'en' }), testAdminUser);
         assert(resWithResults.totalCount === 1, `qualified + en with results: totalCount should be 1, got ${resWithResults.totalCount}`);
 
         // qualified + en without results (no english leads)
-        const resNoResults = await svc2.listLeads(CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'es' }));
+        const resNoResults = await svc2.listLeads(CrmLeadReadFiltersSchema.parse({ status: 'qualified', locale: 'es' }), testAdminUser);
         assert(resNoResults.totalCount === 0, `qualified + es without results: totalCount should be 0, got ${resNoResults.totalCount}`);
       }
 

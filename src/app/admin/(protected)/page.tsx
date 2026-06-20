@@ -21,10 +21,10 @@ export const revalidate = 0;
 
 export default async function DashboardPage() {
   // Enforces session check
-  await proxyAdmin();
+  const authInfo = await proxyAdmin();
 
   const readService = await getCrmReadService();
-  const metrics = await readService.getDashboardMetrics();
+  const metrics = await readService.getDashboardMetrics(authInfo.user);
 
   const phonePercentage = metrics.totalLeads > 0 
     ? ((metrics.leadsWithPhone / metrics.totalLeads) * 100).toFixed(0) 

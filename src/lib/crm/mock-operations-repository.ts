@@ -12,9 +12,9 @@ import {
 import { UpdateOperationSchema, CreateNoteSchema, ActorEmailSchema } from './operations-schemas';
 
 // In-memory global state databases for the mock layer
-const mockOperations = new Map<string, CrmLeadOperation>();
-const mockNotes = new Map<string, CrmLeadNote[]>();
-const mockLogs = new Map<string, CrmActivityLog[]>();
+export const mockOperations = new Map<string, CrmLeadOperation>();
+export const mockNotes = new Map<string, CrmLeadNote[]>();
+export const mockLogs = new Map<string, CrmActivityLog[]>();
 
 export class MockOperationsRepository implements CrmOperationsRepository {
   /**

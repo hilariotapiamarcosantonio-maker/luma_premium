@@ -45,10 +45,6 @@ export function joinDateTimeToIso(date: string | null | undefined, time: string 
   }
 
   try {
-    const d = new Date(`${dTrim}T${tTrim}`);
-    if (isNaN(d.getTime())) {
-      return 'INVALID_DATE';
-    }
     const parts = dTrim.split('-');
     if (parts.length !== 3) {
       return 'INVALID_DATE';
@@ -56,7 +52,19 @@ export function joinDateTimeToIso(date: string | null | undefined, time: string 
     const y = Number(parts[0]);
     const m = Number(parts[1]);
     const day = Number(parts[2]);
-    if (d.getFullYear() !== y || (d.getMonth() + 1) !== m || d.getDate() !== day) {
+
+    const timeParts = tTrim.split(':');
+    if (timeParts.length < 2) {
+      return 'INVALID_DATE';
+    }
+    const h = Number(timeParts[0]);
+    const min = Number(timeParts[1]);
+
+    const d = new Date(y, m - 1, day, h, min, 0, 0);
+    if (isNaN(d.getTime())) {
+      return 'INVALID_DATE';
+    }
+    if (d.getFullYear() !== y || (d.getMonth() + 1) !== m || d.getDate() !== day || d.getHours() !== h || d.getMinutes() !== min) {
       return 'INVALID_DATE';
     }
     return d.toISOString();
@@ -100,7 +108,9 @@ export default function LeadOperationEditor({
   const [ownerEmail, setOwnerEmail] = useState<string>(currentOperation?.owner_email ?? '');
   const [nextActionType, setNextActionType] = useState<string>(currentOperation?.next_action_type ?? '');
 
-  const initialNextAction = splitIsoDateTime(currentOperation?.next_action_at);
+  const initialNextAction = currentOperation?.next_action_type
+    ? splitIsoDateTime(currentOperation?.next_action_at)
+    : { date: '', time: '' };
   const [nextActionDate, setNextActionDate] = useState<string>(initialNextAction.date);
   const [nextActionTime, setNextActionTime] = useState<string>(initialNextAction.time);
 
@@ -115,6 +125,8 @@ export default function LeadOperationEditor({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [localValidationError, setLocalValidationError] = useState<string | null>(null);
+  // Field-specific validation messages returned by the server (keyed by field name).
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Client-side inline validation helpers
   const getNextActionError = (): string | null => {
@@ -169,12 +181,87 @@ export default function LeadOperationEditor({
     return null;
   };
 
-  // Next action date change handler (set 09:00 default time)
+  // Future-date check for last_contact_at. Kept out of the render-phase helper above because it
+  // relies on the current time (Date.now), which must only be read inside event handlers.
+  const getLastContactFutureError = (): string | null => {
+    const iso = joinDateTimeToIso(lastContactDate, lastContactTime);
+    if (iso && iso !== 'INVALID_DATE') {
+      const SKEW_TOLERANCE_MS = 5 * 60 * 1000;
+      if (new Date(iso).getTime() > Date.now() + SKEW_TOLERANCE_MS) {
+        return 'El último contacto no puede ser una fecha futura.';
+      }
+    }
+    return null;
+  };
+
+  // Next action type change handler
+  const handleNextActionTypeChange = (val: string) => {
+    setNextActionType(val);
+
+    // Clear next_action_type error immediately
+    setFieldErrors((prev) => {
+      if (!prev.next_action_type) return prev;
+      const next = { ...prev };
+      delete next.next_action_type;
+      return next;
+    });
+
+    if (!val.trim()) {
+      // Clear fields when type is empty
+      setNextActionDate('');
+      setNextActionTime('');
+      // Clear next_action_at error as well
+      setFieldErrors((prev) => {
+        if (!prev.next_action_at) return prev;
+        const next = { ...prev };
+        delete next.next_action_at;
+        return next;
+      });
+    }
+  };
+
+  // Next action date change handler (no default "09:00" time)
   const handleNextActionDateChange = (val: string) => {
     setNextActionDate(val);
-    if (val && !nextActionTime) {
-      setNextActionTime('09:00');
-    }
+    setFieldErrors((prev) => {
+      if (!prev.next_action_at) return prev;
+      const next = { ...prev };
+      delete next.next_action_at;
+      return next;
+    });
+  };
+
+  // Next action time change handler
+  const handleNextActionTimeChange = (val: string) => {
+    setNextActionTime(val);
+    setFieldErrors((prev) => {
+      if (!prev.next_action_at) return prev;
+      const next = { ...prev };
+      delete next.next_action_at;
+      return next;
+    });
+  };
+
+  // Last contact date change handler
+  const handleLastContactDateChange = (val: string) => {
+    setLastContactDate(val);
+    setFieldErrors((prev) => {
+      if (!prev.last_contact_at) return prev;
+      const next = { ...prev };
+      delete next.last_contact_at;
+      return next;
+    });
+  };
+
+  // Last contact time change handler
+  const handleLastContactTimeChange = (val: string) => {
+    setLastContactTime(val);
+    setFieldErrors((prev) => {
+      if (!prev.last_contact_at) return prev;
+      const next = { ...prev };
+      delete next.last_contact_at;
+      return next;
+    });
   };
 
   // Last contact 'Marcar ahora' button handler
@@ -185,6 +272,12 @@ export default function LeadOperationEditor({
     const tStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
     setLastContactDate(dStr);
     setLastContactTime(tStr);
+    setFieldErrors((prev) => {
+      if (!prev.last_contact_at) return prev;
+      const next = { ...prev };
+      delete next.last_contact_at;
+      return next;
+    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -196,12 +289,22 @@ export default function LeadOperationEditor({
     setSuccessMessage(null);
     setErrorMessage(null);
     setLocalValidationError(null);
+    setFieldErrors({});
 
     // Validate date/time pairs first
     const nextActionErr = getNextActionError();
     const lastContactErr = getLastContactError();
     if (nextActionErr || lastContactErr) {
       setErrorMessage(nextActionErr || lastContactErr || 'Revisa la fecha y la hora antes de guardar.');
+      setIsSaving(false);
+      return;
+    }
+
+    // last_contact_at must never be in the future (it may be in the past, even before creation).
+    const lastContactFutureErr = getLastContactFutureError();
+    if (lastContactFutureErr) {
+      setFieldErrors({ last_contact_at: lastContactFutureErr });
+      setErrorMessage('Revisa los campos marcados antes de guardar.');
       setIsSaving(false);
       return;
     }
@@ -214,7 +317,7 @@ export default function LeadOperationEditor({
     }
 
     try {
-      const nextActionIso = joinDateTimeToIso(nextActionDate, nextActionTime);
+      const nextActionIso = nextActionType.trim() ? joinDateTimeToIso(nextActionDate, nextActionTime) : null;
       const lastContactIso = joinDateTimeToIso(lastContactDate, lastContactTime);
 
       // Build clean explicit payload
@@ -249,7 +352,9 @@ export default function LeadOperationEditor({
         setOwnerEmail(op.owner_email ?? '');
         setNextActionType(op.next_action_type ?? '');
 
-        const nextActionSplit = splitIsoDateTime(op.next_action_at);
+        const nextActionSplit = op.next_action_type
+          ? splitIsoDateTime(op.next_action_at)
+          : { date: '', time: '' };
         setNextActionDate(nextActionSplit.date);
         setNextActionTime(nextActionSplit.time);
 
@@ -271,7 +376,12 @@ export default function LeadOperationEditor({
             setErrorMessage('No tienes permiso para modificar este lead.');
             break;
           case 'VALIDATION_ERROR':
-            setErrorMessage('Revisa los campos marcados antes de guardar.');
+            if (response.fieldErrors && Object.keys(response.fieldErrors).length > 0) {
+              setFieldErrors(response.fieldErrors);
+              setErrorMessage('Revisa los campos marcados antes de guardar.');
+            } else {
+              setErrorMessage('Revisa los campos marcados antes de guardar.');
+            }
             break;
           case 'LEAD_NOT_FOUND':
             setErrorMessage('El lead especificado no existe.');
@@ -394,7 +504,7 @@ export default function LeadOperationEditor({
             <input
               type="text"
               value={nextActionType}
-              onChange={(e) => setNextActionType(e.target.value)}
+              onChange={(e) => handleNextActionTypeChange(e.target.value)}
               disabled={!canEdit}
               placeholder="Llamada, Correo, Demo..."
               maxLength={100}
@@ -402,34 +512,36 @@ export default function LeadOperationEditor({
             />
           </div>
 
-          {/* Next Action Date */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider">
-              Fecha Próxima Acción
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(150px,170px)] gap-2">
-              <input
-                type="date"
-                value={nextActionDate}
-                onChange={(e) => handleNextActionDateChange(e.target.value)}
-                disabled={!canEdit}
-                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
-              />
-              <input
-                type="time"
-                value={nextActionTime}
-                onChange={(e) => setNextActionTime(e.target.value)}
-                disabled={!canEdit}
-                className="w-full min-w-[150px] rounded-lg border border-neutral-800 bg-neutral-950 px-3 pr-10 py-2 text-sm text-neutral-100 [color-scheme:dark] focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
-              />
+          {/* Next Action Date (Conditional on type being selected) */}
+          {nextActionType.trim() !== '' && (
+            <div className="space-y-1.5 animate-fadeIn">
+              <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                Fecha Próxima Acción
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(150px,170px)] gap-2">
+                <input
+                  type="date"
+                  value={nextActionDate}
+                  onChange={(e) => handleNextActionDateChange(e.target.value)}
+                  disabled={!canEdit}
+                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+                />
+                <input
+                  type="time"
+                  value={nextActionTime}
+                  onChange={(e) => handleNextActionTimeChange(e.target.value)}
+                  disabled={!canEdit}
+                  className="w-full min-w-[150px] rounded-lg border border-neutral-800 bg-neutral-950 px-3 pr-10 py-2 text-sm text-neutral-100 [color-scheme:dark] focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+                />
+              </div>
+              {(getNextActionError() || fieldErrors.next_action_at || fieldErrors.next_action_type) && (
+                <p className="text-xs text-red-400 flex items-center gap-1.5 mt-1 select-none">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  {getNextActionError() || fieldErrors.next_action_at || fieldErrors.next_action_type}
+                </p>
+              )}
             </div>
-            {getNextActionError() && (
-              <p className="text-xs text-red-400 flex items-center gap-1.5 mt-1 select-none">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                {getNextActionError()}
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Last Contact Date */}
           <div className="space-y-1.5">
@@ -451,22 +563,22 @@ export default function LeadOperationEditor({
               <input
                 type="date"
                 value={lastContactDate}
-                onChange={(e) => setLastContactDate(e.target.value)}
+                onChange={(e) => handleLastContactDateChange(e.target.value)}
                 disabled={!canEdit}
                 className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
               />
               <input
                 type="time"
                 value={lastContactTime}
-                onChange={(e) => setLastContactTime(e.target.value)}
+                onChange={(e) => handleLastContactTimeChange(e.target.value)}
                 disabled={!canEdit}
                 className="w-full min-w-[150px] rounded-lg border border-neutral-800 bg-neutral-950 px-3 pr-10 py-2 text-sm text-neutral-100 [color-scheme:dark] focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
               />
             </div>
-            {getLastContactError() && (
+            {(getLastContactError() || fieldErrors.last_contact_at) && (
               <p className="text-xs text-red-400 flex items-center gap-1.5 mt-1 select-none">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                {getLastContactError()}
+                {getLastContactError() || fieldErrors.last_contact_at}
               </p>
             )}
           </div>
@@ -486,10 +598,10 @@ export default function LeadOperationEditor({
               placeholder="Especifica detalladamente el motivo de pérdida..."
               className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 placeholder-neutral-600 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
             />
-            {localValidationError && (
+            {(localValidationError || fieldErrors.lost_reason) && (
               <p className="mt-1 text-xs text-red-400 flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                {localValidationError}
+                {localValidationError || fieldErrors.lost_reason}
               </p>
             )}
           </div>

@@ -20,6 +20,7 @@ export type UpdateLeadOperationClientResult =
         | 'CONCURRENCY_ERROR'
         | 'LEAD_NOT_FOUND'
         | 'INTERNAL_ERROR';
+      fieldErrors?: Record<string, string>;
     };
 
 /**
@@ -50,5 +51,6 @@ export async function updateLeadOperationAction(
   return {
     success: false,
     error: result.error ?? 'INTERNAL_ERROR',
+    fieldErrors: result.fieldErrors,
   };
 }
