@@ -1,5 +1,6 @@
-import { ExternalLink, User } from 'lucide-react';
+import { ExternalLink, User, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { CASE_KIND_LABEL, type CaseItem } from '@/lib/cases';
 
 const CASE_KIND_LABEL_EN: Record<CaseItem['kind'], string> = {
@@ -202,6 +203,7 @@ export default function CaseCard({
   onScreenshotClick?: (id: string) => void;
 }) {
   const isEn = locale === 'en';
+  const slug = item.solutionSlug;
   return (
     <div
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-slate-700 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/30 transition-all duration-300"
@@ -238,17 +240,31 @@ export default function CaseCard({
           <h3 className="text-lg font-bold text-white mb-3 hover:text-amber-500 transition-colors">{item.title}</h3>
         </a>
         <p className="text-slate-400 text-sm leading-relaxed flex-1">{item.description}</p>
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-flex items-center gap-2 text-amber-500 text-sm font-medium hover:text-amber-400 transition-colors"
-        >
-          {isEn
-            ? (item.kind === 'demo' ? 'View demo' : 'View reference')
-            : (item.kind === 'demo' ? 'Ver demo' : 'Ver referencia')}{' '}
-          <ExternalLink className="w-4 h-4" />
-        </a>
+        
+        {/* Double-CTA layout at card bottom */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-800/60 pt-4">
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-amber-500 text-xs font-semibold hover:text-amber-400 transition-colors"
+          >
+            {isEn
+              ? (item.kind === 'demo' ? 'Open Demo' : 'Open Reference')
+              : (item.kind === 'demo' ? 'Abrir Demo' : 'Ver Referencia')}{' '}
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+          
+          {slug && (
+            <Link
+              href={isEn ? `/en/solutions/${slug}` : `/soluciones/${slug}`}
+              className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium hover:text-white transition-colors"
+            >
+              {isEn ? 'View Architecture' : 'Ver Arquitectura'}{' '}
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

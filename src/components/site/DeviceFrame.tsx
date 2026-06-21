@@ -6,10 +6,12 @@ export function BrowserFrame({
   label = 'sistema.luma',
   children,
   className = '',
+  noPadding = false,
 }: {
   label?: string;
   children: React.ReactNode;
   className?: string;
+  noPadding?: boolean;
 }) {
   return (
     <div
@@ -24,7 +26,7 @@ export function BrowserFrame({
           {label}
         </span>
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className={noPadding ? '' : 'p-4 sm:p-5'}>{children}</div>
     </div>
   );
 }
@@ -32,9 +34,11 @@ export function BrowserFrame({
 export function PhoneFrame({
   children,
   className = '',
+  noPadding = false,
 }: {
   children: React.ReactNode;
   className?: string;
+  noPadding?: boolean;
 }) {
   return (
     <div
@@ -44,7 +48,7 @@ export function PhoneFrame({
       <div className="flex items-center justify-center bg-slate-900/60 py-2">
         <span className="h-1.5 w-16 rounded-full bg-slate-700" />
       </div>
-      <div className="p-3">{children}</div>
+      <div className={noPadding ? '' : 'p-3'}>{children}</div>
     </div>
   );
 }

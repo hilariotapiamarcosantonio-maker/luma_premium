@@ -18,7 +18,7 @@ export default function CTASection({
   footnote?: string;
 }) {
   return (
-    <section className="py-24 px-6 bg-slate-950 text-center relative overflow-hidden">
+    <section id="final-cta" className="py-24 px-6 bg-slate-950 text-center relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10" />
       <div className="max-w-4xl mx-auto bg-slate-900/40 border border-white/10 rounded-3xl p-12 md:p-20 shadow-2xl backdrop-blur-sm">
         <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-6">
