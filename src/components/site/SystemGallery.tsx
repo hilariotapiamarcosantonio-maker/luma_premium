@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import {
   LayoutDashboard,
   Activity,
@@ -10,6 +9,7 @@ import {
   Users,
   Smartphone,
 } from 'lucide-react';
+import ProductScreenshotFrame from './ProductScreenshotFrame';
 
 type Locale = 'es' | 'en';
 
@@ -98,61 +98,52 @@ export default function SystemGallery({
   locale?: Locale;
   onScreenshotClick?: (id: string) => void;
 }) {
-  const isEn = locale === 'en';
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-      {GALLERY_ITEMS.map((item) => (
-        <div
-          key={item.id}
-          className={`group flex flex-col justify-between overflow-hidden rounded-xl border border-slate-800 bg-gradient-to-b from-slate-900/60 to-slate-950 p-5 transition-all duration-300 hover:border-amber-500/40 hover:-translate-y-0.5 ${
-            item.span ? 'sm:col-span-2' : ''
-          }`}
-        >
-          {/* Tile Header */}
-          <div className="flex items-center justify-between gap-2.5 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-950 group-hover:border-amber-500/40 transition-colors">
-                <item.icon className="h-4 w-4 text-amber-500" />
-              </span>
-              <span className="text-xs font-bold text-white leading-tight">{item.label[locale]}</span>
-            </div>
-            
-            {/* Tag Badge */}
-            <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/50 text-slate-400">
-              {item.tag[locale]}
-            </span>
-          </div>
-
-          {/* Screenshot container */}
-          <div className="flex-1 text-[10px] text-slate-400 font-sans mt-2">
-            <button
-              onClick={() => onScreenshotClick && onScreenshotClick(item.screenshotId)}
-              disabled={!onScreenshotClick}
-              aria-label={isEn ? `Expand ${item.label[locale]}` : `Ampliar ${item.label[locale]}`}
-              className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors cursor-zoom-in block"
-            >
-              <div className="relative w-full h-full">
-                <Image
-                  src={item.thumbnailPath}
-                  alt={item.label[locale]}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 640px) 150px, (max-width: 1024px) 250px, 350px"
-                  className="object-cover object-top brightness-[1.03] contrast-[1.02] transition-all duration-300 group-hover:brightness-110"
-                />
-                {onScreenshotClick && (
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
-                    <span className="bg-amber-500 text-slate-950 font-bold text-[8px] px-2 py-0.5 rounded shadow-md uppercase tracking-wider">
-                      {isEn ? 'View larger' : 'Ampliar'}
-                    </span>
-                  </div>
-                )}
+      {GALLERY_ITEMS.map((item) => {
+        const isMobileItem = item.screenshotId.endsWith('-mobile');
+        return (
+          <div
+            key={item.id}
+            className={`group flex flex-col justify-between overflow-hidden rounded-xl border border-slate-800 bg-gradient-to-b from-slate-900/60 to-slate-950 p-5 transition-all duration-300 hover:border-amber-500/40 hover:-translate-y-0.5 ${
+              item.span ? 'sm:col-span-2' : ''
+            }`}
+          >
+            {/* Tile Header */}
+            <div className="flex items-center justify-between gap-2.5 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-950 group-hover:border-amber-500/40 transition-colors">
+                  <item.icon className="h-4 w-4 text-amber-500" />
+                </span>
+                <span className="text-xs font-bold text-white leading-tight">{item.label[locale]}</span>
               </div>
-            </button>
+              
+              {/* Tag Badge */}
+              <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900/50 text-slate-400">
+                {item.tag[locale]}
+              </span>
+            </div>
+
+            {/* Screenshot container */}
+            <div className="flex-1 mt-2">
+              <ProductScreenshotFrame
+                src={item.thumbnailPath}
+                alt={item.label[locale]}
+                screenshotId={item.screenshotId}
+                usage={isMobileItem ? 'mobile' : 'desktop'}
+                locale={locale}
+                onScreenshotClick={onScreenshotClick}
+                aspectRatio="aspect-[16/10]"
+                rounded="rounded"
+                border="border border-slate-800/80"
+                shadow="shadow-inner"
+              />
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
+

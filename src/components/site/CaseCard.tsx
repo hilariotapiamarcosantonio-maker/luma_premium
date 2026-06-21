@@ -1,7 +1,7 @@
 import { ExternalLink, User, ArrowRight } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { CASE_KIND_LABEL, type CaseItem } from '@/lib/cases';
+import ProductScreenshotFrame from './ProductScreenshotFrame';
 
 const CASE_KIND_LABEL_EN: Record<CaseItem['kind'], string> = {
   demo: 'Official demo',
@@ -73,89 +73,37 @@ function CaseThumb({
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-slate-950 -z-10" />
           <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/5 to-amber-600/5 rounded blur opacity-50 -z-10" />
           
-          <button
-            onClick={(e) => {
-              if (onScreenshotClick && screenshotId) {
-                e.preventDefault();
-                e.stopPropagation();
-                onScreenshotClick(screenshotId);
-              }
-            }}
-            aria-label={locale === 'en' ? 'Expand screenshot' : 'Ampliar captura de pantalla'}
-            className="w-[85px] h-[150px] rounded-xl border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl flex flex-col transition-transform duration-300 hover:scale-[1.04] focus:outline-none focus:ring-1 focus:ring-amber-500/50 relative group cursor-zoom-in"
-          >
-            {/* Simple Mobile Notch/Bar */}
-            <div className="flex justify-center bg-slate-900/60 py-0.5 border-b border-slate-800/80 shrink-0 w-full">
-              <span className="h-0.5 w-6 rounded-full bg-slate-700" />
-            </div>
-            {/* Screenshot */}
-            <div className="relative flex-1 w-full bg-slate-950 overflow-hidden">
-              <Image
-                src={screenshotPath}
-                alt={altText}
-                fill
-                unoptimized
-                sizes="120px"
-                className="object-cover object-top brightness-[1.03] contrast-[1.02]"
-              />
-              {/* Ampliar Captura Badge Overlay */}
-              {onScreenshotClick && screenshotId && (
-                <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
-                  <span className="bg-amber-500 text-slate-950 font-bold text-[7px] px-1.5 py-0.5 rounded shadow-md uppercase tracking-wider text-center leading-none">
-                    {locale === 'en' ? 'View' : 'Ampliar'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </button>
+          <ProductScreenshotFrame
+            src={screenshotPath}
+            alt={altText}
+            screenshotId={screenshotId}
+            usage="mobile"
+            locale={locale}
+            onScreenshotClick={onScreenshotClick}
+            className="w-[84px] h-[150px]"
+          />
         </div>
       );
     } else {
       return (
-        <div className="relative h-44 w-full overflow-hidden border-b border-slate-850 bg-slate-950 p-2 flex items-center justify-center">
+        <div className="relative h-44 w-full overflow-hidden border-b border-slate-800 bg-slate-950 flex items-center justify-center">
           {/* Ambient Glow */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-slate-950 -z-10" />
           
-          <button
-            onClick={(e) => {
-              if (onScreenshotClick && screenshotId) {
-                e.preventDefault();
-                e.stopPropagation();
-                onScreenshotClick(screenshotId);
-              }
-            }}
-            aria-label={locale === 'en' ? 'Expand screenshot' : 'Ampliar captura de pantalla'}
-            className="w-full h-full rounded-lg border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl flex flex-col transition-transform duration-300 hover:scale-[1.01] focus:outline-none focus:ring-1 focus:ring-amber-500/50 relative group cursor-zoom-in"
-          >
-            {/* Simple Browser Bar */}
-            <div className="flex items-center gap-1 border-b border-slate-800/80 bg-slate-900/40 px-2.5 py-1 shrink-0 w-full">
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-700/80" />
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-700/80" />
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-700/80" />
-              <span className="ml-2 truncate rounded bg-slate-950/70 px-2 py-0.5 text-[7px] font-mono text-slate-500 flex-1 leading-none text-left">
-                {item.url.replace('https://', '').replace(/\/$/, '')}
-              </span>
-            </div>
-            {/* Screenshot */}
-            <div className="relative flex-1 w-full bg-slate-950 overflow-hidden">
-              <Image
-                src={screenshotPath}
-                alt={altText}
-                fill
-                unoptimized
-                sizes="(max-width: 768px) 100vw, 30vw"
-                className="object-cover object-top brightness-[1.03] contrast-[1.02]"
-              />
-              {/* Ampliar Captura Badge Overlay */}
-              {onScreenshotClick && screenshotId && (
-                <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                  <span className="bg-amber-500 text-slate-950 font-bold text-[9px] px-2.5 py-1 rounded shadow-md uppercase tracking-wider">
-                    {locale === 'en' ? 'View larger' : 'Ampliar captura'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </button>
+          <ProductScreenshotFrame
+            src={screenshotPath}
+            alt={altText}
+            screenshotId={screenshotId}
+            usage="desktop"
+            locale={locale}
+            onScreenshotClick={onScreenshotClick}
+            className="w-full h-full"
+            aspectRatio="h-full w-full aspect-auto"
+            rounded="rounded-none"
+            border="border-none"
+            shadow="shadow-none"
+            hoverBorder="hover:border-none"
+          />
         </div>
       );
     }
