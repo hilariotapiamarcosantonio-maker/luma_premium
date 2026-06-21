@@ -21,7 +21,7 @@ const OPTIONS = [
   {
     icon: Search,
     title: 'Request assessment',
-    description: 'We evaluate your commercial operation and propose the ideal system. Receive a full technical report.',
+    description: 'We evaluate your commercial operation and propose the ideal system. Receive a full technical report within 24–48 business hours.',
     cta: 'Start assessment',
     href: '/en/assessment',
     primary: true,
@@ -30,20 +30,20 @@ const OPTIONS = [
   {
     icon: MessageCircle,
     title: 'WhatsApp Channel',
-    description: 'Connect directly with Luma Premium for quick questions or instant commercial inquiries.',
+    description: 'Direct channel to connect with Luma Premium for quick questions or commercial inquiries. Response within 24–48 business hours.',
     cta: 'Chat on WhatsApp',
     href: whatsappLink('Hello, I would like to discuss a Luma Premium commercial system.'),
     external: true,
-    guarantee: '< 2 business hours',
+    guarantee: '24–48 b. hours',
   },
   {
     icon: Mail,
     title: 'Email Contact',
-    description: 'Send us an email with your specific project requirements or custom technical specifications.',
+    description: 'Send us an email with your specific project requirements or custom technical specifications. Response within 24–48 business hours.',
     cta: 'Send email',
-    href: 'mailto:hola@sistema.luma',
+    href: 'mailto:contacto@lumapremium.com',
     external: true,
-    guarantee: '< 12 business hours',
+    guarantee: '24–48 b. hours',
   },
 ];
 

@@ -23,7 +23,7 @@ const OPTIONS = [
     icon: Search,
     title: 'Solicitar diagnóstico',
     description:
-      'Evaluamos su operación comercial y le proponemos el sistema ideal. Reciba un informe técnico completo.',
+      'Evaluamos su operación comercial y le proponemos el sistema ideal. Reciba un informe técnico completo en 24–48 horas laborables.',
     cta: 'Iniciar evaluación',
     href: '/diagnostico',
     primary: true,
@@ -33,21 +33,21 @@ const OPTIONS = [
     icon: MessageCircle,
     title: 'Canal de WhatsApp',
     description:
-      'Hable de forma directa con Luma Premium para consultas rápidas o dudas comerciales.',
+      'Canal directo para comunicarse con Luma Premium para consultas rápidas o dudas comerciales. Respuesta en 24–48 horas laborables.',
     cta: 'Chat por WhatsApp',
     href: whatsappLink('Hola, me gustaría conversar sobre un sistema comercial de Luma Premium.'),
     external: true,
-    guarantee: '< 2 horas laborables',
+    guarantee: '24–48 h laborables',
   },
   {
     icon: Mail,
     title: 'Correo Electrónico',
     description:
-      'Envíenos un correo con los requerimientos específicos o especificaciones de su proyecto.',
+      'Envíenos un correo con los requerimientos específicos o especificaciones de su proyecto. Respuesta en 24–48 horas laborables.',
     cta: 'Enviar correo',
-    href: 'mailto:hola@sistema.luma',
+    href: 'mailto:contacto@lumapremium.com',
     external: true,
-    guarantee: '< 12 horas laborables',
+    guarantee: '24–48 h laborables',
   },
 ];
 

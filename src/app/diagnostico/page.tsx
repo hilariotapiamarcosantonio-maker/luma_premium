@@ -179,19 +179,18 @@ export default function DiagnosticoPage() {
             
             <div className="relative p-8 md:p-10 rounded-2xl border border-amber-500/20 bg-slate-950 shadow-[0_0_50px_rgba(245,158,11,0.03)]">
               {/* Badge indicativo de seguridad y expectativa */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-900 pb-6 mb-8">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-amber-500" />
-                  <div>
-                    <p className="text-xs font-semibold text-white tracking-wide uppercase">Cuestionario Seguro</p>
-                    <p className="text-[10px] text-slate-500">Conexión encriptada SSL &bull; Datos de demostración</p>
-                  </div>
+              <div className="flex flex-wrap items-center justify-between gap-y-4 gap-x-6 border-b border-slate-900 pb-6 mb-8 text-xs text-slate-400 font-medium">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-amber-500" />
+                  <span>Conexión segura</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-amber-500/80" />
-                  <p className="text-xs text-slate-400 font-medium">
-                    Respuesta: <span className="text-amber-500">24–48 horas laborables</span>
-                  </p>
+                  <span>Respuesta en 24–48 horas laborables</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Información tratada de forma confidencial</span>
                 </div>
               </div>
 
