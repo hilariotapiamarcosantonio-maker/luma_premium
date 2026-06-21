@@ -205,9 +205,9 @@ export default function HomeContent({ locale = 'es' }: { locale?: Locale }) {
   return (
     <HomeScreenshotShowcase locale={locale}>
       {/* 1 · Hero */}
-      <section className="relative pt-32 pb-16 md:pb-24 px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,_rgba(30,41,59,0.45),_transparent_70%)] -z-10" />
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-[45%_55%] gap-12 lg:gap-8 items-center">
+      <section className="relative pt-32 pb-16 md:pb-24 px-4 sm:px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,_rgba(37,99,235,0.06),_rgba(30,41,59,0.35),_transparent_70%)] -z-10" />
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-[40%_60%] gap-12 lg:gap-8 items-center">
           {/* Copy Column */}
           <div className="text-center lg:text-left space-y-6">
             <PremiumBadge pulse tone="amber" className="mx-auto lg:mx-0">
@@ -237,7 +237,7 @@ export default function HomeContent({ locale = 'es' }: { locale?: Locale }) {
           </div>
 
           {/* Interactive Screen Showcase Column */}
-          <div className="relative pb-6 lg:pb-0 w-full max-w-lg sm:max-w-2xl mx-auto lg:max-w-none">
+          <div className="relative pb-6 lg:pb-0 w-full max-w-xl md:max-w-3xl lg:max-w-none mx-auto">
             <HeroComposition locale={locale} />
           </div>
         </div>
