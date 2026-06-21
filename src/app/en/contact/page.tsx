@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, MessageCircle, Search, Layers } from 'lucide-react';
+import { ArrowRight, MessageCircle, Search, Mail, Clock } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import EditorialFigure from '@/components/site/EditorialFigure';
@@ -21,26 +21,29 @@ const OPTIONS = [
   {
     icon: Search,
     title: 'Request assessment',
-    description: 'The serious way to begin. We review your commercial operation and recommend the right system.',
-    cta: 'Go to assessment',
+    description: 'We evaluate your commercial operation and propose the ideal system. Receive a full technical report.',
+    cta: 'Start assessment',
     href: '/en/assessment',
     primary: true,
+    guarantee: '24–48 b. hours',
   },
   {
     icon: MessageCircle,
-    title: 'Send a message',
-    description: 'Reach Luma Premium directly via WhatsApp for quick questions.',
-    cta: 'Write on WhatsApp',
+    title: 'WhatsApp Channel',
+    description: 'Connect directly with Luma Premium for quick questions or instant commercial inquiries.',
+    cta: 'Chat on WhatsApp',
     href: whatsappLink('Hello, I would like to discuss a Luma Premium commercial system.'),
     external: true,
+    guarantee: '< 2 business hours',
   },
   {
-    icon: Layers,
-    title: 'See our solutions',
-    description: 'Browse our solution lines and find the one that fits your operation.',
-    cta: 'View solutions',
-    href: '/en/solutions',
-    primary: false,
+    icon: Mail,
+    title: 'Email Contact',
+    description: 'Send us an email with your specific project requirements or custom technical specifications.',
+    cta: 'Send email',
+    href: 'mailto:hola@sistema.luma',
+    external: true,
+    guarantee: '< 12 business hours',
   },
 ];
 
@@ -75,11 +78,17 @@ export default function EnContactPage() {
       <section className="pb-24 px-6">
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
           {OPTIONS.map((opt) => (
-            <div key={opt.title} className={`p-8 rounded-2xl border transition-all ${
+            <div key={opt.title} className={`group relative p-8 rounded-2xl border transition-all duration-300 ${
               opt.primary
-                ? 'border-white/20 bg-white/5'
-                : 'border-slate-800 bg-slate-900/20'
+                ? 'border-amber-500/30 bg-amber-500/[0.03] hover:border-amber-500/50 hover:bg-amber-500/[0.06] hover:shadow-[0_0_30px_rgba(245,158,11,0.05)]'
+                : 'border-slate-900 bg-slate-950/40 hover:border-slate-800 hover:bg-slate-950/80'
             }`}>
+              {/* Guarantee Badge */}
+              <div className="absolute top-6 right-6 flex items-center gap-1 bg-slate-900/60 border border-slate-800/80 rounded-full px-2.5 py-0.5 text-[10px] text-slate-400">
+                <Clock className="w-2.5 h-2.5 text-amber-500/70" />
+                <span>{opt.guarantee}</span>
+              </div>
+
               <opt.icon className="w-8 h-8 text-amber-500 mb-6" />
               <h2 className="text-lg font-semibold text-white mb-3">{opt.title}</h2>
               <p className="text-slate-400 text-sm leading-relaxed mb-6">{opt.description}</p>
@@ -88,13 +97,13 @@ export default function EnContactPage() {
                   href={opt.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-white hover:text-amber-400 transition-colors"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors"
                 >
-                  {opt.cta} <ArrowRight className="w-3.5 h-3.5" />
+                  {opt.cta} <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                 </a>
               ) : (
-                <Link href={opt.href} className="inline-flex items-center gap-2 text-sm font-medium text-white hover:text-amber-400 transition-colors">
-                  {opt.cta} <ArrowRight className="w-3.5 h-3.5" />
+                <Link href={opt.href} className="inline-flex items-center gap-2 text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors">
+                  {opt.cta} <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                 </Link>
               )}
             </div>

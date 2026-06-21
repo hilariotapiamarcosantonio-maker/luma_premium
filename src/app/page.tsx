@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, ShieldCheck, Layers, Compass } from 'lucide-react';
+import { ArrowRight, Compass, Layers, ShieldCheck } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import SectionHeading from '@/components/site/SectionHeading';
 import SolutionCard from '@/components/site/SolutionCard';
@@ -30,27 +30,6 @@ export const metadata: Metadata = {
     locale: 'es_ES',
   },
 };
-
-const PILLARS = [
-  {
-    icon: Compass,
-    title: 'Captar con autoridad',
-    description:
-      'Presentación premium y rutas comerciales que atraen al perfil correcto desde cada campaña.',
-  },
-  {
-    icon: Layers,
-    title: 'Responder y organizar',
-    description:
-      'Concierge, seguimiento y un centro de control donde ningún prospecto se pierde.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Convertir con control',
-    description:
-      'Trazabilidad de punta a punta: menos improvisación, decisiones con datos reales.',
-  },
-];
 
 export default function HomePage() {
   return (
@@ -135,7 +114,7 @@ export default function HomePage() {
       </section>
 
       {/* Qué hace Luma Premium */}
-      <section className="py-24 px-6 border-y border-slate-800/50 bg-slate-900/20">
+      <section className="py-24 px-6 border-y border-slate-800/50 bg-gradient-to-b from-slate-900/20 to-blue-950/10">
         <div className="max-w-7xl mx-auto">
           <MotionSection>
             <SectionHeading
@@ -147,18 +126,92 @@ export default function HomePage() {
             />
           </MotionSection>
           <MotionStagger className="grid md:grid-cols-3 gap-6">
-            {PILLARS.map((p) => (
-              <MotionItem
-                key={p.title}
-                className="p-8 rounded-2xl border border-slate-800 bg-slate-950 h-full"
-              >
-                <p.icon className="w-8 h-8 text-amber-500 mb-6" />
-                <h3 className="text-lg font-semibold text-white mb-3">{p.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  {p.description}
+            {/* Pilar 1: Captar */}
+            <MotionItem className="flex flex-col p-8 rounded-2xl border border-slate-800 bg-slate-950/80 h-full justify-between overflow-hidden relative group hover:border-amber-500/20 transition-all duration-300">
+              <div>
+                <Compass className="w-8 h-8 text-amber-500 mb-6 group-hover:scale-110 transition-transform" />
+                <h3 className="text-lg font-semibold text-white mb-3">Captar con autoridad</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                  Presentación premium y rutas comerciales que atraen al perfil correcto desde cada campaña.
                 </p>
-              </MotionItem>
-            ))}
+              </div>
+              {/* Micro UI: Mock Ad Preview */}
+              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-[10px] space-y-2.5 transition-colors group-hover:border-slate-700">
+                <div className="flex items-center gap-2 border-b border-slate-800/60 pb-2">
+                  <span className="h-5 w-5 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-bold text-amber-500 text-[8px]">L</span>
+                  <div>
+                    <span className="block font-semibold text-white leading-none">Luma Estate OS</span>
+                    <span className="text-[7px] text-slate-500">Sponsored</span>
+                  </div>
+                </div>
+                <div className="rounded border border-slate-800 bg-slate-950/60 p-2 text-slate-400 font-sans">
+                  <span className="block font-medium text-white mb-1">Villa Esmeralda - Punta Cana</span>
+                  <span className="block text-[8px] leading-tight text-slate-500">Rutas comerciales segmentadas para inversores y segunda vivienda.</span>
+                </div>
+                <div className="flex justify-between items-center bg-slate-950/30 p-2 rounded">
+                  <span className="text-[8px] font-mono text-slate-500">luma-estate.com/punta-cana</span>
+                  <span className="bg-white text-slate-950 px-2 py-0.5 rounded-sm font-semibold text-[8px]">Ver proyecto</span>
+                </div>
+              </div>
+            </MotionItem>
+
+            {/* Pilar 2: Responder */}
+            <MotionItem className="flex flex-col p-8 rounded-2xl border border-slate-800 bg-slate-950/80 h-full justify-between overflow-hidden relative group hover:border-amber-500/20 transition-all duration-300">
+              <div>
+                <Layers className="w-8 h-8 text-amber-500 mb-6 group-hover:scale-110 transition-transform" />
+                <h3 className="text-lg font-semibold text-white mb-3">Responder y organizar</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                  Concierge, seguimiento y un centro de control donde ningún prospecto se pierde.
+                </p>
+              </div>
+              {/* Micro UI: Mock Chat qualifier */}
+              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-[10px] space-y-2.5 transition-colors group-hover:border-slate-700">
+                <div className="space-y-2">
+                  <div className="max-w-[85%] rounded bg-slate-950/80 border border-slate-800 p-2 text-slate-300">
+                    ¿Prefiere financiamiento o pago al contado?
+                  </div>
+                  <div className="ml-auto max-w-[85%] rounded bg-amber-500/10 border border-amber-500/20 p-2 text-amber-400">
+                    Contado, busco retorno inmediato.
+                  </div>
+                  <div className="flex items-center gap-1.5 justify-center py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-semibold">
+                    <span>Intención: Inversor • Cash Buyer</span>
+                  </div>
+                </div>
+              </div>
+            </MotionItem>
+
+            {/* Pilar 3: Convertir */}
+            <MotionItem className="flex flex-col p-8 rounded-2xl border border-slate-800 bg-slate-950/80 h-full justify-between overflow-hidden relative group hover:border-amber-500/20 transition-all duration-300">
+              <div>
+                <ShieldCheck className="w-8 h-8 text-amber-500 mb-6 group-hover:scale-110 transition-transform" />
+                <h3 className="text-lg font-semibold text-white mb-3">Convertir con control</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                  Trazabilidad de punta a punta: menos improvisación, decisiones con datos reales.
+                </p>
+              </div>
+              {/* Micro UI: Mock charts */}
+              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-[10px] space-y-2.5 transition-colors group-hover:border-slate-700">
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="bg-slate-950/60 rounded border border-slate-800 p-1.5">
+                    <span className="block text-[8px] text-slate-500 uppercase">Tasa Conversión</span>
+                    <span className="block font-bold text-emerald-400">14.8%</span>
+                  </div>
+                  <div className="bg-slate-950/60 rounded border border-slate-800 p-1.5">
+                    <span className="block text-[8px] text-slate-500 uppercase">Leads Atendidos</span>
+                    <span className="block font-bold text-white">100%</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[8px] text-slate-500 font-mono">
+                    <span>Atribución Campañas</span>
+                    <span className="text-slate-300">76% ROI</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-950 rounded overflow-hidden">
+                    <div className="h-full w-[76%] bg-amber-500 rounded" />
+                  </div>
+                </div>
+              </div>
+            </MotionItem>
           </MotionStagger>
         </div>
       </section>

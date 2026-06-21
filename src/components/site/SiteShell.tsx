@@ -7,7 +7,7 @@ import StickyMobileCTA from './StickyMobileCTA';
 // Reutilizado por todas las rutas públicas de la web madre.
 export default function SiteShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen text-slate-300 selection:bg-amber-500/30 selection:text-amber-200 font-sans">
+    <div className="public-site relative min-h-screen text-slate-300 selection:bg-amber-500/30 selection:text-amber-200 font-sans">
       <PremiumBackground />
       <SiteHeader />
       <main>{children}</main>

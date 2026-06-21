@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, MessageCircle, Search, CalendarClock, Layers } from 'lucide-react';
+import { ArrowRight, MessageCircle, Search, CalendarClock, Mail, Clock } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import EditorialFigure from '@/components/site/EditorialFigure';
@@ -21,29 +21,33 @@ export const metadata: Metadata = {
 const OPTIONS = [
   {
     icon: Search,
-    title: 'Solicitar evaluación',
+    title: 'Solicitar diagnóstico',
     description:
-      'La forma seria de empezar. Revisamos su operación comercial y le recomendamos el sistema correcto.',
-    cta: 'Ir al diagnóstico',
+      'Evaluamos su operación comercial y le proponemos el sistema ideal. Reciba un informe técnico completo.',
+    cta: 'Iniciar evaluación',
     href: '/diagnostico',
     primary: true,
+    guarantee: '24–48 h laborables',
   },
   {
     icon: MessageCircle,
-    title: 'Enviar mensaje',
+    title: 'Canal de WhatsApp',
     description:
-      'Hable directamente con Luma Premium por WhatsApp para resolver dudas rápidas.',
-    cta: 'Escribir por WhatsApp',
+      'Hable de forma directa con Luma Premium para consultas rápidas o dudas comerciales.',
+    cta: 'Chat por WhatsApp',
     href: whatsappLink('Hola, me gustaría conversar sobre un sistema comercial de Luma Premium.'),
     external: true,
+    guarantee: '< 2 horas laborables',
   },
   {
-    icon: Layers,
-    title: 'Ver solución recomendada',
+    icon: Mail,
+    title: 'Correo Electrónico',
     description:
-      'Explore las líneas de solución y descubra cuál encaja con su negocio.',
-    cta: 'Ver soluciones',
-    href: '/soluciones',
+      'Envíenos un correo con los requerimientos específicos o especificaciones de su proyecto.',
+    cta: 'Enviar correo',
+    href: 'mailto:hola@sistema.luma',
+    external: true,
+    guarantee: '< 12 horas laborables',
   },
 ];
 
@@ -82,13 +86,19 @@ export default function ContactoPage() {
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
           {OPTIONS.map((opt) => {
             const isLink = !opt.external;
-            const className = `group flex flex-col p-8 rounded-2xl border transition-colors ${
+            const className = `group relative flex flex-col p-8 rounded-2xl border transition-all duration-300 ${
               opt.primary
-                ? 'border-amber-500/30 bg-amber-500/[0.04] hover:bg-amber-500/[0.08]'
-                : 'border-slate-800 bg-slate-900/20 hover:bg-slate-900/40'
+                ? 'border-amber-500/30 bg-amber-500/[0.03] hover:border-amber-500/50 hover:bg-amber-500/[0.06] hover:shadow-[0_0_30px_rgba(245,158,11,0.05)]'
+                : 'border-slate-900 bg-slate-950/40 hover:border-slate-800 hover:bg-slate-950/80'
             }`;
             const inner = (
               <>
+                {/* Guarantee Badge */}
+                <div className="absolute top-6 right-6 flex items-center gap-1 bg-slate-900/60 border border-slate-800/80 rounded-full px-2.5 py-0.5 text-[10px] text-slate-400">
+                  <Clock className="w-2.5 h-2.5 text-amber-500/70" />
+                  <span>{opt.guarantee}</span>
+                </div>
+
                 <opt.icon className="w-8 h-8 text-amber-500 mb-6" />
                 <h3 className="text-lg font-semibold text-white mb-3">
                   {opt.title}
@@ -97,7 +107,7 @@ export default function ContactoPage() {
                   {opt.description}
                 </p>
                 <span className="inline-flex items-center gap-2 text-amber-500 text-sm font-medium">
-                  {opt.cta} <ArrowRight className="w-4 h-4" />
+                  {opt.cta} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </>
             );

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, MessageCircle } from 'lucide-react';
+import { ArrowRight, MessageCircle, Compass, Layers, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import SolutionCard from '@/components/site/SolutionCard';
@@ -20,25 +20,6 @@ export const metadata: Metadata = {
     languages: { 'es': '/' },
   },
 };
-
-const PILLARS = [
-  {
-    title: 'Capture',
-    description: 'Premium digital presence that positions, qualifies, and converts before the first call.',
-  },
-  {
-    title: 'Respond',
-    description: 'Intelligent concierge that handles inquiries with speed, consistency, and commercial authority.',
-  },
-  {
-    title: 'Organize',
-    description: 'CRM and commercial control so nothing slips through and follow-up is disciplined.',
-  },
-  {
-    title: 'Convert',
-    description: 'Automated follow-up sequences and presentation systems built to close high-ticket deals.',
-  },
-];
 
 export default function EnHomePage() {
   return (
@@ -112,7 +93,7 @@ export default function EnHomePage() {
       </section>
 
       {/* Four pillars */}
-      <section className="py-28 px-6">
+      <section className="py-28 px-6 bg-gradient-to-b from-slate-950 to-slate-900/20 border-t border-slate-900">
         <div className="max-w-7xl mx-auto">
           <MotionSection className="text-center mb-16">
             <PremiumBadge className="mb-4 mx-auto">The system</PremiumBadge>
@@ -124,13 +105,96 @@ export default function EnHomePage() {
             </p>
           </MotionSection>
           <MotionStagger className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {PILLARS.map((p, i) => (
-              <MotionItem key={p.title} className="p-8 rounded-2xl border border-slate-800 bg-slate-900/20 space-y-4">
-                <div className="text-4xl font-bold text-slate-700 leading-none">0{i + 1}</div>
-                <h3 className="text-xl font-semibold text-white">{p.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{p.description}</p>
-              </MotionItem>
-            ))}
+            {/* Pillar 1: Capture */}
+            <MotionItem className="flex flex-col justify-between p-8 rounded-2xl border border-slate-800 bg-slate-950/80 group hover:border-amber-500/20 transition-all duration-300">
+              <div className="space-y-4">
+                <div className="text-4xl font-bold text-slate-800 leading-none group-hover:text-amber-500/40 transition-colors">01</div>
+                <div className="flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-amber-500" />
+                  <h3 className="text-lg font-semibold text-white">Capture</h3>
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed">Premium digital presence that positions, qualifies, and converts before the first call.</p>
+              </div>
+              {/* Micro UI: Mock ad */}
+              <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-[9px] space-y-2">
+                <div className="flex items-center gap-1.5 border-b border-slate-800/60 pb-1.5">
+                  <span className="h-4 w-4 rounded bg-amber-500/10 border border-amber-500/20 flex items-center justify-center font-bold text-amber-500 text-[7px]">L</span>
+                  <span className="font-semibold text-white text-[8px]">Luma Estate OS</span>
+                </div>
+                <div className="rounded border border-slate-800 bg-slate-950/60 p-2 text-slate-400">
+                  <span className="block font-medium text-white mb-0.5">Villa Esmeralda</span>
+                  <span className="block text-[7px] text-slate-500">Premium Real Estate Routes</span>
+                </div>
+              </div>
+            </MotionItem>
+
+            {/* Pillar 2: Respond */}
+            <MotionItem className="flex flex-col justify-between p-8 rounded-2xl border border-slate-800 bg-slate-950/80 group hover:border-amber-500/20 transition-all duration-300">
+              <div className="space-y-4">
+                <div className="text-4xl font-bold text-slate-800 leading-none group-hover:text-amber-500/40 transition-colors">02</div>
+                <div className="flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-amber-500" />
+                  <h3 className="text-lg font-semibold text-white">Respond</h3>
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed">Intelligent concierge that handles inquiries with speed, consistency, and commercial authority.</p>
+              </div>
+              {/* Micro UI: Mock Chat */}
+              <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-[9px] space-y-2">
+                <div className="space-y-1.5">
+                  <div className="max-w-[85%] rounded bg-slate-950/80 border border-slate-800 p-1.5 text-slate-300">
+                    Are you buying for investment or to live?
+                  </div>
+                  <div className="ml-auto max-w-[85%] rounded bg-amber-500/10 border border-amber-500/20 p-1.5 text-amber-400">
+                    Mainly for investment.
+                  </div>
+                </div>
+              </div>
+            </MotionItem>
+
+            {/* Pillar 3: Organize */}
+            <MotionItem className="flex flex-col justify-between p-8 rounded-2xl border border-slate-800 bg-slate-950/80 group hover:border-amber-500/20 transition-all duration-300">
+              <div className="space-y-4">
+                <div className="text-4xl font-bold text-slate-800 leading-none group-hover:text-amber-500/40 transition-colors">03</div>
+                <div className="flex items-center gap-2">
+                  <LayoutDashboard className="w-5 h-5 text-amber-500" />
+                  <h3 className="text-lg font-semibold text-white">Organize</h3>
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed">CRM and commercial control so nothing slips through and follow-up is disciplined.</p>
+              </div>
+              {/* Micro UI: CRM lead card */}
+              <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-[9px] space-y-1.5">
+                <div className="flex justify-between items-center text-[7px] text-slate-500 font-mono">
+                  <span>Lead Stage</span>
+                  <span className="text-emerald-400 font-bold">QUALIFIED</span>
+                </div>
+                <div className="rounded border border-slate-850 bg-slate-950/60 p-2">
+                  <span className="block font-semibold text-white leading-none">A. Mendez</span>
+                  <span className="block text-[7px] text-slate-500 mt-1">Interest: Villa Esmeralda</span>
+                </div>
+              </div>
+            </MotionItem>
+
+            {/* Pillar 4: Convert */}
+            <MotionItem className="flex flex-col justify-between p-8 rounded-2xl border border-slate-800 bg-slate-950/80 group hover:border-amber-500/20 transition-all duration-300">
+              <div className="space-y-4">
+                <div className="text-4xl font-bold text-slate-800 leading-none group-hover:text-amber-500/40 transition-colors">04</div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-amber-500" />
+                  <h3 className="text-lg font-semibold text-white">Convert</h3>
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed">Automated follow-up sequences and presentation systems built to close high-ticket deals.</p>
+              </div>
+              {/* Micro UI: Conversion bar */}
+              <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-[9px] space-y-2">
+                <div className="flex justify-between text-[7px] text-slate-500">
+                  <span>Conversion Rate</span>
+                  <span className="text-emerald-400 font-bold">14.8%</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-950 rounded overflow-hidden">
+                  <div className="h-full w-[14.8%] bg-amber-500 rounded" />
+                </div>
+              </div>
+            </MotionItem>
           </MotionStagger>
         </div>
       </section>

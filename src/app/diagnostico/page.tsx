@@ -129,19 +129,85 @@ export default function DiagnosticoPage() {
             ))}
           </MotionStagger>
 
-          {/* ── Formulario maestro integrado ── */}
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-3">
-                Complete su solicitud
+          {/* ── Cómo funciona el Diagnóstico ── */}
+          <div className="max-w-5xl mx-auto mt-20 pt-16 border-t border-slate-900">
+            <div className="text-center mb-12">
+              <PremiumBadge tone="amber" className="mb-3 mx-auto">El Proceso</PremiumBadge>
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                Cómo funciona la evaluación
               </h2>
-              <p className="text-slate-400 text-base">
-                Tres pasos. Menos de cuatro minutos. Revisamos y respondemos en 24–48 h.
+              <p className="text-slate-400 text-sm mt-2 max-w-xl mx-auto">
+                Un proceso directo y confidencial en tres etapas para determinar la solución ideal para su negocio.
               </p>
             </div>
-            <Suspense>
-              <DiagnosticoMaestroForm locale="es" />
-            </Suspense>
+            
+            <div className="grid md:grid-cols-3 gap-6 relative">
+              {/* Line connector */}
+              <div className="hidden md:block absolute top-[40px] left-[15%] right-[15%] h-[1px] bg-gradient-to-r from-amber-500/10 via-amber-500/30 to-amber-500/10 -z-10" />
+              
+              {[
+                {
+                  step: "01",
+                  title: "Formulario Técnico",
+                  desc: "Complete las preguntas sobre su operación actual, volumen de leads y herramientas comerciales."
+                },
+                {
+                  step: "02",
+                  title: "Análisis Confidencial",
+                  desc: "Evaluamos de forma interna sus flujos públicos de venta y detectamos las principales fricciones."
+                },
+                {
+                  step: "03",
+                  title: "Entrega Ejecutiva",
+                  desc: "Reciba en su correo la propuesta de arquitectura ideal y recomendaciones técnicas en 24–48 horas laborables."
+                }
+              ].map((p, idx) => (
+                <div key={idx} className="relative p-6 rounded-2xl border border-slate-900 bg-slate-950/80 flex flex-col items-center text-center space-y-3">
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded border border-amber-500/20">
+                    Paso {p.step}
+                  </span>
+                  <h3 className="text-base font-semibold text-white">{p.title}</h3>
+                  <p className="text-slate-400 text-xs leading-relaxed">{p.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Formulario maestro integrado con borde amber glow ── */}
+          <div className="max-w-3xl mx-auto mt-20 relative">
+            <div className="absolute -inset-1 bg-gradient-to-b from-amber-500/10 to-amber-600/5 rounded-3xl blur-xl opacity-75 -z-10" />
+            
+            <div className="relative p-8 md:p-10 rounded-2xl border border-amber-500/20 bg-slate-950 shadow-[0_0_50px_rgba(245,158,11,0.03)]">
+              {/* Badge indicativo de seguridad y expectativa */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-900 pb-6 mb-8">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-amber-500" />
+                  <div>
+                    <p className="text-xs font-semibold text-white tracking-wide uppercase">Cuestionario Seguro</p>
+                    <p className="text-[10px] text-slate-500">Conexión encriptada SSL &bull; Datos de demostración</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-500/80" />
+                  <p className="text-xs text-slate-400 font-medium">
+                    Respuesta: <span className="text-amber-500">24–48 horas laborables</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-2">
+                  Complete su solicitud
+                </h2>
+                <p className="text-slate-400 text-sm">
+                  Evaluación técnica confidencial. Responderemos dentro de 24–48 horas laborables.
+                </p>
+              </div>
+
+              <Suspense fallback={<div className="text-center py-10 text-slate-500">Cargando formulario...</div>}>
+                <DiagnosticoMaestroForm locale="es" />
+              </Suspense>
+            </div>
           </div>
         </div>
       </section>
