@@ -1,4 +1,4 @@
-import { ExternalLink, User, MapPin } from 'lucide-react';
+import { ExternalLink, User } from 'lucide-react';
 import { CASE_KIND_LABEL, type CaseItem } from '@/lib/cases';
 
 const CASE_KIND_LABEL_EN: Record<CaseItem['kind'], string> = {
@@ -16,12 +16,95 @@ const KIND_STYLE: Record<CaseItem['kind'], string> = {
 function CaseThumb({ item }: { item: CaseItem }) {
   const slug = item.solutionSlug;
 
+  // Map screenshots
+  let screenshotPath = '';
+  let altText = '';
+  let isMobile = false;
+
+  if (slug === 'real-estate-os') {
+    screenshotPath = '/images/marketing/screenshots/optimized/luma_vista_del_rio_desktop.webp';
+    altText = 'Real Estate OS - Vista del Río';
+  } else if (slug === 'real-estate-crm-os') {
+    screenshotPath = '/images/marketing/screenshots/optimized/luma_real_estete_os_crm_-_demo.webp';
+    altText = 'Real Estate CRM OS';
+  } else if (slug === 'real-estate-concierge-os') {
+    screenshotPath = '/images/marketing/screenshots/optimized/real_estate_concierge_os_-_demo.webp';
+    altText = 'Real Estate Concierge OS';
+  } else if (slug === 'commerce-os') {
+    screenshotPath = '/images/marketing/screenshots/optimized/luma_commerce_os_-_demo.webp';
+    altText = 'Commerce OS';
+  } else if (slug === 'beauty-spa-os') {
+    if (item.title.toLowerCase().includes('concierge')) {
+      screenshotPath = '/images/marketing/screenshots/optimized/luma_beauty_spa_movil.webp';
+      altText = 'Beauty Spa OS - Concierge Flow';
+      isMobile = true;
+    } else {
+      screenshotPath = '/images/marketing/screenshots/optimized/luma_beauty_spa_desktop.webp';
+      altText = 'Beauty Spa OS';
+    }
+  } else if (item.title.toLowerCase().includes('suvoga')) {
+    screenshotPath = '/images/marketing/screenshots/optimized/suvoga_os_academy.webp';
+    altText = 'Suvoga OS Academy';
+  }
+
+  if (screenshotPath) {
+    if (isMobile) {
+      return (
+        <div className="relative h-44 w-full overflow-hidden border-b border-slate-800 bg-slate-950 flex items-center justify-center p-3">
+          {/* Ambient Glow */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-slate-950 -z-10" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/5 to-amber-600/5 rounded blur opacity-50 -z-10" />
+          
+          <div className="w-[85px] h-[150px] rounded-xl border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl flex flex-col transition-transform duration-300 group-hover:scale-[1.03]">
+            {/* Simple Mobile Notch/Bar */}
+            <div className="flex justify-center bg-slate-900/60 py-0.5 border-b border-slate-800/80 shrink-0">
+              <span className="h-0.5 w-6 rounded-full bg-slate-700" />
+            </div>
+            {/* Screenshot */}
+            <div className="relative flex-1 bg-slate-950 overflow-hidden">
+              <img
+                src={screenshotPath}
+                alt={altText}
+                className="w-full h-full object-cover object-top brightness-[1.03] contrast-[1.02]"
+              />
+            </div>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="relative h-44 w-full overflow-hidden border-b border-slate-850 bg-slate-950 p-2">
+          {/* Ambient Glow */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-slate-950 -z-10" />
+          
+          <div className="w-full h-full rounded-lg border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl flex flex-col transition-transform duration-300 group-hover:scale-[1.01]">
+            {/* Simple Browser Bar */}
+            <div className="flex items-center gap-1 border-b border-slate-800/80 bg-slate-900/40 px-2.5 py-1 shrink-0">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-700/80" />
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-700/80" />
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-700/80" />
+              <span className="ml-2 truncate rounded bg-slate-950/70 px-2 py-0.5 text-[7px] font-mono text-slate-500 flex-1 leading-none">
+                {item.url.replace('https://', '').replace(/\/$/, '')}
+              </span>
+            </div>
+            {/* Screenshot */}
+            <div className="relative flex-1 bg-slate-950 overflow-hidden">
+              <img
+                src={screenshotPath}
+                alt={altText}
+                className="w-full h-full object-cover object-top brightness-[1.03] contrast-[1.02]"
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Fallback (for Portafolio and other things)
   return (
     <div className="relative h-44 w-full overflow-hidden border-b border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950">
-      {/* Background glow orb */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(245,158,11,0.08),_transparent_65%)]" />
-
-      {/* Browser Bar Chrome */}
       <div className="relative flex items-center gap-1.5 border-b border-slate-800/80 bg-slate-900/60 px-3 py-2">
         <span className="h-1.5 w-1.5 rounded-full bg-slate-700/80" />
         <span className="h-1.5 w-1.5 rounded-full bg-slate-700/80" />
@@ -30,104 +113,20 @@ function CaseThumb({ item }: { item: CaseItem }) {
           demo.luma-premium.com/{slug ?? 'preview'}
         </span>
       </div>
-
-      {/* Custom Mockup Render based on Slug */}
       <div className="p-3 text-[9px] font-sans">
-        {slug === 'real-estate-os' && (
-          <div className="grid grid-cols-2 gap-2 text-white">
-            <div className="rounded border border-slate-850 bg-slate-950/50 p-2 space-y-1">
-              <div className="flex justify-between items-start">
-                <span className="font-semibold truncate max-w-[50px]">Vista del Río</span>
-                <span className="text-[7px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-0.5 rounded font-mono">€280k</span>
-              </div>
-              <div className="flex items-center gap-0.5 text-[7px] text-slate-500">
-                <MapPin className="h-2 w-2 shrink-0" />
-                <span>Punta Cana</span>
-              </div>
+        <div className="flex gap-2">
+          <div className="flex-1 rounded border border-slate-850 bg-slate-950/50 p-2 space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="flex h-4 w-4 items-center justify-center rounded bg-slate-900 border border-slate-800">
+                <User className="h-2 w-2 text-amber-500" />
+              </span>
+              <span className="font-semibold text-white leading-none">Founder Dashboard</span>
             </div>
-            <div className="rounded border border-slate-850 bg-slate-950/50 p-2 space-y-1">
-              <div className="flex justify-between items-start">
-                <span className="font-semibold truncate max-w-[50px]">Villa Esmeralda</span>
-                <span className="text-[7px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-0.5 rounded font-mono">€520k</span>
-              </div>
-              <div className="flex items-center gap-0.5 text-[7px] text-slate-500">
-                <MapPin className="h-2 w-2 shrink-0" />
-                <span>Santo Domingo</span>
-              </div>
+            <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden mt-1">
+              <div className="h-full w-[85%] bg-amber-500" />
             </div>
           </div>
-        )}
-
-        {slug === 'real-estate-crm-os' && (
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded border border-slate-850 bg-slate-950/50 p-1.5 space-y-1">
-              <span className="block text-[6px] uppercase tracking-wide text-slate-500 font-bold">New</span>
-              <div className="bg-slate-900/50 rounded border border-slate-800 p-1 text-[8px] text-white truncate">Mateo G.</div>
-            </div>
-            <div className="rounded border border-slate-850 bg-slate-950/50 p-1.5 space-y-1">
-              <span className="block text-[6px] uppercase tracking-wide text-slate-500 font-bold">Contact</span>
-              <div className="bg-slate-900/50 rounded border border-slate-800 p-1 text-[8px] text-white truncate">Elena V.</div>
-            </div>
-            <div className="rounded border border-slate-850 bg-slate-950/50 p-1.5 space-y-1">
-              <span className="block text-[6px] uppercase tracking-wide text-emerald-500 font-bold">Qualified</span>
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded p-1 text-[8px] text-white truncate">Carlos M.</div>
-            </div>
-          </div>
-        )}
-
-        {slug === 'real-estate-concierge-os' && (
-          <div className="space-y-1.5 max-w-[90%] mx-auto">
-            <div className="rounded bg-slate-900/80 border border-slate-850 p-1.5 text-slate-300">
-              Hola, ¿tienen locales en Torre Platinum?
-            </div>
-            <div className="ml-auto max-w-[90%] rounded bg-amber-500/10 border border-amber-500/20 p-1.5 text-amber-400">
-              ¡Hola! Sí, contamos con 3 locales comerciales en PB.
-            </div>
-          </div>
-        )}
-
-        {slug === 'commerce-os' && (
-          <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-2 rounded border border-slate-850 bg-slate-950/50 p-2 space-y-1">
-              <span className="block font-semibold text-white truncate">Silla Ergonómica</span>
-              <span className="block text-amber-500 font-bold font-mono">€240</span>
-            </div>
-            <div className="rounded border border-slate-850 bg-slate-900/40 p-1.5 flex flex-col justify-between items-center text-center">
-              <span className="text-[7px] text-slate-500 uppercase">Cart</span>
-              <span className="font-bold text-white leading-none">1 item</span>
-            </div>
-          </div>
-        )}
-
-        {slug === 'beauty-spa-os' && (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded border border-slate-850 bg-slate-950/50 p-1.5 space-y-1">
-              <span className="block text-[6px] uppercase tracking-wide text-slate-500 font-bold">Services</span>
-              <span className="block text-white truncate leading-none">Limpieza Facial</span>
-            </div>
-            <div className="rounded border border-amber-500/20 bg-amber-500/10 p-1.5 space-y-1">
-              <span className="block text-[6px] uppercase tracking-wide text-amber-400 font-bold">Booked</span>
-              <span className="block text-white truncate leading-none">11:30 AM</span>
-            </div>
-          </div>
-        )}
-
-        {/* Default / Suvoga OS / Personal Portfolio */}
-        {!slug && (
-          <div className="flex gap-2">
-            <div className="flex-1 rounded border border-slate-850 bg-slate-950/50 p-2 space-y-1">
-              <div className="flex items-center gap-1.5">
-                <span className="flex h-4 w-4 items-center justify-center rounded bg-slate-900 border border-slate-800">
-                  <User className="h-2 w-2 text-amber-500" />
-                </span>
-                <span className="font-semibold text-white leading-none">Founder Dashboard</span>
-              </div>
-              <div className="h-1.5 w-full bg-slate-900 rounded overflow-hidden mt-1">
-                <div className="h-full w-[85%] bg-amber-500" />
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

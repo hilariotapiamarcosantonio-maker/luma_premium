@@ -324,6 +324,7 @@ export default function SolutionLanding({
                   </li>
                 ))}
               </ul>
+              <SolutionVisual slug={solution.slug} locale={locale} view="client" chip={false} className="mt-8" />
             </div>
             {/* Equipo */}
             <div>

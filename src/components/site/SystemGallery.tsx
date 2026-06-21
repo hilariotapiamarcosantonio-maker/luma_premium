@@ -8,9 +8,6 @@ import {
   Smartphone,
   Package,
   Target,
-  TrendingUp,
-  ListTodo,
-  FileCheck,
 } from 'lucide-react';
 
 type Locale = 'es' | 'en';
@@ -34,7 +31,6 @@ const TILES: TileType[] = [
 ];
 
 export default function SystemGallery({ locale = 'es' }: { locale?: Locale }) {
-  const isEn = locale === 'en';
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -51,102 +47,88 @@ export default function SystemGallery({ locale = 'es' }: { locale?: Locale }) {
               <tile.icon className="h-4 w-4 text-amber-500" />
             </span>
             <span className="text-xs font-bold text-white">{tile.label[locale]}</span>
-          </div>
-
-          {/* Custom Module UI Mockups */}
-          <div className="flex-1 text-[10px] text-slate-400 font-sans">
+          </div>          {/* Custom Module UI Mockups utilizing real screenshots */}
+          <div className="flex-1 text-[10px] text-slate-400 font-sans mt-2">
             {tile.id === 'dashboard' && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="rounded border border-slate-850 bg-slate-950/40 p-2 space-y-1">
-                  <span className="block text-[8px] text-slate-500 uppercase">Conversion</span>
-                  <div className="flex items-center gap-1">
-                    <span className="font-bold text-white text-xs">14.8%</span>
-                    <TrendingUp className="h-3 w-3 text-emerald-400" />
-                  </div>
-                </div>
-                <div className="rounded border border-slate-850 bg-slate-950/40 p-2 space-y-1">
-                  <span className="block text-[8px] text-slate-500 uppercase">Response Rate</span>
-                  <span className="block font-bold text-white text-xs">98.2%</span>
-                </div>
-                <div className="hidden sm:block rounded border border-slate-850 bg-slate-950/40 p-2 space-y-1">
-                  <span className="block text-[8px] text-slate-500 uppercase">Ad ROI</span>
-                  <span className="block font-bold text-white text-xs">84%</span>
-                </div>
+              <div className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors">
+                <img
+                  src="/images/marketing/screenshots/optimized/luma_real_estete_os_crm_-_demo.webp"
+                  alt="CRM Dashboard Preview"
+                  className="w-full h-full object-cover object-top brightness-[1.03] contrast-[1.02]"
+                />
               </div>
             )}
 
             {tile.id === 'pipeline' && (
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center text-[7px] text-slate-500 font-mono">
-                  <span>Sales Stages</span>
-                  <span className="text-amber-500">ACTIVE</span>
-                </div>
-                <div className="rounded border border-slate-850 bg-slate-950/50 p-1.5">
-                  <span className="block font-semibold text-white leading-none">A. Mendez</span>
-                  <span className="block text-[8px] text-slate-500 mt-0.5">Vista del Río</span>
-                </div>
+              <div className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors">
+                <img
+                  src="/images/marketing/screenshots/optimized/luma_real_estete_os_crm_-_demo.webp"
+                  alt="CRM Sales Pipeline Preview"
+                  className="w-full h-full object-cover brightness-[1.03] contrast-[1.02]"
+                  style={{ objectPosition: 'center 40%' }}
+                />
               </div>
             )}
 
             {tile.id === 'concierge' && (
-              <div className="space-y-1.5">
-                <div className="rounded bg-slate-950/70 border border-slate-850 p-1.5 text-slate-300">
-                  {isEn ? 'Qualified: Investor' : 'Calificado: Inversor'}
-                </div>
-                <div className="h-1.5 w-full bg-slate-950 rounded overflow-hidden">
-                  <div className="h-full w-[80%] bg-emerald-500" />
-                </div>
+              <div className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors">
+                <img
+                  src="/images/marketing/screenshots/optimized/real_estate_concierge_os_-_demo.webp"
+                  alt="Concierge Chat Assist Preview"
+                  className="w-full h-full object-cover object-top brightness-[1.03] contrast-[1.02]"
+                />
               </div>
             )}
 
             {tile.id === 'catalog' && (
-              <div className="flex gap-2">
-                <div className="flex-1 rounded border border-slate-850 bg-slate-950/50 p-1.5 text-center">
-                  <span className="block font-bold text-white">€240</span>
-                </div>
-                <div className="flex-1 rounded border border-slate-850 bg-slate-950/50 p-1.5 text-center">
-                  <span className="block font-bold text-white">€480</span>
-                </div>
+              <div className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors">
+                <img
+                  src="/images/marketing/screenshots/optimized/luma_vista_del_rio_desktop.webp"
+                  alt="Properties Catalog Preview"
+                  className="w-full h-full object-cover object-top brightness-[1.03] contrast-[1.02]"
+                />
               </div>
             )}
 
             {tile.id === 'contacts' && (
-              <div className="space-y-1">
-                {['Alejandro M.', 'Elena V.', 'Carlos M.'].map((name, idx) => (
-                  <div key={idx} className="flex justify-between items-center border-b border-slate-850 pb-0.5">
-                    <span className="text-white font-medium">{name}</span>
-                    <span className="text-[8px] text-slate-500">Lead</span>
-                  </div>
-                ))}
+              <div className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors">
+                <img
+                  src="/images/marketing/screenshots/optimized/luma_real_estete_os_crm_-_demo.webp"
+                  alt="CRM Contacts List Preview"
+                  className="w-full h-full object-cover brightness-[1.03] contrast-[1.02]"
+                  style={{ objectPosition: 'center 75%' }}
+                />
               </div>
             )}
 
             {tile.id === 'followup' && (
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <ListTodo className="h-3 w-3 text-slate-500" />
-                  <span className="text-[9px] line-through text-slate-500">{isEn ? 'Schedule call' : 'Llamar prospecto'}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <ListTodo className="h-3 w-3 text-amber-500" />
-                  <span className="text-[9px] text-slate-300">{isEn ? 'Send proposal' : 'Enviar cotización'}</span>
-                </div>
+              <div className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors">
+                <img
+                  src="/images/marketing/screenshots/optimized/luma_real_estete_os_crm_-_demo.webp"
+                  alt="CRM Tasks & Followups"
+                  className="w-full h-full object-cover brightness-[1.03] contrast-[1.02]"
+                  style={{ objectPosition: 'center 20%' }}
+                />
               </div>
             )}
 
             {tile.id === 'orders' && (
-              <div className="flex justify-between items-center rounded border border-emerald-500/20 bg-emerald-500/[0.03] p-2 text-emerald-400">
-                <span className="font-semibold">{isEn ? 'Order #2041' : 'Pedido #2041'}</span>
-                <span className="inline-flex items-center gap-0.5 text-[8px] bg-emerald-500/20 px-1 rounded">
-                  <FileCheck className="h-2.5 w-2.5" /> {isEn ? 'Success' : 'Completado'}
-                </span>
+              <div className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors">
+                <img
+                  src="/images/marketing/screenshots/optimized/luma_commerce_os_-_demo.webp"
+                  alt="Commerce OS Orders Preview"
+                  className="w-full h-full object-cover object-top brightness-[1.03] contrast-[1.02]"
+                />
               </div>
             )}
 
             {tile.id === 'mobile' && (
-              <div className="rounded border border-slate-850 bg-slate-950/50 p-1.5 flex justify-between items-center">
-                <span>App Concierge</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <div className="relative h-28 w-full overflow-hidden rounded border border-slate-800/80 bg-slate-950/80 shadow-inner group-hover:border-amber-500/20 transition-colors">
+                <img
+                  src="/images/marketing/screenshots/optimized/luma_beauty_spa_movil.webp"
+                  alt="Mobile Booking View Preview"
+                  className="w-full h-full object-cover object-top brightness-[1.03] contrast-[1.02]"
+                />
               </div>
             )}
           </div>
