@@ -1,19 +1,33 @@
 # Luma Premium — Manifiesto de Reemplazo de Imágenes (web pública)
 
-> Registro de **todo** el material visual de la web pública tras el upgrade de
-> *visual storytelling* (Fase 1.1). Define qué es provisional y cómo sustituirlo
-> por material real de Luma Premium antes de campañas serias.
+> Registro de **todo** el material visual de la web pública. Actualizado en la
+> **Fase 1.2** (landings de venta + brillo/legibilidad). Define qué es provisional
+> y cómo sustituirlo por material real de Luma Premium antes de campañas serias.
 >
-> Dos tipos de activo:
-> 1. **Fotos stock** (WebP en `public/images/marketing/stock/`) — provisionales.
-> 2. **Mockups / diagramas en código** (CSS/SVG, sin archivo de imagen) — estilizados,
->    sin datos reales; idealmente se sustituyen por **capturas reales** cuando existan.
+> **visual_type** (clasificación pedida):
+> - `stock_temporal` — foto de stock provisional (archivo WebP).
+> - `mockup_conceptual` — representación CSS/SVG de producto/proceso (sin archivo, sin datos reales).
+> - `screenshot_real` — captura real del sistema (con PII oculta). *Aún no hay ninguno en el repo.*
+> - `placeholder_demo` — hueco marcado a la espera de captura/recurso real.
+> - `imagen_definitiva` — material propio final. *Aún ninguno.*
 >
 > Registro central de rutas/alt/tamaños: `src/data/marketing-images.ts`.
 > Carga: `next/image` con `width`/`height` o `fill`, `sizes`, `alt` y lazy (salvo heroes con `priority`).
 
 - **Fuente stock:** Unsplash (`images.unsplash.com`). Licencia Unsplash (uso comercial, sin atribución obligatoria) — https://unsplash.com/license
 - **Reglas:** no marcas reales, no clientes/equipo/oficina falsos, no resultados/testimonios inventados, alt honesto (concepto, nunca evidencia).
+
+### Ajuste de brillo / overlay (Fase 1.2)
+
+Todas las fotos se sirven ahora más vivas y legibles vía clases utilitarias en los
+componentes (no se re-procesaron los archivos):
+
+- **brightness_notes:** `brightness-110 contrast-105` (+ `saturate-105` en editoriales);
+  `opacity` subida a `0.95` (antes `0.70`–`0.80`).
+- **overlay_notes:** gradientes oscuros reducidos (p. ej. `from-slate-950/90 … to-transparent`,
+  antes `from-slate-950 via-slate-950/40`); en editoriales el refuerzo oscuro se limita
+  al tercio inferior solo si hay caption, para no apagar la imagen.
+- **safe_area:** sujeto centrado; texto/caption siempre sobre el refuerzo inferior.
 
 ---
 
@@ -87,15 +101,23 @@ Representaciones **estilizadas** de producto/proceso. No son capturas reales ni
 muestran datos. Para máxima autoridad conviene sustituirlas por **capturas reales**
 (con datos sensibles ocultos) cuando estén disponibles.
 
-| image_id | componente | page / section | replacement_type | replacement_needed | priority |
-|---|---|---|---|---|---|
-| mock-hero | `HeroComposition` | `/`, `/en` · hero | product_composition / real_dashboard_screenshot | recomendado | alta |
-| mock-solution-* | `SolutionVisual` | fichas `/soluciones/[slug]`, `/en/solutions/[slug]` · hero | premium_mockup → screenshot real del sistema | recomendado | alta |
-| mock-flow | `CommercialFlowBand` | `/`, `/en` · flujo | process_illustration | no | — |
-| mock-method | `MethodJourney` | `/metodo`, `/en/method` | process_illustration | no | — |
-| mock-case-thumb | `CaseCard` (thumb) | `/casos`, `/en/cases`, home | browser_mockup → screenshot real de la demo | recomendado | media |
-| mock-gallery | `SystemGallery` | `/casos`, `/en/cases` · "Dentro del sistema" | premium_mockup → screenshots reales de módulos | recomendado | media |
-| mock-diag-matrix | `DiagnosticMatrix` | `/diagnostico`, `/en/assessment` | process_illustration | no | — |
+| image_id | componente | visual_type | page / section | replacement_type | replacement_needed | priority |
+|---|---|---|---|---|---|---|
+| mock-hero | `HeroComposition` | mockup_conceptual | `/`, `/en` · hero | product_composition / real_dashboard_screenshot | recomendado | alta |
+| mock-solution-client | `SolutionVisual view="client"` | mockup_conceptual | fichas · hero + demo | premium_mockup → screenshot real (vista cliente) | recomendado | alta |
+| mock-solution-team | `SolutionVisual view="team"` (`TeamPanel`) | mockup_conceptual | fichas · "qué ve el equipo" | crm_screenshot / real_dashboard_screenshot | recomendado | alta |
+| mock-transform | `SolutionLanding` (Antes→Luma→Después) | mockup_conceptual | fichas · transformación | process_illustration | no | — |
+| mock-flow | `CommercialFlowBand` | mockup_conceptual | `/`, `/en` · flujo | process_illustration | no | — |
+| mock-method | `MethodJourney` | mockup_conceptual | `/metodo`, `/en/method` | process_illustration | no | — |
+| mock-case-thumb | `CaseCard` (thumb) | mockup_conceptual | `/casos`, `/en/cases`, home | browser_mockup + mobile_mockup → screenshot real de la demo | recomendado | media |
+| mock-gallery | `SystemGallery` | mockup_conceptual | `/casos`, `/en/cases`, fichas · "Dentro del sistema" | premium_mockup → screenshots reales de módulos | recomendado | media |
+| mock-diag-matrix | `DiagnosticMatrix` | mockup_conceptual | `/diagnostico`, `/en/assessment` | process_illustration | no | — |
+
+> **Fichas como landing (Fase 1.2):** cada `/soluciones/[slug]` y `/en/solutions/[slug]`
+> usa `SolutionLanding` con 13 bloques (hero, problema, transformación, qué incluye,
+> cómo funciona, vista cliente/equipo, demo real, galería, escenario, implementación,
+> FAQ, CTA). Los visuales `mock-solution-client` y `mock-solution-team` son los
+> candidatos #1 a sustituir por **capturas reales de las demos** (URLs en `src/lib/solutions.ts`).
 
 - safe_area / crop: responsivos por diseño (CSS), sin layout shift; no requieren recorte.
 - replacement_instructions: al disponer de capturas reales por sistema, sustituir el

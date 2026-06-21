@@ -31,11 +31,15 @@ export default function EditorialFigure({
         fill
         sizes="(max-width: 1024px) 100vw, 50vw"
         priority={priority}
-        className="object-cover opacity-70 transition-transform duration-700 group-hover:scale-[1.03]"
+        className="object-cover opacity-95 brightness-110 contrast-105 saturate-105 transition-transform duration-700 group-hover:scale-[1.03]"
       />
-      {/* Overlay para tono premium oscuro y legibilidad */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-950/50 to-slate-900/20" />
-      <div className="absolute inset-0 ring-1 ring-inset ring-white/5" />
+      {/* Overlay sutil: profundidad sin apagar la imagen */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-slate-950/80 via-slate-950/15 to-transparent" />
+      {/* Refuerzo de legibilidad solo donde va el caption */}
+      {caption && (
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-slate-950/85 to-transparent" />
+      )}
+      <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
       {caption && (
         <figcaption className="absolute bottom-4 left-4 right-4">
           <span className="inline-flex items-center rounded-full border border-amber-500/20 bg-slate-950/80 px-3 py-1.5 text-[11px] font-medium text-amber-400/90 backdrop-blur-sm">

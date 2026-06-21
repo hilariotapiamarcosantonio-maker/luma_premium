@@ -6,6 +6,9 @@
 
 export type SolutionFlow = { label: string; detail: string };
 
+export type SolutionFAQ = { q: string; a: string };
+export type SolutionView = { caption: string; points: string[] };
+
 export type Solution = {
   slug: string;
   /** Nombre comercial corto */
@@ -38,6 +41,21 @@ export type Solution = {
   salesNextStep: string;
   /** Nota de cumplimiento / honestidad comercial */
   disclaimer?: string;
+  // ── Campos de landing comercial (Fase 1.2) ──
+  /** Propuesta de valor de una línea para el hero */
+  valueProp?: string;
+  /** Transformación: situación antes del sistema */
+  before?: string;
+  /** Transformación: operación controlada después */
+  after?: string;
+  /** Qué ve el cliente final (experiencia) */
+  clientView?: SolutionView;
+  /** Qué ve el equipo (panel / backend) */
+  teamView?: SolutionView;
+  /** Escenario de uso cualitativo (sin métricas inventadas) */
+  useCase?: { context: string; resolution: string };
+  /** Preguntas frecuentes de compra */
+  faq?: SolutionFAQ[];
 };
 
 export const SOLUTIONS: Solution[] = [
@@ -90,6 +108,36 @@ export const SOLUTIONS: Solution[] = [
     demoUrl: 'https://luma-real-estate-os-demo.vercel.app/',
     internalUrl: '/luma-estate-os',
     salesNextStep: 'Pedir una auditoría comercial inmobiliaria (diagnóstico).',
+    valueProp:
+      'Presenta cada proyecto con autoridad y convierte tus campañas en leads calificados por perfil de comprador.',
+    before:
+      'Propiedades premium publicadas como anuncios genéricos; el lead llega sin contexto y se enfría.',
+    after:
+      'Cada proyecto con su presentación, su ruta por perfil y captación conectada lista para el seguimiento.',
+    clientView: {
+      caption: 'Lo que ve el comprador',
+      points: [
+        'Presentación premium del proyecto',
+        'Una ruta según su perfil (inversión, retiro, vivienda)',
+        'Galería, ubicación y beneficios claros',
+        'Un formulario corto para dejar su interés',
+      ],
+    },
+    teamView: {
+      caption: 'Lo que ve su equipo',
+      points: [
+        'Leads con perfil e interés ya identificados',
+        'Origen de campaña en cada oportunidad',
+        'Material listo para enviar al asesor',
+        'Base ordenada para seguimiento y atribución',
+      ],
+    },
+    useCase: {
+      context:
+        'Un desarrollo con varias tipologías recibe tráfico de Facebook e Instagram, pero todos los anuncios llevan a la misma página y los leads llegan sin saber qué buscan.',
+      resolution:
+        'Con Real Estate OS cada anuncio dirige a una ruta por perfil; el comprador ve una presentación pensada para su caso y deja su interés ya calificado para el asesor.',
+    },
   },
   {
     slug: 'real-estate-crm-os',
@@ -135,6 +183,36 @@ export const SOLUTIONS: Solution[] = [
     commercialFlow: ['Lead', 'Propiedad', 'Asesor', 'Estado', 'Próximo paso', 'Cierre'],
     demoUrl: 'https://luma-real-estate-crm-os-demo.vercel.app/',
     salesNextStep: 'Mostrar el demo del CRM y pedir el diagnóstico de seguimiento.',
+    valueProp:
+      'Centraliza leads, propiedades y seguimiento en un pipeline donde la gerencia ve todo en tiempo real.',
+    before:
+      'Prospectos dispersos en Excel y WhatsApp; nadie sabe el estado real ni cuál es el próximo paso.',
+    after:
+      'Un pipeline único con estado, responsable y próximo paso visible para todo el equipo.',
+    clientView: {
+      caption: 'Lo que percibe el prospecto',
+      points: [
+        'Respuesta más rápida y ordenada',
+        'Seguimiento sin que le repitan preguntas',
+        'Atención coherente entre asesores',
+        'Una experiencia que se siente profesional',
+      ],
+    },
+    teamView: {
+      caption: 'Lo que ve su equipo',
+      points: [
+        'Pipeline con el estado de cada lead',
+        'Ficha con historial, propiedad e interés',
+        'Asignación por asesor con responsabilidad',
+        'Tablero de control para la gerencia',
+      ],
+    },
+    useCase: {
+      context:
+        'Una inmobiliaria con varios asesores pierde oportunidades porque cada quien lleva sus leads a su manera y la gerencia no tiene visibilidad.',
+      resolution:
+        'El CRM OS unifica todos los prospectos con estado y próximo paso; la dirección ve el pipeline completo y ninguna oportunidad se queda sin seguimiento.',
+    },
   },
   {
     slug: 'real-estate-concierge-os',
@@ -183,6 +261,36 @@ export const SOLUTIONS: Solution[] = [
     salesNextStep: 'Mostrar el flujo demo del concierge y pedir el diagnóstico.',
     disclaimer:
       'Flujo de concierge demostrativo. Preparado para integraciones de mensajería; sin conexión real a plataformas de terceros en esta etapa.',
+    valueProp:
+      'Responde, educa y califica a cada prospecto al instante, y entrega al asesor solo los que están listos.',
+    before:
+      'El asesor responde lo mismo una y otra vez; los prospectos serios se enfrían esperando respuesta.',
+    after:
+      'Un concierge que atiende a toda hora, califica y deriva al asesor con un resumen del prospecto.',
+    clientView: {
+      caption: 'Lo que ve el prospecto',
+      points: [
+        'Respuesta inmediata a sus dudas',
+        'Ubicación, precio y material a la mano',
+        'Explicación de plano vs. listo',
+        'Atención disponible a cualquier hora',
+      ],
+    },
+    teamView: {
+      caption: 'Lo que ve su equipo',
+      points: [
+        'Prospectos calificados por intención',
+        'Un resumen de cada conversación',
+        'Solo los leads listos llegan al asesor',
+        'Menos tiempo en curiosos, más en compradores',
+      ],
+    },
+    useCase: {
+      context:
+        'Una campaña genera decenas de consultas por WhatsApp con las mismas preguntas, y el equipo no da abasto para responder a tiempo.',
+      resolution:
+        'El Concierge OS responde y educa al instante, identifica intención y presupuesto, y entrega al asesor un prospecto calificado con su contexto resumido.',
+    },
   },
   {
     slug: 'commerce-os',
@@ -228,6 +336,36 @@ export const SOLUTIONS: Solution[] = [
     commercialFlow: ['Catálogo', 'Pedido', 'Cliente', 'Seguimiento', 'Recompra'],
     demoUrl: 'https://luma-commerce-os-demo.vercel.app/',
     salesNextStep: 'Mostrar el demo de tienda y pedir el diagnóstico comercial.',
+    valueProp:
+      'Ordena tu venta por redes en una tienda con catálogo, pedidos, clientes y panel de control.',
+    before:
+      'Ventas por DM sin catálogo, sin registro de cliente y sin forma de hacer seguimiento.',
+    after:
+      'Catálogo, pedidos y clientes organizados en un panel listo para recompra y postventa.',
+    clientView: {
+      caption: 'Lo que ve el cliente',
+      points: [
+        'Catálogo presentado con orden',
+        'Producto con detalle y precio claros',
+        'Carrito o solicitud de pedido simple',
+        'Checkout y confirmación sin fricción',
+      ],
+    },
+    teamView: {
+      caption: 'Lo que ve su equipo',
+      points: [
+        'Pedidos registrados y asociados a un cliente',
+        'Historial de compra por cliente',
+        'Panel de productos, pedidos y clientes',
+        'Base lista para WhatsApp y campañas',
+      ],
+    },
+    useCase: {
+      context:
+        'Una marca que vende por Instagram pierde pedidos en la bandeja de mensajes y no tiene registro de quién compró qué.',
+      resolution:
+        'Commerce OS convierte ese flujo en una tienda con pedidos y clientes registrados, con un panel para gestionar todo y activar la recompra.',
+    },
   },
   {
     slug: 'beauty-spa-os',
@@ -275,6 +413,36 @@ export const SOLUTIONS: Solution[] = [
     salesNextStep: 'Mostrar el demo y el concierge, luego pedir el diagnóstico.',
     disclaimer:
       'Sistema de presentación y captación comercial. No realiza afirmaciones médicas ni promete resultados clínicos.',
+    valueProp:
+      'Presenta tus servicios con nivel, capta consultas desde redes y ordena tu agenda comercial.',
+    before:
+      'Consultas de Instagram que se pierden entre mensajes y una agenda a merced de la improvisación.',
+    after:
+      'Servicios presentados con autoridad, consultas calificadas y citas solicitadas con orden.',
+    clientView: {
+      caption: 'Lo que ve la clienta',
+      points: [
+        'Servicios presentados con estética premium',
+        'Un concierge que resuelve sus dudas',
+        'Solicitud de cita simple y clara',
+        'Una experiencia de marca coherente',
+      ],
+    },
+    teamView: {
+      caption: 'Lo que ve su equipo',
+      points: [
+        'Consultas captadas desde redes y ads',
+        'Clientas con su información para confirmar',
+        'Una agenda ordenada de solicitudes',
+        'Base para seguimiento y recompra',
+      ],
+    },
+    useCase: {
+      context:
+        'Un centro estético recibe muchas consultas por Instagram, pero sin un sistema que presente, califique y agende se diluye la marca y se pierden citas.',
+      resolution:
+        'Beauty Spa OS presenta los servicios con nivel, atiende y califica con un concierge, y ordena la solicitud de citas para que la agenda deje de depender de la improvisación.',
+    },
   },
 ];
 
@@ -334,6 +502,36 @@ export const EN_SOLUTIONS: Solution[] = [
     demoUrl: 'https://luma-real-estate-os-demo.vercel.app/',
     internalUrl: '/luma-estate-os',
     salesNextStep: 'Request a real estate commercial audit (assessment).',
+    valueProp:
+      'Present every project with authority and turn your campaigns into leads qualified by buyer profile.',
+    before:
+      'Premium properties published as generic listings; the lead arrives without context and cools down.',
+    after:
+      'Each project with its own presentation, profile route, and connected capture ready for follow-up.',
+    clientView: {
+      caption: 'What the buyer sees',
+      points: [
+        'A premium presentation of the project',
+        'A route matched to their profile (investment, retirement, living)',
+        'Gallery, location, and clear benefits',
+        'A short form to leave their interest',
+      ],
+    },
+    teamView: {
+      caption: 'What your team sees',
+      points: [
+        'Leads with profile and interest already identified',
+        'Campaign source on every opportunity',
+        'Material ready to send to the agent',
+        'A clean base for follow-up and attribution',
+      ],
+    },
+    useCase: {
+      context:
+        'A development with several unit types gets traffic from Facebook and Instagram, but every ad leads to the same page and leads arrive without knowing what they want.',
+      resolution:
+        'With Real Estate OS each ad routes to a profile-based path; the buyer sees a presentation built for their case and leaves their interest already qualified for the agent.',
+    },
   },
   {
     slug: 'real-estate-crm-os',
@@ -379,6 +577,36 @@ export const EN_SOLUTIONS: Solution[] = [
     commercialFlow: ['Lead', 'Property', 'Agent', 'Status', 'Next step', 'Close'],
     demoUrl: 'https://luma-real-estate-crm-os-demo.vercel.app/',
     salesNextStep: 'Show CRM demo and request follow-up assessment.',
+    valueProp:
+      'Centralize leads, properties, and follow-up in one pipeline where management sees everything in real time.',
+    before:
+      'Prospects scattered across spreadsheets and WhatsApp; no one knows the real status or the next step.',
+    after:
+      'A single pipeline with status, owner, and next step visible to the whole team.',
+    clientView: {
+      caption: 'What the prospect feels',
+      points: [
+        'A faster, more orderly response',
+        'Follow-up without repeating the same questions',
+        'Consistent attention across agents',
+        'An experience that feels professional',
+      ],
+    },
+    teamView: {
+      caption: 'What your team sees',
+      points: [
+        'A pipeline with each lead’s status',
+        'A record with history, property, and interest',
+        'Per-agent assignment with accountability',
+        'A control board for management',
+      ],
+    },
+    useCase: {
+      context:
+        'An agency with several agents loses opportunities because everyone tracks leads their own way and management has no visibility.',
+      resolution:
+        'CRM OS unifies every prospect with status and next step; leadership sees the full pipeline and no opportunity is left without follow-up.',
+    },
   },
   {
     slug: 'real-estate-concierge-os',
@@ -426,6 +654,36 @@ export const EN_SOLUTIONS: Solution[] = [
     salesNextStep: 'Show concierge demo flow and request assessment.',
     disclaimer:
       'Demonstrative concierge flow. Prepared for messaging integrations; no real connection to third-party platforms at this stage.',
+    valueProp:
+      'Responds, educates, and qualifies every prospect instantly, handing the agent only the ones who are ready.',
+    before:
+      'The agent answers the same questions over and over; serious prospects cool down while waiting.',
+    after:
+      'A concierge that responds around the clock, qualifies, and hands off to the agent with a prospect summary.',
+    clientView: {
+      caption: 'What the prospect sees',
+      points: [
+        'Instant answers to their questions',
+        'Location, price, and material at hand',
+        'Pre-construction vs. ready explained',
+        'Attention available at any hour',
+      ],
+    },
+    teamView: {
+      caption: 'What your team sees',
+      points: [
+        'Prospects qualified by intent',
+        'A summary of each conversation',
+        'Only ready leads reach the agent',
+        'Less time on browsers, more on buyers',
+      ],
+    },
+    useCase: {
+      context:
+        'A campaign generates dozens of WhatsApp inquiries with the same questions, and the team cannot keep up with timely replies.',
+      resolution:
+        'Concierge OS responds and educates instantly, identifies intent and budget, and hands the agent a qualified prospect with summarized context.',
+    },
   },
   {
     slug: 'commerce-os',
@@ -471,6 +729,36 @@ export const EN_SOLUTIONS: Solution[] = [
     commercialFlow: ['Catalog', 'Order', 'Client', 'Follow-up', 'Repeat purchase'],
     demoUrl: 'https://luma-commerce-os-demo.vercel.app/',
     salesNextStep: 'Show store demo and request commercial assessment.',
+    valueProp:
+      'Bring order to your social selling with a store: catalog, orders, clients, and an admin panel.',
+    before:
+      'Sales via DM with no catalog, no client record, and no way to follow up.',
+    after:
+      'Catalog, orders, and clients organized in a panel ready for repeat purchase and after-sales.',
+    clientView: {
+      caption: 'What the customer sees',
+      points: [
+        'A catalog presented in order',
+        'Products with clear detail and price',
+        'A simple cart or order request',
+        'A frictionless checkout and confirmation',
+      ],
+    },
+    teamView: {
+      caption: 'What your team sees',
+      points: [
+        'Orders registered and tied to a client',
+        'Purchase history per client',
+        'A panel for products, orders, and clients',
+        'A base ready for WhatsApp and campaigns',
+      ],
+    },
+    useCase: {
+      context:
+        'A brand selling on Instagram loses orders in the message inbox and has no record of who bought what.',
+      resolution:
+        'Commerce OS turns that flow into a store with registered orders and clients, plus a panel to manage everything and trigger repeat purchases.',
+    },
   },
   {
     slug: 'beauty-spa-os',
@@ -518,6 +806,36 @@ export const EN_SOLUTIONS: Solution[] = [
     salesNextStep: 'Show demo and concierge, then request assessment.',
     disclaimer:
       'Presentation and commercial capture system. Does not make medical claims or promise clinical results.',
+    valueProp:
+      'Present your services with authority, capture inquiries from social, and bring order to your booking agenda.',
+    before:
+      'Instagram inquiries lost among messages and a schedule left to improvisation.',
+    after:
+      'Services presented with authority, qualified inquiries, and bookings requested in an orderly way.',
+    clientView: {
+      caption: 'What the client sees',
+      points: [
+        'Services presented with premium aesthetics',
+        'A concierge that resolves their questions',
+        'A simple, clear booking request',
+        'A consistent brand experience',
+      ],
+    },
+    teamView: {
+      caption: 'What your team sees',
+      points: [
+        'Inquiries captured from social and ads',
+        'Clients with the info needed to confirm',
+        'An orderly schedule of requests',
+        'A base for follow-up and repeat visits',
+      ],
+    },
+    useCase: {
+      context:
+        'An aesthetics center receives many Instagram inquiries, but without a system to present, qualify, and book, the brand is diluted and bookings are lost.',
+      resolution:
+        'Beauty Spa OS presents services with authority, attends and qualifies with a concierge, and brings order to booking requests so the schedule stops depending on improvisation.',
+    },
   },
 ];
 
@@ -526,3 +844,85 @@ export function getEnSolution(slug: string): Solution | undefined {
 }
 
 export const EN_SOLUTION_SLUGS = EN_SOLUTIONS.map((s) => s.slug);
+
+// ── Contenido compartido de landing (igual para todas las soluciones) ──
+
+export const IMPLEMENTATION_STEPS_ES: { title: string; detail: string }[] = [
+  { title: 'Diagnóstico', detail: 'Entendemos su operación comercial antes de construir nada.' },
+  { title: 'Configuración', detail: 'Levantamos el sistema base de la solución.' },
+  { title: 'Personalización', detail: 'Lo adaptamos a su marca, su nicho y sus procesos.' },
+  { title: 'Conexión', detail: 'Integramos captación, canales y seguimiento.' },
+  { title: 'Despliegue', detail: 'Entregamos el sistema funcionando, con entrenamiento al equipo.' },
+  { title: 'Optimización', detail: 'Medimos, ajustamos y escalamos por ciclos.' },
+];
+
+export const IMPLEMENTATION_STEPS_EN: { title: string; detail: string }[] = [
+  { title: 'Assessment', detail: 'We understand your commercial operation before building anything.' },
+  { title: 'Setup', detail: 'We stand up the base system for the solution.' },
+  { title: 'Customization', detail: 'We adapt it to your brand, niche, and processes.' },
+  { title: 'Integration', detail: 'We connect capture, channels, and follow-up.' },
+  { title: 'Deployment', detail: 'We deliver a working system, with team training.' },
+  { title: 'Optimization', detail: 'We measure, adjust, and scale in cycles.' },
+];
+
+export const SOLUTION_FAQ_ES: SolutionFAQ[] = [
+  {
+    q: '¿Se adapta a mi negocio?',
+    a: 'Sí. Cada sistema se configura para su operación, su nicho y su forma de vender. Partimos del diagnóstico para ajustar el alcance exacto.',
+  },
+  {
+    q: '¿Se conecta con WhatsApp y mis redes?',
+    a: 'Está diseñado para trabajar con WhatsApp y redes como canal de captación y respuesta. La integración concreta se define en el diagnóstico.',
+  },
+  {
+    q: '¿Puede trabajar con mi equipo?',
+    a: 'Sí. El sistema asigna y da visibilidad por persona, y entregamos el entrenamiento para que su equipo lo opere con criterio.',
+  },
+  {
+    q: '¿Se puede personalizar?',
+    a: 'Sí. Se adapta a su marca, sus procesos y sus rutas comerciales. No es una plantilla cerrada.',
+  },
+  {
+    q: '¿Tiene demo?',
+    a: 'Sí. En esta misma página puede abrir la demo pública de esta solución y verla en funcionamiento.',
+  },
+  {
+    q: '¿Cuánto tarda la implementación?',
+    a: 'Depende del alcance que definamos en el diagnóstico. Trabajamos por fases para que vea avances sin esperar meses a un único gran lanzamiento.',
+  },
+  {
+    q: '¿Qué ocurre después del diagnóstico?',
+    a: 'Recibe una lectura ejecutiva y una recomendación de sistema con una ruta por fases. Sin compromiso de venta.',
+  },
+];
+
+export const SOLUTION_FAQ_EN: SolutionFAQ[] = [
+  {
+    q: 'Does it adapt to my business?',
+    a: 'Yes. Each system is configured for your operation, your niche, and how you sell. We start from the assessment to set the exact scope.',
+  },
+  {
+    q: 'Does it connect with WhatsApp and my socials?',
+    a: 'It is designed to work with WhatsApp and social channels for capture and response. The specific integration is defined in the assessment.',
+  },
+  {
+    q: 'Can it work with my team?',
+    a: 'Yes. The system assigns and gives per-person visibility, and we provide the training so your team can operate it confidently.',
+  },
+  {
+    q: 'Can it be customized?',
+    a: 'Yes. It adapts to your brand, your processes, and your commercial routes. It is not a closed template.',
+  },
+  {
+    q: 'Is there a demo?',
+    a: 'Yes. On this page you can open the public demo of this solution and see it in action.',
+  },
+  {
+    q: 'How long does implementation take?',
+    a: 'It depends on the scope we define in the assessment. We work in phases so you see progress without waiting months for a single big launch.',
+  },
+  {
+    q: 'What happens after the assessment?',
+    a: 'You receive an executive read and a system recommendation with a phased roadmap. No sales commitment.',
+  },
+];

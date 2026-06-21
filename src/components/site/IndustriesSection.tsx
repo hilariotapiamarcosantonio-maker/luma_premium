@@ -59,9 +59,9 @@ export default function IndustriesSection({ locale = 'es' }: { locale?: 'es' | '
                       width={ind.image.width}
                       height={ind.image.height}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="h-36 w-full object-cover opacity-75 transition-all duration-500 group-hover:scale-105 group-hover:opacity-90"
+                      className="h-36 w-full object-cover opacity-95 brightness-110 contrast-105 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent" />
                     <span className="absolute bottom-3 left-4 inline-flex items-center gap-2">
                       <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-950/80">
                         <IconCmp className="h-4 w-4 text-amber-500" />

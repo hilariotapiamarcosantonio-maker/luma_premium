@@ -23,9 +23,9 @@ export default function SolutionCard({ solution, locale = 'es' }: { solution: So
               width={image.width}
               height={image.height}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="h-40 w-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
+              className="h-40 w-full object-cover opacity-95 brightness-110 contrast-105 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
           </div>
         )}
         <div className="flex flex-1 flex-col p-8">
