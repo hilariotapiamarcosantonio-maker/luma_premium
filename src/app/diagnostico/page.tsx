@@ -4,8 +4,11 @@ import Link from 'next/link';
 import { Search, FileCheck, Route, Users, Clock, ShieldCheck } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
+import DiagnosticMatrix from '@/components/site/DiagnosticMatrix';
+import EditorialFigure from '@/components/site/EditorialFigure';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import DiagnosticoMaestroForm from '@/components/diagnostico/DiagnosticoMaestroForm';
+import { EDITORIAL_IMAGES } from '@/data/marketing-images';
 
 export const metadata: Metadata = {
   title: 'Diagnóstico comercial digital',
@@ -22,16 +25,6 @@ export const metadata: Metadata = {
     languages: { 'en': '/en/assessment' },
   },
 };
-
-const REVISA = [
-  'Presencia digital',
-  'Captación de oportunidades',
-  'Seguimiento comercial',
-  'WhatsApp y redes',
-  'CRM y organización',
-  'Conversión',
-  'Autoridad de marca',
-];
 
 const RECIBE = [
   {
@@ -83,6 +76,15 @@ export default function DiagnosticoPage() {
               </span>
             ))}
           </div>
+          <div className="max-w-3xl mx-auto pt-8">
+            <EditorialFigure
+              image={EDITORIAL_IMAGES.diagnostic}
+              locale="es"
+              priority
+              aspect="aspect-[2/1]"
+              caption="Lectura ejecutiva, no una llamada de ventas"
+            />
+          </div>
         </div>
       </section>
 
@@ -97,16 +99,7 @@ export default function DiagnosticoPage() {
               Una mirada completa a su operación comercial, no solo a su sitio web.
             </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            {REVISA.map((item) => (
-              <span
-                key={item}
-                className="px-5 py-3 rounded-full border border-slate-800 bg-slate-900/30 text-slate-300 text-sm font-medium"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
+          <DiagnosticMatrix locale="es" />
         </div>
       </section>
 

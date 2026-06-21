@@ -70,6 +70,42 @@ export function getSolutionImage(slug: string): MarketingImage | undefined {
   return SOLUTION_IMAGES[slug];
 }
 
+// Imágenes editoriales (heroes de Método, Diagnóstico y Contacto).
+// STOCK PROVISIONAL y abstracto: no representan equipo, oficina ni sede de
+// Luma Premium. El alt describe el concepto, nunca afirma evidencia real.
+const EW = 1600;
+const EH = 900;
+
+export const EDITORIAL_IMAGES: Record<'method' | 'diagnostic' | 'contact', MarketingImage> = {
+  method: {
+    src: `${base}/editorial-method.webp`,
+    width: EW,
+    height: EH,
+    alt: {
+      es: 'Representación abstracta de arquitectura e integración de sistemas',
+      en: 'Abstract representation of architecture and systems integration',
+    },
+  },
+  diagnostic: {
+    src: `${base}/editorial-diagnostic.webp`,
+    width: EW,
+    height: EH,
+    alt: {
+      es: 'Análisis de datos y métricas comerciales en pantalla',
+      en: 'Data analysis and commercial metrics on screen',
+    },
+  },
+  contact: {
+    src: `${base}/editorial-contact.webp`,
+    width: EW,
+    height: EH,
+    alt: {
+      es: 'Espacio de trabajo premium para planificación comercial',
+      en: 'Premium workspace for commercial planning',
+    },
+  },
+};
+
 // Sectores atendidos. Cada sector reutiliza una imagen de concepto.
 export type Industry = {
   id: string;

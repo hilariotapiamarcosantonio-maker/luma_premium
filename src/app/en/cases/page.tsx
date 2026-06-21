@@ -4,6 +4,8 @@ import { ArrowRight } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import CaseCard from '@/components/site/CaseCard';
+import SystemGallery from '@/components/site/SystemGallery';
+import SectionHeading from '@/components/site/SectionHeading';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import { EN_CASES } from '@/lib/cases';
 
@@ -55,6 +57,22 @@ export default function EnCasesPage() {
             </MotionItem>
           ))}
         </MotionStagger>
+      </section>
+
+      {/* Inside the system */}
+      <section className="py-20 px-6 border-t border-slate-800/50 bg-slate-900/20">
+        <div className="max-w-7xl mx-auto">
+          <MotionSection className="mb-12">
+            <SectionHeading
+              badge="Inside the system"
+              title="What the operation looks like from the inside."
+              subtitle="A representation of the modules that make up a Luma architecture: control, pipeline, concierge, catalog, and more. Illustrative views, no real data."
+            />
+          </MotionSection>
+          <MotionSection delay={0.1}>
+            <SystemGallery locale="en" />
+          </MotionSection>
+        </div>
       </section>
 
       <section className="py-16 px-6 border-t border-slate-900 text-center">

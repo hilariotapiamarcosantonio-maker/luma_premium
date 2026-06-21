@@ -5,7 +5,8 @@ import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import SolutionCard from '@/components/site/SolutionCard';
 import IndustriesSection from '@/components/site/IndustriesSection';
-import FlowDiagram from '@/components/site/FlowDiagram';
+import HeroComposition from '@/components/site/HeroComposition';
+import CommercialFlowBand from '@/components/site/CommercialFlowBand';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import { EN_SOLUTIONS } from '@/lib/solutions';
 import { whatsappLink } from '@/lib/site';
@@ -43,35 +44,42 @@ export default function EnHomePage() {
   return (
     <SiteShell>
       {/* Hero */}
-      <section className="relative pt-40 pb-28 px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10" />
-        <div className="max-w-5xl mx-auto text-center space-y-7">
-          <PremiumBadge tone="amber" className="mx-auto">
-            Commercial Digital Architecture
-          </PremiumBadge>
-          <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-[1.05]">
-            From digital presence<br />
-            <span className="text-slate-400 font-light">to commercial control.</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-slate-400 font-light max-w-3xl mx-auto leading-relaxed">
-            We design connected commercial infrastructure for premium businesses
-            that sell through trust, speed, and disciplined follow-up.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link
-              href="/en/assessment"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-slate-950 px-10 py-5 rounded-sm font-semibold hover:bg-slate-200 transition-all shadow-xl shadow-white/5"
-            >
-              Request assessment <ArrowRight className="w-5 h-5" />
-            </Link>
-            <a
-              href={whatsappLink('Hello, I want to request a commercial assessment with Luma Premium.')}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-5 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors"
-            >
-              <MessageCircle className="w-5 h-5" /> WhatsApp
-            </a>
+      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,_rgba(30,41,59,0.5),_transparent_70%)] -z-10" />
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-14 lg:gap-12 items-center">
+          <div className="text-center lg:text-left space-y-7">
+            <PremiumBadge tone="amber" className="mx-auto lg:mx-0">
+              Commercial Digital Architecture
+            </PremiumBadge>
+            <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold text-white tracking-tight leading-[1.05]">
+              From digital presence{' '}
+              <span className="text-slate-400 font-light">to commercial control.</span>
+            </h1>
+            <p className="text-lg md:text-xl text-slate-400 font-light max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              We design connected commercial infrastructure for premium businesses
+              that sell through trust, speed, and disciplined follow-up.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-4 pt-2">
+              <Link
+                href="/en/assessment"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-slate-950 px-8 py-4 rounded-sm font-semibold hover:bg-slate-200 transition-all shadow-xl shadow-white/5"
+              >
+                Request assessment <ArrowRight className="w-5 h-5" />
+              </Link>
+              <a
+                href={whatsappLink('Hello, I want to request a commercial assessment with Luma Premium.')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors"
+              >
+                <MessageCircle className="w-5 h-5" /> WhatsApp
+              </a>
+            </div>
+          </div>
+
+          {/* Premium product composition */}
+          <div className="relative pb-10 lg:pb-0">
+            <HeroComposition locale="en" />
           </div>
         </div>
       </section>
@@ -98,9 +106,7 @@ export default function EnHomePage() {
             </h2>
           </MotionSection>
           <MotionSection delay={0.1}>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 md:p-8 overflow-x-auto">
-              <FlowDiagram steps={['Capture', 'Qualify', 'Follow-up', 'Conversion', 'Operation']} />
-            </div>
+            <CommercialFlowBand locale="en" />
           </MotionSection>
         </div>
       </section>

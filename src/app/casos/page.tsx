@@ -3,6 +3,8 @@ import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import CaseCard from '@/components/site/CaseCard';
 import CTASection from '@/components/site/CTASection';
+import SystemGallery from '@/components/site/SystemGallery';
+import SectionHeading from '@/components/site/SectionHeading';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import { CASES } from '@/lib/cases';
 
@@ -64,6 +66,22 @@ export default function CasosPage() {
             autoridad del fundador se muestran como tales. Los entornos internos de
             operación y la sala de ventas no se exponen aquí.
           </p>
+        </div>
+      </section>
+
+      {/* Dentro del sistema */}
+      <section className="py-20 px-6 border-t border-slate-800/50 bg-slate-900/20">
+        <div className="max-w-7xl mx-auto">
+          <MotionSection className="mb-12">
+            <SectionHeading
+              badge="Dentro del sistema"
+              title="Así se ve la operación por dentro."
+              subtitle="Representación de los módulos que componen una arquitectura Luma: control, pipeline, concierge, catálogo y más. Vistas ilustrativas, sin datos reales."
+            />
+          </MotionSection>
+          <MotionSection delay={0.1}>
+            <SystemGallery locale="es" />
+          </MotionSection>
         </div>
       </section>
 

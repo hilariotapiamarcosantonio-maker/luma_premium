@@ -4,8 +4,11 @@ import Link from 'next/link';
 import { Search, FileCheck, Route, Users, Clock, ShieldCheck } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
+import DiagnosticMatrix from '@/components/site/DiagnosticMatrix';
+import EditorialFigure from '@/components/site/EditorialFigure';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import DiagnosticoMaestroForm from '@/components/diagnostico/DiagnosticoMaestroForm';
+import { EDITORIAL_IMAGES } from '@/data/marketing-images';
 
 export const metadata: Metadata = {
   title: 'Commercial Assessment',
@@ -16,11 +19,6 @@ export const metadata: Metadata = {
     languages: { 'es': '/diagnostico' },
   },
 };
-
-const REVIEWS = [
-  'Digital presence', 'Lead capture', 'Commercial follow-up',
-  'WhatsApp & social', 'CRM & organization', 'Conversion', 'Brand authority',
-];
 
 const RECEIVES = [
   {
@@ -68,6 +66,15 @@ export default function EnAssessmentPage() {
               </span>
             ))}
           </div>
+          <div className="max-w-3xl mx-auto pt-8">
+            <EditorialFigure
+              image={EDITORIAL_IMAGES.diagnostic}
+              locale="en"
+              priority
+              aspect="aspect-[2/1]"
+              caption="An executive read, not a sales call"
+            />
+          </div>
         </div>
       </section>
 
@@ -81,13 +88,7 @@ export default function EnAssessmentPage() {
               A complete look at your commercial operation — not just your website.
             </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            {REVIEWS.map((item) => (
-              <span key={item} className="px-5 py-3 rounded-full border border-slate-800 bg-slate-900/30 text-slate-300 text-sm font-medium">
-                {item}
-              </span>
-            ))}
-          </div>
+          <DiagnosticMatrix locale="en" />
         </div>
       </section>
 

@@ -7,7 +7,8 @@ import SolutionCard from '@/components/site/SolutionCard';
 import CaseCard from '@/components/site/CaseCard';
 import CTASection from '@/components/site/CTASection';
 import PremiumBadge from '@/components/site/PremiumBadge';
-import EcosystemScene from '@/components/site/EcosystemScene';
+import HeroComposition from '@/components/site/HeroComposition';
+import CommercialFlowBand from '@/components/site/CommercialFlowBand';
 import EcosystemLayers from '@/components/site/EcosystemLayers';
 import IndustriesSection from '@/components/site/IndustriesSection';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
@@ -86,9 +87,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Ecosystem scene */}
-          <div className="relative">
-            <EcosystemScene />
+          {/* Composición de producto premium */}
+          <div className="relative pb-10 lg:pb-0">
+            <HeroComposition locale="es" />
           </div>
         </div>
       </section>
@@ -159,6 +160,22 @@ export default function HomePage() {
               </MotionItem>
             ))}
           </MotionStagger>
+        </div>
+      </section>
+
+      {/* Flujo comercial conectado */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <MotionSection className="mb-10 max-w-2xl">
+            <SectionHeading
+              badge="El flujo"
+              title="De la captación a la operación, en un solo sistema."
+              subtitle="Cada etapa alimenta a la siguiente. No es una página suelta: es un flujo comercial conectado donde nada se pierde por el camino."
+            />
+          </MotionSection>
+          <MotionSection delay={0.1}>
+            <CommercialFlowBand locale="es" />
+          </MotionSection>
         </div>
       </section>
 

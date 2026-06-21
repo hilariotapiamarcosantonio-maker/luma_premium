@@ -6,6 +6,7 @@ import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import CTASection from '@/components/site/CTASection';
 import FlowDiagram from '@/components/site/FlowDiagram';
+import SolutionVisual from '@/components/site/SolutionVisual';
 import { Icon } from '@/components/site/Icon';
 import { MotionSection } from '@/components/site/Motion';
 import { getSolution, SOLUTION_SLUGS, SOLUTIONS } from '@/lib/solutions';
@@ -56,51 +57,58 @@ export default async function SolutionDetailPage({
       {/* Hero */}
       <section className="relative pt-36 pb-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10" />
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <Link
             href="/soluciones"
             className="text-slate-400 hover:text-white transition-colors text-sm font-medium mb-8 inline-block"
           >
             &larr; Todas las soluciones
           </Link>
-          <div className="flex items-center gap-4 mb-6">
-            <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl border border-slate-800 bg-slate-900">
-              <Icon name={solution.icon} className="w-7 h-7 text-amber-500" />
-            </span>
-            <PremiumBadge tone="amber">{solution.kicker}</PremiumBadge>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight leading-[1.1] mb-6">
-            {solution.name}
-          </h1>
-          <p className="text-xl md:text-2xl text-slate-400 font-light leading-relaxed max-w-3xl">
-            {solution.positioning}
-          </p>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
+            <div>
+              <div className="flex items-center gap-4 mb-6">
+                <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl border border-slate-800 bg-slate-900">
+                  <Icon name={solution.icon} className="w-7 h-7 text-amber-500" />
+                </span>
+                <PremiumBadge tone="amber">{solution.kicker}</PremiumBadge>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight leading-[1.1] mb-6">
+                {solution.name}
+              </h1>
+              <p className="text-xl md:text-2xl text-slate-400 font-light leading-relaxed">
+                {solution.positioning}
+              </p>
 
-          <div className="pt-8 flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/diagnostico"
-              className="w-full sm:w-auto bg-white text-slate-950 px-8 py-4 rounded-sm font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
-            >
-              Solicitar evaluación <ArrowRight className="w-4 h-4" />
-            </Link>
-            {solution.internalUrl && (
-              <Link
-                href={solution.internalUrl}
-                className="w-full sm:w-auto px-8 py-4 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors flex items-center justify-center gap-2"
-              >
-                Ver experiencia completa <ArrowRight className="w-4 h-4" />
-              </Link>
-            )}
-            {solution.demoUrl && (
-              <a
-                href={solution.demoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-8 py-4 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors flex items-center justify-center gap-2"
-              >
-                Ver demo <ExternalLink className="w-4 h-4" />
-              </a>
-            )}
+              <div className="pt-8 flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/diagnostico"
+                  className="w-full sm:w-auto bg-white text-slate-950 px-8 py-4 rounded-sm font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+                >
+                  Solicitar evaluación <ArrowRight className="w-4 h-4" />
+                </Link>
+                {solution.internalUrl && (
+                  <Link
+                    href={solution.internalUrl}
+                    className="w-full sm:w-auto px-8 py-4 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors flex items-center justify-center gap-2"
+                  >
+                    Ver experiencia completa <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
+                {solution.demoUrl && (
+                  <a
+                    href={solution.demoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-8 py-4 rounded-sm font-medium text-white border border-slate-800 hover:bg-slate-900 transition-colors flex items-center justify-center gap-2"
+                  >
+                    Ver demo <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Visual de producto estilizado de la solución */}
+            <SolutionVisual slug={solution.slug} locale="es" />
           </div>
         </div>
       </section>

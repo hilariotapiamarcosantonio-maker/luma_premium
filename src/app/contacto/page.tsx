@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { ArrowRight, MessageCircle, Search, CalendarClock, Layers } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
+import EditorialFigure from '@/components/site/EditorialFigure';
 import { whatsappLink, SOCIALS } from '@/lib/site';
+import { EDITORIAL_IMAGES } from '@/data/marketing-images';
 
 export const metadata: Metadata = {
   title: 'Contacto',
@@ -50,17 +52,29 @@ export default function ContactoPage() {
     <SiteShell>
       <section className="relative pt-36 pb-16 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10" />
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <PremiumBadge tone="amber" className="mx-auto">
-            Contacto
-          </PremiumBadge>
-          <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight leading-[1.1]">
-            Conversemos sobre su operación comercial.
-          </h1>
-          <p className="text-xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
-            Elija cómo prefiere empezar. Trabajamos con negocios premium que
-            quieren vender con más autoridad, seguimiento y control.
-          </p>
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-14 items-center">
+          <div className="space-y-6 text-center lg:text-left">
+            <PremiumBadge tone="amber" className="mx-auto lg:mx-0">
+              Contacto
+            </PremiumBadge>
+            <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight leading-[1.1]">
+              Conversemos sobre su operación comercial.
+            </h1>
+            <p className="text-xl text-slate-400 font-light max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              Elija cómo prefiere empezar. Trabajamos con negocios premium que
+              quieren vender con más autoridad, seguimiento y control.
+            </p>
+            <p className="text-sm text-slate-500">
+              Atendemos operaciones premium en mercados de habla hispana e inglesa.
+            </p>
+          </div>
+          <EditorialFigure
+            image={EDITORIAL_IMAGES.contact}
+            locale="es"
+            priority
+            aspect="aspect-[16/10]"
+            caption="Una conversación seria, sin presión de venta"
+          />
         </div>
       </section>
 
