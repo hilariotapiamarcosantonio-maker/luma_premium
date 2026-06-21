@@ -1,6 +1,7 @@
 import React from 'react';
+import Image from 'next/image';
 import { Check } from 'lucide-react';
-import ProductScreenshotFrame from './ProductScreenshotFrame';
+import { BrowserFrame, PhoneFrame } from './DeviceFrame';
 
 type Locale = 'es' | 'en';
 
@@ -76,7 +77,7 @@ export default function SolutionVisual({
     } else {
       desktopSrc = '/images/marketing/screenshots/optimized/thumb/luma_beauty_spa_desktop.webp';
       mobileSrc = '/images/marketing/screenshots/optimized/thumb/luma_beauty_spa_movil.webp';
-      desktopLabel = isEn ? 'Beauty Spa OS - Portal de Reservas' : 'Beauty Spa OS - Portal de Reservas';
+      desktopLabel = isEn ? 'Beauty Spa OS - Booking Portal' : 'Beauty Spa OS - Portal de Reservas';
       mobileLabel = isEn ? 'Beauty Spa OS - Mobile Booking' : 'Beauty Spa OS - Reserva Móvil';
       desktopScreenshotId = 'beauty-spa-os-desktop';
       mobileScreenshotId = 'beauty-spa-os-mobile';
@@ -94,38 +95,92 @@ export default function SolutionVisual({
         // Premium overlapping layout for Desktop + Mobile
         <div className="relative w-full">
           <div className="w-[85%] sm:w-[88%]">
-            <ProductScreenshotFrame
-              src={desktopSrc}
-              alt={desktopLabel}
-              screenshotId={desktopScreenshotId}
-              usage="desktop"
-              locale={locale}
-              onScreenshotClick={onScreenshotClick}
-            />
+            <button
+              onClick={() => onScreenshotClick && onScreenshotClick(desktopScreenshotId)}
+              disabled={!onScreenshotClick}
+              aria-label={isEn ? `Expand ${desktopLabel}` : `Ampliar ${desktopLabel}`}
+              className="w-full text-left focus:outline-none focus:ring-2 focus:ring-amber-500/50 rounded-lg group/btn cursor-zoom-in block"
+            >
+              <BrowserFrame label={desktopSrc.split('/').pop() || 'desktop.webp'}>
+                <div className="relative w-full aspect-[16/9]">
+                  <Image
+                    src={desktopSrc}
+                    alt={desktopLabel}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="rounded object-cover object-top border border-slate-900 shadow-lg brightness-[1.02] contrast-[1.02] transition-all duration-300 group-hover/btn:brightness-110"
+                  />
+                  {onScreenshotClick && (
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
+                      <span className="bg-amber-500 text-slate-950 font-bold text-xs px-3.5 py-1.5 rounded shadow-md uppercase tracking-wider">
+                        {isEn ? 'View larger' : 'Ampliar captura'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </BrowserFrame>
+            </button>
           </div>
           
-          <ProductScreenshotFrame
-            src={mobileSrc}
-            alt={mobileLabel}
-            screenshotId={mobileScreenshotId}
-            usage="mobile"
-            locale={locale}
-            onScreenshotClick={onScreenshotClick}
-            className="absolute w-[125px] xs:w-[150px] sm:w-[190px] -right-2 xs:-right-4 sm:-right-6 -bottom-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.04] hover:rotate-1 z-10"
-          />
+          <div className="absolute w-[125px] xs:w-[150px] sm:w-[190px] -right-2 xs:-right-4 sm:-right-6 -bottom-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.04] hover:rotate-1 z-10">
+            <button
+              onClick={() => onScreenshotClick && onScreenshotClick(mobileScreenshotId)}
+              disabled={!onScreenshotClick}
+              aria-label={isEn ? `Expand ${mobileLabel}` : `Ampliar ${mobileLabel}`}
+              className="w-full focus:outline-none focus:ring-2 focus:ring-amber-500/50 rounded-2xl group/phone cursor-zoom-in block"
+            >
+              <PhoneFrame>
+                <div className="relative w-full aspect-[9/16] min-h-[200px] xs:min-h-[250px] sm:min-h-[320px]">
+                  <Image
+                    src={mobileSrc}
+                    alt={mobileLabel}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 640px) 150px, 200px"
+                    className="rounded-2xl object-cover object-top brightness-[1.02] contrast-[1.02] transition-all duration-300 group-hover/phone:brightness-110"
+                  />
+                  {onScreenshotClick && (
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/phone:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px] rounded-2xl">
+                      <span className="bg-amber-500 text-slate-950 font-bold text-[10px] px-2 py-1 rounded shadow-md uppercase tracking-wider text-center leading-none">
+                        {isEn ? 'View' : 'Ampliar'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </PhoneFrame>
+            </button>
+          </div>
         </div>
       ) : (
         // Simple Browser layout for Desktop-only solutions
         <div className="w-full">
-          <ProductScreenshotFrame
-            src={desktopSrc}
-            alt={desktopLabel}
-            screenshotId={desktopScreenshotId}
-            usage="desktop"
-            locale={locale}
-            onScreenshotClick={onScreenshotClick}
-            glow={true}
-          />
+          <button
+            onClick={() => onScreenshotClick && onScreenshotClick(desktopScreenshotId)}
+            disabled={!onScreenshotClick}
+            aria-label={isEn ? `Expand ${desktopLabel}` : `Ampliar ${desktopLabel}`}
+            className="w-full text-left focus:outline-none focus:ring-2 focus:ring-amber-500/50 rounded-lg group/btn cursor-zoom-in block"
+          >
+            <BrowserFrame label={desktopSrc.split('/').pop() || 'desktop.webp'}>
+              <div className="relative w-full aspect-[16/9]">
+                <Image
+                  src={desktopSrc}
+                  alt={desktopLabel}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  className="rounded object-cover object-top border border-slate-900 shadow-lg brightness-[1.02] contrast-[1.02] transition-all duration-300 group-hover/btn:brightness-110"
+                />
+                {onScreenshotClick && (
+                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
+                    <span className="bg-amber-500 text-slate-950 font-bold text-xs px-3.5 py-1.5 rounded shadow-md uppercase tracking-wider">
+                      {isEn ? 'View larger' : 'Ampliar captura'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </BrowserFrame>
+          </button>
         </div>
       )}
 
@@ -148,3 +203,4 @@ export default function SolutionVisual({
     </div>
   );
 }
+
