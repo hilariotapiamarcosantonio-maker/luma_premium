@@ -1,17 +1,34 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { Icon } from './Icon';
 import type { Solution } from '@/lib/solutions';
+import { getSolutionImage } from '@/data/marketing-images';
 
-// Tarjeta premium de solución: borde con gradiente, icono con glow y hover fuerte.
+// Tarjeta premium de solución: imagen sectorial, borde con gradiente, icono con glow.
 export default function SolutionCard({ solution, locale = 'es' }: { solution: Solution; locale?: 'es' | 'en' }) {
   const isEn = locale === 'en';
+  const image = getSolutionImage(solution.slug);
   return (
     <Link
       href={isEn ? `/en/solutions/${solution.slug}` : `/soluciones/${solution.slug}`}
       className="group relative block h-full rounded-2xl p-px bg-gradient-to-b from-slate-700/60 via-slate-800/40 to-transparent transition-all duration-300 hover:from-amber-500/50 hover:via-amber-500/10 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/5"
     >
-      <div className="flex h-full flex-col rounded-[15px] bg-slate-950/80 p-8 backdrop-blur-sm">
+      <div className="flex h-full flex-col overflow-hidden rounded-[15px] bg-slate-950/80 backdrop-blur-sm">
+        {image && (
+          <div className="relative h-40 w-full overflow-hidden">
+            <Image
+              src={image.src}
+              alt={image.alt[locale]}
+              width={image.width}
+              height={image.height}
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="h-40 w-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+          </div>
+        )}
+        <div className="flex flex-1 flex-col p-8">
         <div className="mb-6 flex items-center justify-between">
           <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-xl border border-slate-800 bg-slate-950 transition-colors group-hover:border-amber-500/40">
             <Icon name={solution.icon} className="h-6 w-6 text-amber-500" />
@@ -59,6 +76,7 @@ export default function SolutionCard({ solution, locale = 'es' }: { solution: So
           {isEn ? 'View solution' : 'Ver solución'}{' '}
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </span>
+        </div>
       </div>
     </Link>
   );

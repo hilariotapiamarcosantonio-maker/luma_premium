@@ -9,6 +9,7 @@ import CTASection from '@/components/site/CTASection';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import EcosystemScene from '@/components/site/EcosystemScene';
 import EcosystemLayers from '@/components/site/EcosystemLayers';
+import IndustriesSection from '@/components/site/IndustriesSection';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import { SOLUTIONS } from '@/lib/solutions';
 import { CASES } from '@/lib/cases';
@@ -186,6 +187,9 @@ export default function HomePage() {
           </MotionStagger>
         </div>
       </section>
+
+      {/* Sectores atendidos */}
+      <IndustriesSection locale="es" />
 
       {/* Ecosistema Luma Premium */}
       <section className="py-24 px-6 border-y border-slate-800/50 bg-slate-900/20">

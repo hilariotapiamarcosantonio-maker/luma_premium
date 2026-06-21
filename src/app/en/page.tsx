@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { ArrowRight, MessageCircle } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import PremiumBadge from '@/components/site/PremiumBadge';
+import SolutionCard from '@/components/site/SolutionCard';
+import IndustriesSection from '@/components/site/IndustriesSection';
+import FlowDiagram from '@/components/site/FlowDiagram';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
+import { EN_SOLUTIONS } from '@/lib/solutions';
 import { whatsappLink } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -84,6 +88,23 @@ export default function EnHomePage() {
         </div>
       </section>
 
+      {/* Transformation flow */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <MotionSection className="mb-10 max-w-2xl">
+            <PremiumBadge className="mb-4">The transformation</PremiumBadge>
+            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+              From scattered leads to a connected operation.
+            </h2>
+          </MotionSection>
+          <MotionSection delay={0.1}>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 md:p-8 overflow-x-auto">
+              <FlowDiagram steps={['Capture', 'Qualify', 'Follow-up', 'Conversion', 'Operation']} />
+            </div>
+          </MotionSection>
+        </div>
+      </section>
+
       {/* Four pillars */}
       <section className="py-28 px-6">
         <div className="max-w-7xl mx-auto">
@@ -134,18 +155,13 @@ export default function EnHomePage() {
               Each system addresses a specific commercial operation. Not a template — purpose-built infrastructure.
             </p>
           </MotionSection>
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { name: 'Real Estate OS', desc: 'Presentation, capture, and commercial control for high-value projects.', href: '/en/solutions' },
-              { name: 'Commerce OS', desc: 'End-to-end digital commerce with automated follow-up and conversion tracking.', href: '/en/solutions' },
-              { name: 'Beauty Spa OS', desc: 'Booking, client management, and retention system for premium wellness brands.', href: '/en/solutions' },
-            ].map((s) => (
-              <Link key={s.name} href={s.href} className="group p-8 rounded-2xl border border-slate-800 bg-slate-900/20 hover:border-slate-700 hover:bg-slate-900/40 transition-all">
-                <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-amber-400 transition-colors">{s.name}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{s.desc}</p>
-              </Link>
+          <MotionStagger className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {EN_SOLUTIONS.map((s) => (
+              <MotionItem key={s.slug} className="h-full">
+                <SolutionCard solution={s} locale="en" />
+              </MotionItem>
             ))}
-          </div>
+          </MotionStagger>
           <div className="text-center mt-8">
             <Link href="/en/solutions" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium">
               View all solutions <ArrowRight className="w-4 h-4" />
@@ -153,6 +169,9 @@ export default function EnHomePage() {
           </div>
         </div>
       </section>
+
+      {/* Industries served */}
+      <IndustriesSection locale="en" />
 
       {/* CTA */}
       <section className="py-28 px-6">
