@@ -48,3 +48,8 @@ Para replicar, migrar o adaptar este proyecto:
 - [docs/06_IMPLEMENTATION_LOG.md](docs/06_IMPLEMENTATION_LOG.md) - Registro
 - [docs/07_NEXT_STEPS.md](docs/07_NEXT_STEPS.md) - Próximos pasos
 - [.env.example](.env.example) - Plantilla de variables
+
+## Scripts Locales de Mantenimiento
+
+- `scripts/generate-screenshot-sizes.js` - Genera versiones optimizadas (WebP) para miniaturas (thumbnails: 1200-1600px, WebP 82) y vistas de pantalla completa (full: 1800-2400px, WebP 88) de las capturas de demostración reales. Este script se ejecuta únicamente de manera local para optimizar las capturas y no contiene secretos. No modifica las imágenes originales.
+

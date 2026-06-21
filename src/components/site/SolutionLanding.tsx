@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -13,6 +16,8 @@ import CTASection from './CTASection';
 import FlowDiagram from './FlowDiagram';
 import SolutionVisual from './SolutionVisual';
 import SystemGallery from './SystemGallery';
+import ProductScreenshotLightbox from './ProductScreenshotLightbox';
+import { PRODUCT_SCREENSHOTS } from '@/data/product-screenshots';
 import { Icon } from './Icon';
 import { MotionSection } from './Motion';
 import type { Solution } from '@/lib/solutions';
@@ -52,8 +57,8 @@ const UI = {
     demoOpen: 'Abrir demo interactiva',
     requestAccess: 'Solicitar acceso',
     galleryBadge: 'Dentro del sistema',
-    galleryTitle: 'Varias vistas de la operación.',
-    galleryNote: 'Vistas ilustrativas de los módulos. Sin datos reales.',
+    galleryTitle: 'Así se ve el sistema en funcionamiento.',
+    galleryNote: 'Vistas reales de las diferentes pantallas y flujos del sistema. Haga clic en cualquiera para ampliar.',
     useCaseBadge: 'Escenario de uso',
     challenge: 'El reto',
     withLuma: 'Con Luma',
@@ -93,8 +98,8 @@ const UI = {
     demoOpen: 'Open interactive demo',
     requestAccess: 'Request access',
     galleryBadge: 'Inside the system',
-    galleryTitle: 'Several views of the operation.',
-    galleryNote: 'Illustrative views of the modules. No real data.',
+    galleryTitle: 'See the system in action.',
+    galleryNote: 'Real views of the system screens and operations. Click on any to expand.',
     useCaseBadge: 'Use case',
     challenge: 'The challenge',
     withLuma: 'With Luma',
@@ -119,6 +124,14 @@ export default function SolutionLanding({
   locale: Locale;
   related: Solution[];
 }) {
+  const [activeScreenshotId, setActiveScreenshotId] = useState<string | null>(null);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  const handleOpenScreenshot = (id: string) => {
+    setActiveScreenshotId(id);
+    setIsLightboxOpen(true);
+  };
+
   const t = UI[locale];
   const steps = locale === 'en' ? IMPLEMENTATION_STEPS_EN : IMPLEMENTATION_STEPS_ES;
   const faq = locale === 'en' ? SOLUTION_FAQ_EN : SOLUTION_FAQ_ES;
@@ -184,7 +197,7 @@ export default function SolutionLanding({
                 )}
               </div>
             </div>
-            <SolutionVisual slug={solution.slug} locale={locale} view="client" />
+            <SolutionVisual slug={solution.slug} locale={locale} view="client" onScreenshotClick={handleOpenScreenshot} />
           </div>
         </div>
       </section>
@@ -324,7 +337,7 @@ export default function SolutionLanding({
                   </li>
                 ))}
               </ul>
-              <SolutionVisual slug={solution.slug} locale={locale} view="client" chip={false} className="mt-8" />
+              <SolutionVisual slug={solution.slug} locale={locale} view="client" chip={false} className="mt-8" onScreenshotClick={handleOpenScreenshot} />
             </div>
             {/* Equipo */}
             <div>
@@ -343,7 +356,7 @@ export default function SolutionLanding({
                   </li>
                 ))}
               </ul>
-              <SolutionVisual slug={solution.slug} locale={locale} view="team" chip={false} />
+              <SolutionVisual slug={solution.slug} locale={locale} view="team" chip={false} onScreenshotClick={handleOpenScreenshot} />
             </div>
           </div>
         </div>
@@ -353,7 +366,7 @@ export default function SolutionLanding({
       <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1">
-            <SolutionVisual slug={solution.slug} locale={locale} view="client" chip={false} />
+            <SolutionVisual slug={solution.slug} locale={locale} view="client" chip={false} onScreenshotClick={handleOpenScreenshot} />
           </div>
           <div className="order-1 lg:order-2">
             <PremiumBadge className="mb-4">{t.demoBadge}</PremiumBadge>
@@ -398,7 +411,7 @@ export default function SolutionLanding({
             <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{t.galleryTitle}</h2>
             <p className="mt-3 text-slate-400">{t.galleryNote}</p>
           </MotionSection>
-          <SystemGallery locale={locale} />
+          <SystemGallery locale={locale} onScreenshotClick={handleOpenScreenshot} />
         </div>
       </section>
 
@@ -496,6 +509,13 @@ export default function SolutionLanding({
         subtitle={t.ctaSub}
         primary={{ label: t.requestCta, href: t.requestHref }}
         secondary={{ label: t.seeCases, href: t.casesHref }}
+      />
+      <ProductScreenshotLightbox
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        currentId={activeScreenshotId || ''}
+        screenshots={PRODUCT_SCREENSHOTS}
+        locale={locale}
       />
     </>
   );

@@ -4,7 +4,7 @@ import { ArrowRight, Compass, Layers, ShieldCheck } from 'lucide-react';
 import SiteShell from '@/components/site/SiteShell';
 import SectionHeading from '@/components/site/SectionHeading';
 import SolutionCard from '@/components/site/SolutionCard';
-import CaseCard from '@/components/site/CaseCard';
+import HomeCasesSection from '@/components/site/HomeCasesSection';
 import CTASection from '@/components/site/CTASection';
 import PremiumBadge from '@/components/site/PremiumBadge';
 import HeroComposition from '@/components/site/HeroComposition';
@@ -13,7 +13,6 @@ import EcosystemLayers from '@/components/site/EcosystemLayers';
 import IndustriesSection from '@/components/site/IndustriesSection';
 import { MotionSection, MotionStagger, MotionItem } from '@/components/site/Motion';
 import { SOLUTIONS } from '@/lib/solutions';
-import { CASES } from '@/lib/cases';
 import { SITE } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -325,30 +324,7 @@ export default function HomePage() {
       </section>
 
       {/* Casos / demos */}
-      <section className="py-24 px-6 border-y border-slate-800/50 bg-slate-900/20">
-        <div className="max-w-7xl mx-auto">
-          <MotionSection className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-16">
-            <SectionHeading
-              badge="Casos y demos"
-              title="Sistemas reales, no maquetas."
-              subtitle="Referencias autorizadas para ver la arquitectura Luma en funcionamiento."
-            />
-            <Link
-              href="/casos"
-              className="inline-flex items-center gap-2 text-amber-500 font-medium hover:text-amber-400 transition-colors whitespace-nowrap"
-            >
-              Ver todos los casos <ArrowRight className="w-4 h-4" />
-            </Link>
-          </MotionSection>
-          <MotionStagger className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {CASES.slice(0, 3).map((item) => (
-              <MotionItem key={item.url} className="h-full">
-                <CaseCard item={item} />
-              </MotionItem>
-            ))}
-          </MotionStagger>
-        </div>
-      </section>
+      <HomeCasesSection />
 
       {/* CTA */}
       <CTASection
