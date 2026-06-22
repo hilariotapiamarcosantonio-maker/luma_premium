@@ -11,7 +11,7 @@ export default function HeroComposition({ locale = 'es' }: { locale?: Locale }) 
   const isEn = locale === 'en';
 
   return (
-    <div className="relative w-full select-none">
+    <div className="relative w-full select-none lg:scale-[1.08] lg:origin-right transition-transform duration-500 ease-out">
       {/* Premium Dark Blue/Slate Ambient Glow (Zero Green) */}
       <div className="absolute -inset-10 -z-10 rounded-[3rem] bg-[radial-gradient(ellipse_at_center,_rgba(37,99,235,0.09),_rgba(30,41,59,0.02),_transparent_70%)]" />
 
@@ -21,14 +21,14 @@ export default function HeroComposition({ locale = 'es' }: { locale?: Locale }) 
         className="block w-full text-left focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-xl relative group cursor-zoom-in overflow-hidden border border-slate-800/85 bg-slate-950 shadow-[0_20px_50px_rgba(37,99,235,0.08)] transition-all duration-300"
         aria-label={isEn ? 'Expand CRM dashboard screenshot' : 'Ampliar captura del panel de CRM'}
       >
-        <div className="relative aspect-[16/9] w-full bg-slate-950 overflow-hidden">
+        <div className="relative aspect-[1600/893] w-full bg-slate-950 overflow-hidden">
           <Image
             src="/images/marketing/screenshots/optimized/thumb/luma_real_estete_os_crm_-_demo.webp"
             alt={isEn ? 'Luma CRM OS control panel' : 'Panel de control de Luma CRM OS'}
             fill
             unoptimized
             sizes="(max-width: 1024px) 100vw, 60vw"
-            className="object-cover object-top brightness-[1.02] contrast-[1.01] transition-all duration-300 group-hover:brightness-110"
+            className="object-contain object-top brightness-[1.02] contrast-[1.01] transition-all duration-300 group-hover:brightness-110"
           />
           {/* Hover Badge */}
           <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1.5px]">
@@ -46,14 +46,14 @@ export default function HeroComposition({ locale = 'es' }: { locale?: Locale }) 
           className="block w-full text-left focus:outline-none focus:ring-2 focus:ring-amber-500 rounded-xl relative group cursor-zoom-in overflow-hidden border border-slate-850 bg-slate-950 shadow-[0_15px_35px_rgba(37,99,235,0.06)]"
           aria-label={isEn ? 'Expand mobile view screenshot' : 'Ampliar captura de la vista móvil'}
         >
-          <div className="relative aspect-[9/16] w-full bg-slate-950 overflow-hidden">
+          <div className="relative aspect-[1077/1800] w-full bg-slate-950 overflow-hidden">
             <Image
               src="/images/marketing/screenshots/optimized/thumb/luma_vista_del_rio_movil.webp"
               alt={isEn ? 'Luma Real Estate OS mobile catalog' : 'Catálogo móvil de Luma Real Estate OS'}
               fill
               unoptimized
               sizes="180px"
-              className="object-cover object-top brightness-[1.02] contrast-[1.01] transition-all duration-300 group-hover:brightness-110"
+              className="object-contain object-top brightness-[1.02] contrast-[1.01] transition-all duration-300 group-hover:brightness-110"
             />
             {/* Hover Badge */}
             <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
