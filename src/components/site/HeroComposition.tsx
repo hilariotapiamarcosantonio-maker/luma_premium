@@ -11,7 +11,7 @@ export default function HeroComposition({ locale = 'es' }: { locale?: Locale }) 
   const isEn = locale === 'en';
 
   return (
-    <div className="relative w-full select-none lg:scale-[1.08] lg:origin-right transition-transform duration-500 ease-out">
+    <div className="relative w-full select-none">
       {/* Premium Dark Blue/Slate Ambient Glow (Zero Green) */}
       <div className="absolute -inset-10 -z-10 rounded-[3rem] bg-[radial-gradient(ellipse_at_center,_rgba(37,99,235,0.09),_rgba(30,41,59,0.02),_transparent_70%)]" />
 
