@@ -166,7 +166,7 @@ export const PRODUCT_SCREENSHOTS: ProductScreenshot[] = [
     fullPath: '/images/marketing/screenshots/optimized/full/luma_commerce_os_-_demo.webp',
     format: 'webp',
     width: 1600,
-    height: 825,
+    height: 900,
     orientation: 'landscape',
     usage: 'desktop',
     altEs: 'Tienda en línea, catálogo de productos y checkout de Commerce OS',
