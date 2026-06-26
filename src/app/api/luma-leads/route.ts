@@ -2,8 +2,15 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { appendLumaLead, appendLumaLeadV2, classifyGcpFailure } from '@/lib/google-sheets';
+import { appendLumaLead, appendLumaLeadV2, classifyGcpFailure, isDuplicateLumaLeadV2 } from '@/lib/google-sheets';
 import type { GcpFailureMessageKey } from '@/lib/google-auth';
+import {
+  isValidEmail,
+  isValidPhone,
+  claimSubmissionIdentity,
+  releaseSubmissionIdentity,
+  createSubmissionClaimStore,
+} from '@/lib/luma-leads-validation';
 
 type Locale = 'es' | 'en';
 
@@ -34,14 +41,14 @@ function sanitize(val: unknown, maxLen = 500): string {
   return val.trim().slice(0, maxLen).replace(/[<>]/g, '');
 }
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 200;
-}
+// ─── Submission claim guard ───────────────────────────────────────────────────
+// Short-lived, in-memory, same-instance defense against near-simultaneous
+// duplicate submissions. Authoritative duplicate detection is the Sheets-based
+// check below — this only closes the read-then-write race window for warm
+// Vercel instances. See src/lib/luma-leads-validation.ts for the claim logic.
 
-function isValidPhone(phone: string): boolean {
-  const digits = phone.replace(/\D/g, '');
-  return digits.length >= 7 && digits.length <= 20 && phone.length <= 30;
-}
+const submissionClaims = createSubmissionClaimStore();
+const SUBMISSION_CLAIM_TTL_MS = 20_000;
 
 // ─── Error classifier — maps infrastructure errors to safe client messages ────
 //
@@ -106,34 +113,53 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Debe aceptar el consentimiento de contacto.' }, { status: 400 });
       }
 
-      await appendLumaLeadV2({
-        locale:               sanitize(body.locale, 5)                 || 'es',
-        country,
-        full_name,
-        email,
-        phone,
-        company:              sanitize(body.company, 150)              || '',
-        role,
-        industry,
-        industry_detail:      sanitize(body.industry_detail, 300)      || '',
-        team_size,
-        lead_volume:          sanitize(body.lead_volume, 50)           || '',
-        acquisition_channels: sanitize(body.acquisition_channels, 300) || '',
-        advertising_status,
-        current_tools:        sanitize(body.current_tools, 300)        || '',
-        main_bottleneck,
-        desired_outcome:      sanitize(body.desired_outcome, 800)      || '',
-        solution_interest:    sanitize(body.solution_interest, 200)    || '',
-        timeline:             sanitize(body.timeline, 100)             || '',
-        investment_range,
-        source:               sanitize(body.source, 100)               || 'diagnostico',
-        page_origin:          sanitize(body.page_origin, 300)          || '',
-        utm_source:           sanitize(body.utm_source, 100)           || '',
-        utm_medium:           sanitize(body.utm_medium, 100)           || '',
-        utm_campaign:         sanitize(body.utm_campaign, 200)         || '',
-        utm_content:          sanitize(body.utm_content, 200)          || '',
-        utm_term:             sanitize(body.utm_term, 200)             || '',
-      });
+      // Duplicate guard — a submission is a duplicate if it matches an
+      // existing lead by normalized email OR canonical phone. The public
+      // response is identical either way: no signal crosses back to the
+      // browser about whether this was a new lead or a suppressed duplicate.
+      if (!claimSubmissionIdentity(submissionClaims, email, phone, Date.now(), SUBMISSION_CLAIM_TTL_MS)) {
+        console.log('[luma-leads]', { event: 'duplicate_suppressed_inflight', schema_version: '2' });
+        return NextResponse.json({ success: true, message: 'Evaluación recibida.' });
+      }
+
+      try {
+        if (await isDuplicateLumaLeadV2(email, phone)) {
+          console.log('[luma-leads]', { event: 'duplicate_suppressed', schema_version: '2' });
+          return NextResponse.json({ success: true, message: 'Evaluación recibida.' });
+        }
+
+        await appendLumaLeadV2({
+          locale:               sanitize(body.locale, 5)                 || 'es',
+          country,
+          full_name,
+          email,
+          phone,
+          company:              sanitize(body.company, 150)              || '',
+          role,
+          industry,
+          industry_detail:      sanitize(body.industry_detail, 300)      || '',
+          team_size,
+          lead_volume:          sanitize(body.lead_volume, 50)           || '',
+          acquisition_channels: sanitize(body.acquisition_channels, 300) || '',
+          advertising_status,
+          current_tools:        sanitize(body.current_tools, 300)        || '',
+          main_bottleneck,
+          desired_outcome:      sanitize(body.desired_outcome, 800)      || '',
+          solution_interest:    sanitize(body.solution_interest, 200)    || '',
+          timeline:             sanitize(body.timeline, 100)             || '',
+          investment_range,
+          source:               sanitize(body.source, 100)               || 'diagnostico',
+          page_origin:          sanitize(body.page_origin, 300)          || '',
+          utm_source:           sanitize(body.utm_source, 100)           || '',
+          utm_medium:           sanitize(body.utm_medium, 100)           || '',
+          utm_campaign:         sanitize(body.utm_campaign, 200)         || '',
+          utm_content:          sanitize(body.utm_content, 200)          || '',
+          utm_term:             sanitize(body.utm_term, 200)             || '',
+        });
+      } catch (err) {
+        releaseSubmissionIdentity(submissionClaims, email, phone);
+        throw err;
+      }
 
       return NextResponse.json({ success: true, message: 'Evaluación recibida.' });
     }
