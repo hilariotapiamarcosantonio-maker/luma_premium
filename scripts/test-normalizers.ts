@@ -69,6 +69,12 @@ assert(normalizeIndustry('commerce') === 'Comercio y e-commerce', 'commerce indu
 assert(normalizeIndustry('e-commerce') === 'Comercio y e-commerce', 'e-commerce industry normalization');
 assert(normalizeIndustry('retail') === 'Comercio y e-commerce', 'retail industry normalization');
 assert(normalizeIndustry('real estate') === 'Inmobiliarias y construcción', 'real estate industry normalization');
+assert(normalizeIndustry('real-estate') === 'Inmobiliarias y construcción', 'real-estate (hyphen, form literal value) industry normalization');
+assert(normalizeIndustry('real_estate') === 'Inmobiliarias y construcción', 'real_estate (underscore) industry normalization');
+assert(normalizeIndustry('inmobiliaria') === 'Inmobiliarias y construcción', 'inmobiliaria industry normalization');
+assert(normalizeIndustry('inmobiliario') === 'Inmobiliarias y construcción', 'inmobiliario industry normalization');
+assert(normalizeIndustry('bienes raíces') === 'Inmobiliarias y construcción', 'bienes raíces industry normalization');
+assert(normalizeIndustry('bienes raices') === 'Inmobiliarias y construcción', 'bienes raices (no accent) industry normalization');
 assert(normalizeIndustry('construcción') === 'Inmobiliarias y construcción', 'construcción industry normalization');
 assert(normalizeIndustry('spa') === 'Belleza, spa y estética', 'spa industry normalization');
 assert(normalizeIndustry('beauty') === 'Belleza, spa y estética', 'beauty industry normalization');

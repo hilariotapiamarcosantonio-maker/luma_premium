@@ -206,7 +206,7 @@ export function normalizeIndustry(industry: string): string {
 
   const has = (terms: string[]) => terms.some(term => clean === term || clean.includes(term));
 
-  if (has(['real estate', 'realtor', 'inmobiliaria', 'construcción', 'construccion', 'broker', 'bienes raices', 'bienes raíces', 'proptech', 'constructor'])) {
+  if (has(['real estate', 'real-estate', 'real_estate', 'realtor', 'inmobiliaria', 'inmobiliario', 'construcción', 'construccion', 'broker', 'bienes raices', 'bienes raíces', 'proptech', 'constructor'])) {
     return 'Inmobiliarias y construcción';
   }
   if (has(['ecommerce', 'e-commerce', 'e commerce', 'commerce', 'retail', 'tienda', 'comercio'])) {
