@@ -193,18 +193,92 @@ async function runTests() {
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ email: 'not-an-email' })).valid === false, 'Invalid email rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ phone: '123' })).valid === false, 'Invalid (too short) phone rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ country: 'República Dominicana' })).valid === false, 'Free-text country rejected (must be ISO-2)');
-  assert(validateAndMapMarcosPortfolioPayload(validPayload({ sector: 'Sector inventado' })).valid === false, 'Disallowed sector rejected at the full-payload level');
-  assert(validateAndMapMarcosPortfolioPayload(validPayload({ sector: '' })).valid === false, 'Missing sector rejected at the full-payload level');
-  assert(validateAndMapMarcosPortfolioPayload(validPayload({ role: 'Función inventada' })).valid === false, 'Disallowed role rejected at the full-payload level');
-  assert(validateAndMapMarcosPortfolioPayload(validPayload({ role: '' })).valid === false, 'Missing role rejected at the full-payload level');
-  assert(validateAndMapMarcosPortfolioPayload(validPayload({ timeline: 'Plazo inventado' })).valid === false, 'Disallowed timeline rejected at the full-payload level');
-  assert(validateAndMapMarcosPortfolioPayload(validPayload({ timeline: '' })).valid === false, 'Missing timeline rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ sector: 'Sector inventado' })).valid === false, 'Sector PRESENT but disallowed is rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ role: 'Función inventada' })).valid === false, 'Role PRESENT but disallowed is rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ timeline: 'Plazo inventado' })).valid === false, 'Timeline PRESENT but disallowed is rejected at the full-payload level');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ consentContact: false })).valid === false, 'Missing consent rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ message: 'short' })).valid === false, 'Too-short message rejected');
 
   {
     const honeypotResult = validateAndMapMarcosPortfolioPayload(validPayload({ honeypot: 'i-am-a-bot' }));
     assert(honeypotResult.valid === false && honeypotResult.fakeSuccess === true, 'Honeypot filled: flagged as fake-success, no validation error message');
+  }
+
+  // ── GATE 1: V1/V2 rollout backward compatibility ────────────────────────────
+  // The pre-Fase-5 portfolio payload never sent sector/role/timeline at all.
+  // A stale cached frontend bundle could still submit that exact shape while
+  // this intake is already live — it must keep working, not start failing
+  // with 400 just because three new, optional fields are absent.
+
+  {
+    // Simulates the OLD payload shape literally — the keys don't exist at
+    // all, not just empty strings — exactly as an old client would send it.
+    const v1Payload: MarcosPortfolioPayload = {
+      name: 'Luis Fernández',
+      company: 'Fernández Servicios',
+      email: 'luis@example.com',
+      phone: '+1 809 555 9000',
+      country: 'DO',
+      needType: 'CRM y seguimiento comercial',
+      budgetRange: 'US$3,000 - US$5,000',
+      message: 'Necesito ordenar el seguimiento de mis clientes actuales.',
+      consentContact: true,
+      honeypot: '',
+      source: 'marcos_portfolio',
+      utm_source: '',
+      utm_medium: '',
+      utm_campaign: '',
+      utm_content: '',
+      utm_term: '',
+      page_origin: 'https://marcoshilario.com/#audit',
+      referrer: '',
+      // sector / role / timeline intentionally omitted — old contract.
+    };
+
+    const result = validateAndMapMarcosPortfolioPayload(v1Payload);
+    assert(result.valid === true, 'GATE 1: a V1 payload (no sector/role/timeline at all) is still accepted, not rejected with 400');
+    if (result.valid) {
+      const row = buildLumaLeadV2Row(result.lead);
+      assert(row[GoogleSheetsV2Columns.indexOf('role')] === '', 'GATE 1: V1 payload leaves the role column empty, not fabricated');
+      assert(row[GoogleSheetsV2Columns.indexOf('industry')] === '', 'GATE 1: V1 payload leaves the industry column empty, not fabricated');
+      assert(row[GoogleSheetsV2Columns.indexOf('timeline')] === '', 'GATE 1: V1 payload leaves the timeline column empty, not fabricated');
+      // Everything else about the V1 contract still works exactly as before.
+      assert(result.lead.full_name === 'Luis Fernández', 'GATE 1: V1 payload still maps full_name correctly');
+      assert(result.lead.solution_interest === 'CRM y seguimiento comercial', 'GATE 1: V1 payload still maps needType → solution_interest');
+    }
+  }
+
+  {
+    // A V2 payload with all three new fields present is still validated and mapped correctly (unchanged from before this fix).
+    const result = validateAndMapMarcosPortfolioPayload(validPayload());
+    assert(result.valid === true, 'GATE 1: a full V2 payload (sector/role/timeline present) is still accepted');
+    if (result.valid) {
+      assert(result.lead.role === 'Propietario o fundador', 'GATE 1: V2 payload still maps role correctly');
+      assert(result.lead.industry === 'Inmobiliarias y construcción', 'GATE 1: V2 payload still maps sector → industry correctly');
+      assert(result.lead.timeline === '1-3 meses', 'GATE 1: V2 payload still maps timeline correctly');
+    }
+  }
+
+  {
+    // Each of the three new fields, when present but invalid, is still rejected with a safe 400-style error — never silently accepted, never crashing.
+    assert(validateAndMapMarcosPortfolioPayload(validPayload({ sector: 'Sector inventado' })).valid === false, 'GATE 1: invalid sector (present) is rejected');
+    assert(validateAndMapMarcosPortfolioPayload(validPayload({ role: 'Función inventada' })).valid === false, 'GATE 1: invalid role (present) is rejected');
+    assert(validateAndMapMarcosPortfolioPayload(validPayload({ timeline: 'Plazo inventado' })).valid === false, 'GATE 1: invalid timeline (present) is rejected');
+  }
+
+  {
+    // Mixed: some V2 fields present and valid, others absent — each is handled independently.
+    const mixedPayload = validPayload();
+    delete (mixedPayload as Record<string, unknown>).role;
+    delete (mixedPayload as Record<string, unknown>).timeline;
+    const result = validateAndMapMarcosPortfolioPayload(mixedPayload);
+    assert(result.valid === true, 'GATE 1: a mixed payload (sector present, role/timeline absent) is accepted');
+    if (result.valid) {
+      assert(result.lead.industry === 'Inmobiliarias y construcción', 'GATE 1: mixed payload still maps the present sector');
+      const row = buildLumaLeadV2Row(result.lead);
+      assert(row[GoogleSheetsV2Columns.indexOf('role')] === '', 'GATE 1: mixed payload leaves role empty (absent), not fabricated');
+      assert(row[GoogleSheetsV2Columns.indexOf('timeline')] === '', 'GATE 1: mixed payload leaves timeline empty (absent), not fabricated');
+    }
   }
 
   // ── Behavioral (not grep-based): claim guard + duplicate + persistence-error resolution ──

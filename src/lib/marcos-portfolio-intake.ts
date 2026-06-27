@@ -189,11 +189,16 @@ export function validateAndMapMarcosPortfolioPayload(body: MarcosPortfolioPayloa
   if (!isValidEmail(email)) return { valid: false, fakeSuccess: false, error: 'Ingrese un correo válido.' };
   if (!isValidPhone(phone)) return { valid: false, fakeSuccess: false, error: 'Ingrese un teléfono válido.' };
   if (!isValidCountryCode(country)) return { valid: false, fakeSuccess: false, error: 'Ingrese un país válido.' };
-  if (!isValidSector(sector)) return { valid: false, fakeSuccess: false, error: 'Seleccione un sector válido.' };
-  if (!isValidRole(role)) return { valid: false, fakeSuccess: false, error: 'Seleccione una función válida.' };
+  // sector/role/timeline are optional for backward compatibility with the
+  // pre-Fase-5 portfolio payload (which never sent them) — e.g. a stale
+  // cached frontend bundle still in flight during a rollout. Each is only
+  // validated (against its allowlist) when actually present; absence is not
+  // a 400, it just leaves the corresponding column empty below.
+  if (sector && !isValidSector(sector)) return { valid: false, fakeSuccess: false, error: 'Seleccione un sector válido.' };
+  if (role && !isValidRole(role)) return { valid: false, fakeSuccess: false, error: 'Seleccione una función válida.' };
   if (!needType) return { valid: false, fakeSuccess: false, error: 'Seleccione el tipo de necesidad.' };
   if (!budgetRange) return { valid: false, fakeSuccess: false, error: 'Seleccione el rango de inversión.' };
-  if (!isValidTimelineOption(timeline)) return { valid: false, fakeSuccess: false, error: 'Seleccione un plazo válido.' };
+  if (timeline && !isValidTimelineOption(timeline)) return { valid: false, fakeSuccess: false, error: 'Seleccione un plazo válido.' };
   if (message.length < 20) return { valid: false, fakeSuccess: false, error: 'El mensaje es demasiado corto.' };
   if (body.consentContact !== true) return { valid: false, fakeSuccess: false, error: 'Debe aceptar el consentimiento de contacto.' };
 
@@ -204,12 +209,9 @@ export function validateAndMapMarcosPortfolioPayload(body: MarcosPortfolioPayloa
     email,
     phone,
     company,
-    role,
-    industry: mapSectorToIndustry(sector),
     source: normalizeSource(body.source),
     solution_interest: needType,
     investment_range: budgetRange,
-    timeline: mapTimelineToCanonical(timeline),
     main_bottleneck: message,
     page_origin: sanitize(body.page_origin, 300),
     utm_source: sanitize(body.utm_source, 100),
@@ -219,6 +221,12 @@ export function validateAndMapMarcosPortfolioPayload(body: MarcosPortfolioPayloa
     utm_term: sanitize(body.utm_term, 200),
     acquisition_channels: sanitizeReferrerHost(sanitize(body.referrer, 300)),
   };
+
+  // Each V2 field is only written when actually provided — never inventing
+  // a value for an older payload that doesn't have it.
+  if (role) lead.role = role;
+  if (sector) lead.industry = mapSectorToIndustry(sector);
+  if (timeline) lead.timeline = mapTimelineToCanonical(timeline);
 
   return { valid: true, fakeSuccess: false, lead };
 }
