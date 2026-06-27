@@ -81,22 +81,35 @@ export const V2_COLUMNS: (keyof LumaLeadV2)[] = [
   'status',
 ];
 
-export async function appendLumaLeadV2(
-  lead: Omit<LumaLeadV2, 'schema_version' | 'created_at' | 'status'>
-) {
-  const spreadsheetId = process.env.LUMA_LEADS_SPREADSHEET_ID;
-  const sheetName     = process.env.LUMA_LEADS_SHEET_V2_NAME || 'Luma Leads V2';
+// Fields every V2 lead source must supply, regardless of which form/endpoint
+// captured it. Everything else is genuinely optional — diagnostic-only
+// fields (industry, role, team_size, ...) simply land as '' for sources that
+// don't collect them (see V2_COLUMNS.map(... ?? '') below), instead of
+// forcing callers to invent placeholder values.
+export type LumaLeadV2Input =
+  Pick<LumaLeadV2, 'locale' | 'country' | 'full_name' | 'email' | 'phone' | 'source'> &
+  Partial<Omit<LumaLeadV2, 'schema_version' | 'created_at' | 'status' | 'locale' | 'country' | 'full_name' | 'email' | 'phone' | 'source'>>;
 
-  if (!spreadsheetId) throw new GcpConfigError(['LUMA_LEADS_SPREADSHEET_ID']);
-
-  const full: LumaLeadV2 = {
+export function buildLumaLeadV2Row(lead: LumaLeadV2Input): string[] {
+  // Not annotated as `LumaLeadV2`: most of its fields stay optional here
+  // (that's the whole point of LumaLeadV2Input), so the `?? ''` below is
+  // what actually guarantees every column lands as a string in the row.
+  const full = {
     schema_version: '2',
     created_at: new Date().toISOString(),
     status: 'nuevo',
     ...lead,
   };
+  return V2_COLUMNS.map((col) => full[col] ?? '');
+}
 
-  const row = V2_COLUMNS.map((col) => full[col] ?? '');
+export async function appendLumaLeadV2(lead: LumaLeadV2Input) {
+  const spreadsheetId = process.env.LUMA_LEADS_SPREADSHEET_ID;
+  const sheetName     = process.env.LUMA_LEADS_SHEET_V2_NAME || 'Luma Leads V2';
+
+  if (!spreadsheetId) throw new GcpConfigError(['LUMA_LEADS_SPREADSHEET_ID']);
+
+  const row = buildLumaLeadV2Row(lead);
 
   const sheets = await getSheetsClient();
   const response = await sheets.spreadsheets.values.append({
