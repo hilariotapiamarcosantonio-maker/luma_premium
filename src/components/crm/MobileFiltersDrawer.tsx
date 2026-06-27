@@ -271,6 +271,21 @@ export default function MobileFiltersDrawer({ activeFilters, campaigns }: Mobile
             </select>
           </div>
 
+          {/* Next action due */}
+          <div>
+            <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Próxima acción</label>
+            <select
+              name="next_action_due"
+              defaultValue={activeFilters.next_action_due || ''}
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-3 text-base text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium min-h-[44px]"
+            >
+              <option value="">Todas</option>
+              <option value="overdue">Vencidas</option>
+              <option value="today">Para hoy</option>
+              <option value="future">Futuras</option>
+            </select>
+          </div>
+
           {/* Action Buttons inside Drawer */}
           <div className="pt-4 flex flex-col gap-3">
             <button

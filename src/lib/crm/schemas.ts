@@ -7,6 +7,9 @@ const SPANISH_STATUS_MAP: Record<string, string> = {
   calificado: 'qualified',
   'reunión programada': 'meeting_scheduled',
   'reunion programada': 'meeting_scheduled',
+  'diagnóstico realizado': 'diagnosis_completed',
+  'diagnostico realizado': 'diagnosis_completed',
+  'demo realizada': 'demo_completed',
   'propuesta enviada': 'proposal_sent',
   negociación: 'negotiation',
   negociacion: 'negotiation',
@@ -14,6 +17,8 @@ const SPANISH_STATUS_MAP: Record<string, string> = {
   perdido: 'lost',
   'en seguimiento': 'nurture',
 };
+
+export const NextActionDueEnum = z.enum(['today', 'overdue', 'future']);
 
 const LOCALE_ALIASES: Record<string, 'es' | 'en'> = {
   en: 'en',
@@ -56,6 +61,7 @@ export const LeadFiltersSchema = z.object({
   channel: z.string().optional(),
   date_from: z.string().optional(), // ISO string date
   date_to: z.string().optional(),   // ISO string date
+  next_action_due: NextActionDueEnum.optional(),
   page: z.coerce.number().int().positive().default(1),
   page_size: z.coerce.number().int().positive().max(100).default(25),
 });

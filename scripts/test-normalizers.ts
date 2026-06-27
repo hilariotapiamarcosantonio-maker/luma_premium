@@ -100,6 +100,20 @@ assert(normalizeIndustry('saas') === 'Tecnología, software y SaaS', 'saas indus
 assert(normalizeIndustry('random') === 'Otros', 'unmatched industry maps to Otros');
 assert(normalizeIndustry('') === 'Otros', 'empty industry maps to Otros');
 
+// 3b. Fase 6A, Paso 5 — new Beauty synonyms (additive; existing Beauty terms keep working)
+assert(normalizeIndustry('cosmetología') === 'Belleza, spa y estética', 'cosmetología normalizes to Belleza, spa y estética');
+assert(normalizeIndustry('cosmetologia') === 'Belleza, spa y estética', 'cosmetologia (no accent) normalizes to Belleza, spa y estética');
+assert(normalizeIndustry('centro de masajes') === 'Belleza, spa y estética', 'centro de masajes normalizes to Belleza, spa y estética');
+assert(normalizeIndustry('masajes') === 'Belleza, spa y estética', 'masajes normalizes to Belleza, spa y estética');
+assert(normalizeIndustry('clínica estética') === 'Belleza, spa y estética', 'clínica estética (already supported) still normalizes to Belleza, spa y estética');
+assert(normalizeIndustry('clinica estetica') === 'Belleza, spa y estética', 'clinica estetica (no accents, already supported) still normalizes to Belleza, spa y estética');
+// Regression: the separate Cosmética category must not be affected by the new Beauty synonyms
+assert(normalizeIndustry('cosmetics') === 'Cosmética y cuidado personal', 'cosmetics (no regression) still normalizes to Cosmética y cuidado personal');
+assert(normalizeIndustry('cosmética') === 'Cosmética y cuidado personal', 'cosmética (no regression) still normalizes to Cosmética y cuidado personal');
+// Regression: Real Estate and Academia industries are unaffected by the Beauty changes
+assert(normalizeIndustry('real estate') === 'Inmobiliarias y construcción', 'real estate (no regression) still normalizes correctly');
+assert(normalizeIndustry('academia') === 'Educación, academias y cursos', 'academia (no regression) still normalizes correctly');
+
 // 4. Countries
 assert(normalizeCountryCode('DO') === 'DO', 'Country code DO');
 assert(normalizeCountryCode('Dominicana') === 'DO', 'Country name Dominicana');
@@ -122,6 +136,39 @@ assert(attr4.platform === 'linkedin' && attr4.channel === 'unknown', 'linkedin e
 
 const attr5 = normalizeAttribution({ page_origin: '/diagnostico' });
 assert(attr5.platform === 'web' && attr5.channel === 'direct', 'page origin direct attribution');
+
+// 5b. Fase 6A, Paso 5 — new attribution synonyms (additive)
+const attrDirect1 = normalizeAttribution({ source: 'Contacto directo' });
+assert(attrDirect1.channel === 'direct', '"Contacto directo" source normalizes to channel direct');
+
+const attrDirect2 = normalizeAttribution({ acquisition_channels: 'contacto directo' });
+assert(attrDirect2.channel === 'direct', '"contacto directo" acquisition_channels normalizes to channel direct');
+
+const attrNetworking1 = normalizeAttribution({ source: 'Networking' });
+assert(attrNetworking1.channel === 'partner', '"Networking" source normalizes to channel partner');
+
+const attrNetworking2 = normalizeAttribution({ source: 'Alianza comercial' });
+assert(attrNetworking2.channel === 'partner', '"Alianza comercial" source normalizes to channel partner');
+
+const attrNetworking3 = normalizeAttribution({ source: 'socio' });
+assert(attrNetworking3.channel === 'partner', '"socio" source normalizes to channel partner');
+
+const attrNetworking4 = normalizeAttribution({ acquisition_channels: 'alianza' });
+assert(attrNetworking4.channel === 'partner', '"alianza" acquisition_channels normalizes to channel partner');
+
+const attrNetworking5 = normalizeAttribution({ acquisition_channels: 'partner' });
+assert(attrNetworking5.channel === 'partner', '"partner" acquisition_channels normalizes to channel partner');
+
+// Regression: referido / boca a boca keep their current classification
+const attrReferral1 = normalizeAttribution({ acquisition_channels: 'referido' });
+assert(attrReferral1.platform === 'referral' && attrReferral1.channel === 'referral', '"referido" (no regression) keeps its current referral classification');
+
+const attrReferral2 = normalizeAttribution({ acquisition_channels: 'boca a boca' });
+assert(attrReferral2.platform === 'referral' && attrReferral2.channel === 'referral', '"boca a boca" (no regression) keeps its current referral classification');
+
+// Explicit UTM keeps priority over source/acquisition_channels even when they mention networking/partner
+const attrUtmPriority = normalizeAttribution({ utm_source: 'google', utm_medium: 'cpc', source: 'networking', acquisition_channels: 'partner' });
+assert(attrUtmPriority.platform === 'google' && attrUtmPriority.channel === 'paid_search', 'Explicit UTM keeps priority over source/acquisition_channels mentioning networking/partner');
 
 // 6. Functional Filters (using simulated mock dataset and logic identical to the repository)
 const testLeads = [

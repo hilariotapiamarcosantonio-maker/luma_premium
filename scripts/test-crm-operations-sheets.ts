@@ -9,8 +9,11 @@ import {
 import { getCrmOperationsRepository } from '../src/lib/crm/operations-repository-factory';
 import { randomUUID } from 'crypto';
 import { executeUpdateLeadOperation } from '../src/lib/crm/update-lead-operation-service';
+import { executeCreateNote } from '../src/lib/crm/create-note-service';
 import { getCrmRepository } from '../src/lib/crm/repository';
 import { MockOperationsRepository } from '../src/lib/crm/mock-operations-repository';
+import { CRM_STATUS_CONFIGS } from '../src/lib/crm/crm-status-display';
+import { deriveLostReasonSelection, resolveLostReasonValue, STANDARD_LOST_REASONS, LOST_REASON_OTHER } from '../src/lib/crm/lost-reason-options';
 
 function assert(condition: boolean, message: string) {
   if (!condition) {
@@ -675,13 +678,23 @@ async function runTests() {
       assert(freshLead !== null && freshLead.status === 'nuevo', 'Original Leads sheet remains completely immutable');
     }
 
-    // O. Static Check: Verify that src/app/actions/crm.ts only exports updateLeadOperationAction
+    // O. Static Check: Verify that src/app/actions/crm.ts only exports the expected Server Actions.
+    // Uses source-text analysis rather than a dynamic import: this module transitively pulls in
+    // next-auth -> next/navigation, which some tsx/Next.js version combinations cannot load under
+    // --conditions=react-server outside of an actual Next.js server runtime (reproduced identically
+    // on an unmodified checkout — unrelated to this module's own contents). The Server Action's
+    // actual behavior is already covered above via direct calls to executeUpdateLeadOperation /
+    // executeCreateNote, the same pattern this file already uses elsewhere.
     {
-      const crmActions = await import('../src/app/actions/crm');
-      const exportsList = Object.keys(crmActions);
+      const fs = await import('fs');
+      const path = await import('path');
+      const actionsSource = fs.readFileSync(path.join(__dirname, '../src/app/actions/crm.ts'), 'utf8');
+      const exportedFunctionNames = Array.from(actionsSource.matchAll(/export\s+async\s+function\s+(\w+)/g)).map((m) => m[1]);
       assert(
-        exportsList.length === 1 && exportsList[0] === 'updateLeadOperationAction',
-        'src/app/actions/crm.ts exports exactly updateLeadOperationAction'
+        exportedFunctionNames.length === 2 &&
+          exportedFunctionNames.includes('updateLeadOperationAction') &&
+          exportedFunctionNames.includes('createNoteAction'),
+        `src/app/actions/crm.ts exports exactly updateLeadOperationAction and createNoteAction (found: ${JSON.stringify(exportedFunctionNames)})`
       );
     }
 
@@ -974,12 +987,14 @@ async function runTests() {
 
     const testAdminUser = { email: 'admin@example.com' };
 
-    // 1. El esquema de la página acepta los nueve estados
+    // 1. El esquema de la página acepta los once estados (incluye diagnosis_completed/demo_completed)
     const validStatuses: CrmStatus[] = [
       'new',
       'contacted',
       'qualified',
       'meeting_scheduled',
+      'diagnosis_completed',
+      'demo_completed',
       'proposal_sent',
       'negotiation',
       'won',
@@ -1262,8 +1277,11 @@ async function runTests() {
     console.log('✅ CrmReadService & Combined Read Layer tests completed successfully!\n');
 
     // 13. Pruebas de LeadOperationEditor Helpers (splitIsoDateTime y joinDateTimeToIso)
+    // Imported from the dependency-free date-time-helpers module (not from the 'use client'
+    // LeadOperationEditor component itself) so this offline test never needs to load
+    // next-auth/next/navigation through the component's import graph.
     console.log('Running LeadOperationEditor date helper tests...');
-    const { splitIsoDateTime, joinDateTimeToIso } = await import('../src/components/crm/LeadOperationEditor');
+    const { splitIsoDateTime, joinDateTimeToIso } = await import('../src/lib/crm/date-time-helpers');
 
     // ambos vacíos -> null
     assert(joinDateTimeToIso('', '') === null, 'joinDateTimeToIso("", "") should return null');
@@ -1624,7 +1642,413 @@ async function runTests() {
       }
 
       console.log('✅ Locale preprocessor and LeadFiltersSchema tests passed successfully!');
+
+      // 3. next_action_due filter ('overdue' | 'today' | 'future') — Fase 6A, Paso 4
+      {
+        console.log('\nRunning next_action_due filter tests (CrmReadService)...');
+
+        const makeLead = (id: string): LeadDetail => ({
+          id,
+          schema_version: '2',
+          created_at: new Date().toISOString(),
+          locale: 'es',
+          country: 'DO',
+          full_name: `Lead ${id}`,
+          email: `${id}@example.com`,
+          phone: '8095551234',
+          company: 'Luma',
+          role: '',
+          industry: 'Belleza, spa y estética',
+          industry_detail: '',
+          team_size: '',
+          lead_volume: '',
+          acquisition_channels: '',
+          advertising_status: '',
+          current_tools: '',
+          main_bottleneck: '',
+          desired_outcome: '',
+          solution_interest: '',
+          timeline: '',
+          investment_range: '',
+          source: 'web',
+          page_origin: '',
+          utm_source: '',
+          utm_medium: '',
+          utm_campaign: '',
+          utm_content: '',
+          utm_term: '',
+          status: 'nuevo',
+          platform: 'web',
+          channel: 'direct',
+          raw_investment_range: '',
+          raw_industry: '',
+          raw_country: '',
+          raw_source: '',
+          raw_utm_source: '',
+          raw_utm_medium: '',
+          raw_utm_campaign: '',
+          raw_page_origin: '',
+        });
+
+        const makeOp = (leadId: string, crm_status: CrmStatus, next_action_at: string | null, owner_email: string | null = null): CrmLeadOperation => ({
+          lead_id: leadId,
+          crm_status,
+          priority: 'medium',
+          owner_email,
+          next_action_type: next_action_at ? 'Llamada' : null,
+          next_action_at,
+          last_contact_at: null,
+          lost_reason: null,
+          version: 1,
+          write_token: 'tok',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          updated_by: 'admin@example.com',
+        });
+
+        const now = new Date();
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+        const todayNoon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0).toISOString();
+        const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+        const nadLeadIds = ['lp_nad_overdue', 'lp_nad_today', 'lp_nad_future', 'lp_nad_overduewon'];
+        const nadLeads: LeadDetail[] = nadLeadIds.map(makeLead);
+        const nadOps: CrmLeadOperation[] = [
+          makeOp('lp_nad_overdue', 'contacted', yesterday),
+          makeOp('lp_nad_today', 'contacted', todayNoon),
+          makeOp('lp_nad_future', 'contacted', nextWeek),
+          makeOp('lp_nad_overduewon', 'won', yesterday), // past-due but already won — must NOT count as overdue
+        ];
+
+        const nadRepo = new FakeCrmRepository(nadLeads);
+        const nadOpsRepo = new FakeCrmOperationsRepository(nadOps);
+        const nadSvc = new CrmReadService(nadRepo, nadOpsRepo);
+
+        const overdueRes = await nadSvc.listLeads(CrmLeadReadFiltersSchema.parse({ next_action_due: 'overdue' }), testAdminUser);
+        assert(
+          overdueRes.leads.length === 1 && overdueRes.leads[0]?.id === 'lp_nad_overdue',
+          `next_action_due=overdue returns only the past-due, still-open lead (got ${overdueRes.leads.map((l) => l.id).join(',')})`
+        );
+        assert(
+          !overdueRes.leads.some((l) => l.id === 'lp_nad_overduewon'),
+          'A won lead with a past next_action_at is excluded from "overdue" (the deal is already closed)'
+        );
+
+        const todayRes = await nadSvc.listLeads(CrmLeadReadFiltersSchema.parse({ next_action_due: 'today' }), testAdminUser);
+        assert(
+          todayRes.leads.length === 1 && todayRes.leads[0]?.id === 'lp_nad_today',
+          `next_action_due=today returns only the lead due today (got ${todayRes.leads.map((l) => l.id).join(',')})`
+        );
+
+        const futureRes = await nadSvc.listLeads(CrmLeadReadFiltersSchema.parse({ next_action_due: 'future' }), testAdminUser);
+        assert(
+          futureRes.leads.length === 1 && futureRes.leads[0]?.id === 'lp_nad_future',
+          `next_action_due=future returns only the lead due later (got ${futureRes.leads.map((l) => l.id).join(',')})`
+        );
+
+        // Combines correctly with another already-existing filter (industry), without breaking either.
+        const combinedRes = await nadSvc.listLeads(
+          CrmLeadReadFiltersSchema.parse({ next_action_due: 'overdue', industry: 'Belleza, spa y estética' }),
+          testAdminUser
+        );
+        assert(
+          combinedRes.leads.length === 1 && combinedRes.leads[0]?.id === 'lp_nad_overdue',
+          'next_action_due combines correctly with the industry filter (Beauty leads only)'
+        );
+
+        // Sales still only sees their own leads even with this filter applied.
+        const nadOpsOwned: CrmLeadOperation[] = nadOps.map((op) => ({
+          ...op,
+          owner_email: op.lead_id === 'lp_nad_overdue' ? 'sales1@example.com' : 'sales2@example.com',
+        }));
+        const nadOpsRepoOwned = new FakeCrmOperationsRepository(nadOpsOwned);
+        const nadSvcOwned = new CrmReadService(nadRepo, nadOpsRepoOwned);
+        const salesRes = await nadSvcOwned.listLeads(CrmLeadReadFiltersSchema.parse({ next_action_due: 'overdue' }), { email: 'sales1@example.com' });
+        assert(
+          salesRes.leads.length === 1 && salesRes.leads[0]?.id === 'lp_nad_overdue',
+          'Sales sees only their own overdue lead, never another agent\'s overdue lead, even with this filter applied'
+        );
+
+        console.log('✅ next_action_due filter tests passed successfully!');
+      }
     }
+  }
+
+  // 15. executeCreateNote tests — Fase 6A, Paso 1 / Paso 7 NOTAS (1-9)
+  {
+    console.log('\nRunning executeCreateNote tests...');
+
+    const originalMode = process.env.CRM_OPERATIONS_MODE;
+    const originalDataMode = process.env.CRM_DATA_MODE;
+    const originalAdmins = process.env.CRM_ADMIN_EMAILS;
+    const originalSales = process.env.CRM_SALES_EMAILS;
+
+    process.env.CRM_OPERATIONS_MODE = 'mock';
+    process.env.CRM_DATA_MODE = 'mock';
+    process.env.CRM_ADMIN_EMAILS = 'admin@example.com';
+    process.env.CRM_SALES_EMAILS = 'sales1@example.com,sales2@example.com';
+
+    MockOperationsRepository.reset();
+    const { MockManualLeadsRepository } = await import('../src/lib/crm/manual-leads-repository');
+    MockManualLeadsRepository.reset();
+
+    const noteCrmRepo = await getCrmRepository();
+    const notePaginated = await noteCrmRepo.listLeads({});
+    const leadA = notePaginated.leads[0];
+    const leadB = notePaginated.leads[1];
+
+    const noteOpsRepo = await getCrmOperationsRepository();
+    await noteOpsRepo.upsertOperation({ lead_id: leadA.id, owner_email: 'sales1@example.com', expected_version: 0 }, 'admin@example.com');
+    await noteOpsRepo.upsertOperation({ lead_id: leadB.id, owner_email: 'sales2@example.com', expected_version: 0 }, 'admin@example.com');
+
+    // 1. Admin can add a note to any visible lead
+    {
+      const res = await executeCreateNote({ lead_id: leadB.id, body: 'Nota de admin sobre lead asignado a sales2.' }, { user: { email: 'admin@example.com' } });
+      assert(res.success === true && res.note?.body === 'Nota de admin sobre lead asignado a sales2.', 'Admin can add a note to any visible lead');
+    }
+
+    // 2. Sales can add a note only to a lead assigned to them
+    {
+      const res = await executeCreateNote({ lead_id: leadA.id, body: 'Seguimiento de sales1 con su propio lead.' }, { user: { email: 'sales1@example.com' } });
+      assert(res.success === true, 'Sales can add a note to their own assigned lead');
+    }
+
+    // 3. Sales cannot add a note to a foreign lead -> LEAD_NOT_FOUND, never UNAUTHORIZED
+    {
+      const res = await executeCreateNote({ lead_id: leadB.id, body: 'Intento de sales1 sobre lead de sales2.' }, { user: { email: 'sales1@example.com' } });
+      assert(
+        res.success === false && res.error === 'LEAD_NOT_FOUND',
+        'Sales accessing a foreign lead gets LEAD_NOT_FOUND (a foreign lead must keep responding as not-found, not as Forbidden/Unauthorized)'
+      );
+    }
+
+    // 4. Works with both lp_ and lm_ prefixed IDs
+    {
+      const manualLeadId = 'lm_' + '0'.repeat(24);
+      MockManualLeadsRepository.mockLeads.push({
+        lead_id: manualLeadId,
+        full_name: 'Lead Manual de Prueba',
+        phone: '8095551234',
+        email: 'manual-note-test@example.com',
+        company: 'Luma',
+        country: 'DO',
+        language: 'es',
+        industry: 'Belleza, spa y estética',
+        investment_range: 'US$1,500–3,000',
+        capture_channel: 'whatsapp',
+        campaign: '',
+        source: 'manual',
+        capture_status: 'nuevo',
+        consent_to_contact: true,
+        created_at: new Date().toISOString(),
+        created_by: 'admin@example.com',
+        updated_at: null,
+      });
+      const res = await executeCreateNote({ lead_id: manualLeadId, body: 'Nota sobre lead manual (lm_).' }, { user: { email: 'admin@example.com' } });
+      assert(res.success === true, 'Notes work for manually-created lm_ leads, not just lp_ leads');
+    }
+
+    // 5. Rejects an empty note
+    {
+      const res = await executeCreateNote({ lead_id: leadA.id, body: '' }, { user: { email: 'admin@example.com' } });
+      assert(res.success === false && res.error === 'VALIDATION_ERROR', 'Rejects an empty note body');
+    }
+
+    // 6. Rejects a note longer than 2000 characters
+    {
+      const tooLong = 'a'.repeat(2001);
+      const res = await executeCreateNote({ lead_id: leadA.id, body: tooLong }, { user: { email: 'admin@example.com' } });
+      assert(res.success === false && res.error === 'VALIDATION_ERROR', 'Rejects a note body longer than 2000 characters');
+    }
+
+    // 7. Preserves author and creation date
+    {
+      const beforeMs = Date.now();
+      const res = await executeCreateNote({ lead_id: leadA.id, body: 'Nota con autor y fecha verificables.' }, { user: { email: 'sales1@example.com' } });
+      assert(res.success === true, 'Note created successfully for author/date check');
+      assert(res.note?.created_by === 'sales1@example.com', 'Note preserves the creating author email');
+      assert(!!res.note && new Date(res.note.created_at).getTime() >= beforeMs, 'Note preserves a valid creation date at/after the moment of creation');
+    }
+
+    // 8. Logs the expected ActivityLog event (add_note), exactly once
+    {
+      const logsBefore = await noteOpsRepo.listActivity(leadA.id);
+      const res = await executeCreateNote({ lead_id: leadA.id, body: 'Nota para verificar ActivityLog.' }, { user: { email: 'sales1@example.com' } });
+      assert(res.success === true, 'Note created for ActivityLog check');
+      const logsAfter = await noteOpsRepo.listActivity(leadA.id);
+      assert(logsAfter.length === logsBefore.length + 1, 'Exactly one new ActivityLog entry is recorded for the note');
+      assert(logsAfter[0].action_type === 'add_note', 'The new ActivityLog entry has action_type add_note');
+    }
+
+    // 9. Never logs the full note body or PII — only a truncated, non-identifying preview
+    {
+      const secretBody = 'Resumen confidencial de la llamada con datos sensibles del cliente que jamas deberia aparecer completo en ningun log del sistema.';
+      const res = await executeCreateNote({ lead_id: leadA.id, body: secretBody }, { user: { email: 'sales1@example.com' } });
+      assert(res.success === true, 'Note created for no-PII-in-logs check');
+
+      const logs = await noteOpsRepo.listActivity(leadA.id);
+      const matchingLog = logs.find((l) => l.action_type === 'add_note' && !!l.new_value && secretBody.startsWith(l.new_value));
+      assert(!!matchingLog, 'Found the matching add_note ActivityLog entry');
+      assert((matchingLog?.new_value?.length ?? 0) <= 50, 'ActivityLog only stores a truncated (<=50 char) preview, never the full note body');
+
+      const fs = await import('fs');
+      const path = await import('path');
+      const serviceSource = fs.readFileSync(path.join(__dirname, '../src/lib/crm/create-note-service.ts'), 'utf8');
+      assert(
+        !/console\.(log|info|warn|error)\([^;]*\b(input\.body|note\.body|rawInput)\b/.test(serviceSource),
+        'create-note-service.ts source contains no console logging of the raw note body or input'
+      );
+    }
+
+    // Edge cases: unauthenticated, not-in-allowlist, and a truly non-existent lead
+    {
+      const res1 = await executeCreateNote({ lead_id: leadA.id, body: 'x' }, null);
+      assert(res1.success === false && res1.error === 'UNAUTHENTICATED', 'Rejected when session is null');
+
+      const res2 = await executeCreateNote({ lead_id: leadA.id, body: 'x' }, { user: { email: 'stranger@example.com' } });
+      assert(res2.success === false && res2.error === 'UNAUTHORIZED', 'Rejected when user email is not in the allowlist');
+
+      const res3 = await executeCreateNote({ lead_id: 'lp_' + 'f'.repeat(24), body: 'x' }, { user: { email: 'admin@example.com' } });
+      assert(res3.success === false && res3.error === 'LEAD_NOT_FOUND', 'Rejected when the lead truly does not exist');
+    }
+
+    process.env.CRM_OPERATIONS_MODE = originalMode;
+    process.env.CRM_DATA_MODE = originalDataMode;
+    process.env.CRM_ADMIN_EMAILS = originalAdmins;
+    process.env.CRM_SALES_EMAILS = originalSales;
+
+    console.log('✅ executeCreateNote tests passed successfully!');
+  }
+
+  // 16. New CRM states (diagnosis_completed / demo_completed) tests — Fase 6A, Paso 2 / Paso 7 ESTADOS (10-14)
+  {
+    console.log('\nRunning new CRM status (diagnosis_completed / demo_completed) tests...');
+
+    const originalMode = process.env.CRM_OPERATIONS_MODE;
+    const originalDataMode = process.env.CRM_DATA_MODE;
+    const originalAdmins = process.env.CRM_ADMIN_EMAILS;
+    const originalSales = process.env.CRM_SALES_EMAILS;
+
+    process.env.CRM_OPERATIONS_MODE = 'mock';
+    process.env.CRM_DATA_MODE = 'mock';
+    process.env.CRM_ADMIN_EMAILS = 'admin@example.com';
+    process.env.CRM_SALES_EMAILS = 'sales1@example.com,sales2@example.com';
+
+    MockOperationsRepository.reset();
+    const stateCrmRepo = await getCrmRepository();
+    const statePaginated = await stateCrmRepo.listLeads({});
+    const stateLead = statePaginated.leads[0];
+    const adminSession = { user: { email: 'admin@example.com', role: 'admin' } };
+
+    // 10 & 11. Both new states are accepted and correctly stored/read back
+    {
+      const res1 = await executeUpdateLeadOperation({ lead_id: stateLead.id, crm_status: 'diagnosis_completed', expected_version: 0 }, adminSession);
+      assert(res1.success === true && res1.operation?.crm_status === 'diagnosis_completed', 'diagnosis_completed is accepted and stored correctly');
+
+      const opsRepo = await getCrmOperationsRepository();
+      const stored1 = await opsRepo.getOperationByLeadId(stateLead.id);
+      assert(stored1?.crm_status === 'diagnosis_completed', 'diagnosis_completed is read back correctly from the repository');
+
+      const res2 = await executeUpdateLeadOperation({ lead_id: stateLead.id, crm_status: 'demo_completed', expected_version: res1.operation?.version }, adminSession);
+      assert(res2.success === true && res2.operation?.crm_status === 'demo_completed', 'demo_completed is accepted and stored correctly');
+
+      const stored2 = await opsRepo.getOperationByLeadId(stateLead.id);
+      assert(stored2?.crm_status === 'demo_completed', 'demo_completed is read back correctly from the repository');
+    }
+
+    // 12. Both new states appear in the canonical labels config used by filters/cards
+    {
+      assert(CRM_STATUS_CONFIGS.diagnosis_completed?.label === 'Diagnóstico Realizado', 'diagnosis_completed has the expected Spanish label');
+      assert(CRM_STATUS_CONFIGS.demo_completed?.label === 'Demo Realizada', 'demo_completed has the expected Spanish label');
+    }
+
+    // 13. Previously existing states keep working (no regression)
+    {
+      const res = await executeUpdateLeadOperation({ lead_id: stateLead.id, crm_status: 'qualified', expected_version: 2 }, adminSession);
+      assert(res.success === true && res.operation?.crm_status === 'qualified', 'Pre-existing status "qualified" still works after adding the two new states');
+    }
+
+    // 14. The capture status of Luma Leads V2 is never touched by these new operational states
+    {
+      const freshLead = await stateCrmRepo.getLeadById(stateLead.id);
+      assert(freshLead !== null && freshLead.status === 'nuevo', 'Original Luma Leads V2 capture status remains untouched by the new operational states');
+    }
+
+    process.env.CRM_OPERATIONS_MODE = originalMode;
+    process.env.CRM_DATA_MODE = originalDataMode;
+    process.env.CRM_ADMIN_EMAILS = originalAdmins;
+    process.env.CRM_SALES_EMAILS = originalSales;
+
+    console.log('✅ New CRM status tests passed successfully!');
+  }
+
+  // 17. Standardized lost reason tests — Fase 6A, Paso 3 / Paso 7 MOTIVOS DE PÉRDIDA (15-18)
+  {
+    console.log('\nRunning standardized lost reason tests...');
+
+    const originalMode = process.env.CRM_OPERATIONS_MODE;
+    const originalDataMode = process.env.CRM_DATA_MODE;
+    const originalAdmins = process.env.CRM_ADMIN_EMAILS;
+    const originalSales = process.env.CRM_SALES_EMAILS;
+
+    process.env.CRM_OPERATIONS_MODE = 'mock';
+    process.env.CRM_DATA_MODE = 'mock';
+    process.env.CRM_ADMIN_EMAILS = 'admin@example.com';
+    process.env.CRM_SALES_EMAILS = 'sales1@example.com,sales2@example.com';
+
+    MockOperationsRepository.reset();
+    const lostCrmRepo = await getCrmRepository();
+    const lostPaginated = await lostCrmRepo.listLeads({});
+    const lostLead = lostPaginated.leads[0];
+    const adminSession = { user: { email: 'admin@example.com', role: 'admin' } };
+
+    // 15. Lost status requires a reason (backend stays free text — schema unchanged)
+    {
+      const res = await executeUpdateLeadOperation({ lead_id: lostLead.id, crm_status: 'lost', expected_version: 0 }, adminSession);
+      assert(res.success === false && res.error === 'VALIDATION_ERROR', 'crm_status=lost without lost_reason is rejected');
+    }
+
+    // 16. A standard reason saves correctly
+    let lostVersionAfterStandardReason = 0;
+    {
+      const res = await executeUpdateLeadOperation(
+        { lead_id: lostLead.id, crm_status: 'lost', lost_reason: 'Sin presupuesto', expected_version: 0 },
+        adminSession
+      );
+      assert(res.success === true && res.operation?.lost_reason === 'Sin presupuesto', 'A standard lost reason ("Sin presupuesto") saves correctly');
+      lostVersionAfterStandardReason = res.operation?.version ?? 0;
+    }
+
+    // 17. "Otro" accepts free custom text — the underlying column stays free text, so the backend
+    // simply accepts whatever string the UI resolves for "Otro" (resolveLostReasonValue).
+    {
+      const customText = resolveLostReasonValue(LOST_REASON_OTHER, 'El cliente fue adquirido por un competidor.');
+      const res = await executeUpdateLeadOperation(
+        { lead_id: lostLead.id, crm_status: 'lost', lost_reason: customText, expected_version: lostVersionAfterStandardReason },
+        adminSession
+      );
+      assert(res.success === true && res.operation?.lost_reason === 'El cliente fue adquirido por un competidor.', '"Otro" custom free text saves correctly');
+    }
+
+    // 18. Historical free-text values (written before this phase) keep displaying correctly
+    {
+      const historical = 'Cliente decidió posponer el proyecto indefinidamente por reestructuración interna';
+      const derived = deriveLostReasonSelection(historical);
+      assert(derived.selection === LOST_REASON_OTHER, 'A historical free-text value not matching any standard reason maps to "Otro"');
+      assert(derived.customText === historical, 'The original historical text is preserved verbatim, never discarded');
+
+      for (const standard of STANDARD_LOST_REASONS) {
+        const derivedStandard = deriveLostReasonSelection(standard);
+        assert(derivedStandard.selection === standard && derivedStandard.customText === '', `Standard reason "${standard}" round-trips through deriveLostReasonSelection unchanged`);
+      }
+    }
+
+    process.env.CRM_OPERATIONS_MODE = originalMode;
+    process.env.CRM_DATA_MODE = originalDataMode;
+    process.env.CRM_ADMIN_EMAILS = originalAdmins;
+    process.env.CRM_SALES_EMAILS = originalSales;
+
+    console.log('✅ Standardized lost reason tests passed successfully!');
   }
 
   console.log('🎉 All Google Sheets Operations Repository offline tests passed successfully!');

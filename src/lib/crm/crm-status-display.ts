@@ -27,6 +27,16 @@ export const CRM_STATUS_CONFIGS: Record<CrmStatus, StatusConfig> = {
     label: 'Reunión Programada',
     badgeClass: 'bg-emerald-950/40 text-emerald-400 border-emerald-900/40',
   },
+  diagnosis_completed: {
+    value: 'diagnosis_completed',
+    label: 'Diagnóstico Realizado',
+    badgeClass: 'bg-teal-950/40 text-teal-400 border-teal-900/40',
+  },
+  demo_completed: {
+    value: 'demo_completed',
+    label: 'Demo Realizada',
+    badgeClass: 'bg-violet-950/40 text-violet-400 border-violet-900/40',
+  },
   proposal_sent: {
     value: 'proposal_sent',
     label: 'Propuesta Enviada',

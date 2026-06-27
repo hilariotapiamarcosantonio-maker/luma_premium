@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { updateLeadOperationAction } from '@/app/actions/crm';
 import type { LeadOperationClientDto } from '@/lib/crm/operations-dto';
 import type { UserRole } from '@/lib/auth/authorized-users';
+import { LOST_REASON_OPTIONS, LOST_REASON_OTHER, deriveLostReasonSelection, resolveLostReasonValue } from '@/lib/crm/lost-reason-options';
+import { splitIsoDateTime, joinDateTimeToIso } from '@/lib/crm/date-time-helpers';
 import { AlertTriangle, CheckCircle, Loader2, Lock, Shield } from 'lucide-react';
+
+export { splitIsoDateTime, joinDateTimeToIso };
 
 interface LeadOperationEditorProps {
   leadId: string;
@@ -15,70 +19,14 @@ interface LeadOperationEditorProps {
   canEdit: boolean;
 }
 
-// Helper to split ISO string to local date (YYYY-MM-DD) and time (HH:mm) parts
-export function splitIsoDateTime(isoString: string | null | undefined): { date: string; time: string } {
-  if (!isoString) return { date: '', time: '' };
-  try {
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return { date: '', time: '' };
-    const pad = (num: number) => String(num).padStart(2, '0');
-    // Must use browser local timezone methods
-    const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const timePart = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    return { date: datePart, time: timePart };
-  } catch {
-    return { date: '', time: '' };
-  }
-}
-
-// Helper to join date and time parts to an ISO string
-export function joinDateTimeToIso(date: string | null | undefined, time: string | null | undefined): string | null {
-  const dTrim = (date || '').trim();
-  const tTrim = (time || '').trim();
-
-  if (dTrim === '' && tTrim === '') {
-    return null;
-  }
-
-  if (dTrim === '' || tTrim === '') {
-    return 'INVALID_DATE';
-  }
-
-  try {
-    const parts = dTrim.split('-');
-    if (parts.length !== 3) {
-      return 'INVALID_DATE';
-    }
-    const y = Number(parts[0]);
-    const m = Number(parts[1]);
-    const day = Number(parts[2]);
-
-    const timeParts = tTrim.split(':');
-    if (timeParts.length < 2) {
-      return 'INVALID_DATE';
-    }
-    const h = Number(timeParts[0]);
-    const min = Number(timeParts[1]);
-
-    const d = new Date(y, m - 1, day, h, min, 0, 0);
-    if (isNaN(d.getTime())) {
-      return 'INVALID_DATE';
-    }
-    if (d.getFullYear() !== y || (d.getMonth() + 1) !== m || d.getDate() !== day || d.getHours() !== h || d.getMinutes() !== min) {
-      return 'INVALID_DATE';
-    }
-    return d.toISOString();
-  } catch {
-    return 'INVALID_DATE';
-  }
-}
-
 
 const CRM_STATUSES = [
   { value: 'new', label: 'Nuevo' },
   { value: 'contacted', label: 'Contactado' },
   { value: 'qualified', label: 'Calificado' },
   { value: 'meeting_scheduled', label: 'Reunión Programada' },
+  { value: 'diagnosis_completed', label: 'Diagnóstico Realizado' },
+  { value: 'demo_completed', label: 'Demo Realizada' },
   { value: 'proposal_sent', label: 'Propuesta Enviada' },
   { value: 'negotiation', label: 'Negociación' },
   { value: 'won', label: 'Ganado (Won)' },
@@ -118,7 +66,9 @@ export default function LeadOperationEditor({
   const [lastContactDate, setLastContactDate] = useState<string>(initialLastContact.date);
   const [lastContactTime, setLastContactTime] = useState<string>(initialLastContact.time);
 
-  const [lostReason, setLostReason] = useState<string>(currentOperation?.lost_reason ?? '');
+  const initialLostReason = deriveLostReasonSelection(currentOperation?.lost_reason);
+  const [lostReasonSelection, setLostReasonSelection] = useState<string>(initialLostReason.selection);
+  const [lostReasonCustomText, setLostReasonCustomText] = useState<string>(initialLostReason.customText);
 
   // UI Flow States
   const [isSaving, setIsSaving] = useState(false);
@@ -310,7 +260,8 @@ export default function LeadOperationEditor({
     }
 
     // Client-side validation for lost_reason
-    if (crmStatus === 'lost' && (!lostReason || lostReason.trim().length === 0)) {
+    const effectiveLostReason = resolveLostReasonValue(lostReasonSelection, lostReasonCustomText);
+    if (crmStatus === 'lost' && !effectiveLostReason) {
       setLocalValidationError('El motivo de pérdida es obligatorio.');
       setIsSaving(false);
       return;
@@ -332,7 +283,7 @@ export default function LeadOperationEditor({
       };
 
       if (crmStatus === 'lost') {
-        payload.lost_reason = lostReason.trim() || null;
+        payload.lost_reason = effectiveLostReason || null;
       } else {
         payload.lost_reason = null;
       }
@@ -362,7 +313,9 @@ export default function LeadOperationEditor({
         setLastContactDate(lastContactSplit.date);
         setLastContactTime(lastContactSplit.time);
 
-        setLostReason(op.lost_reason ?? '');
+        const lostReasonSplit = deriveLostReasonSelection(op.lost_reason);
+        setLostReasonSelection(lostReasonSplit.selection);
+        setLostReasonCustomText(lostReasonSplit.customText);
 
         setSuccessMessage('Operación guardada con éxito.');
         setTimeout(() => setSuccessMessage(null), 3000);
@@ -586,18 +539,39 @@ export default function LeadOperationEditor({
 
         {/* Lost Reason (Conditional) */}
         {crmStatus === 'lost' && (
-          <div className="pt-2 animate-fadeIn">
-            <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
-              Motivo de Pérdida <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={lostReason}
-              onChange={(e) => setLostReason(e.target.value)}
-              disabled={!canEdit}
-              rows={3}
-              placeholder="Especifica detalladamente el motivo de pérdida..."
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 placeholder-neutral-600 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
-            />
+          <div className="pt-2 animate-fadeIn space-y-3">
+            <div>
+              <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+                Motivo de Pérdida <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={lostReasonSelection}
+                onChange={(e) => setLostReasonSelection(e.target.value)}
+                disabled={!canEdit}
+                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+              >
+                <option value="" disabled>
+                  Selecciona un motivo
+                </option>
+                {LOST_REASON_OPTIONS.map((reason) => (
+                  <option key={reason} value={reason}>
+                    {reason}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {lostReasonSelection === LOST_REASON_OTHER && (
+              <textarea
+                value={lostReasonCustomText}
+                onChange={(e) => setLostReasonCustomText(e.target.value)}
+                disabled={!canEdit}
+                rows={3}
+                placeholder="Especifica detalladamente el motivo de pérdida..."
+                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 placeholder-neutral-600 focus:border-amber-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-900/60 disabled:text-neutral-500"
+              />
+            )}
+
             {(localValidationError || fieldErrors.lost_reason) && (
               <p className="mt-1 text-xs text-red-400 flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" />
