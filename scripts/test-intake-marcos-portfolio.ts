@@ -9,6 +9,14 @@ import {
   validateAndMapMarcosPortfolioPayload,
   resolveMarcosPortfolioSubmission,
   ALLOWED_COUNTRY_CODES,
+  ALLOWED_SECTORS,
+  ALLOWED_ROLES,
+  ALLOWED_TIMELINE_OPTIONS,
+  isValidSector,
+  isValidRole,
+  isValidTimelineOption,
+  mapSectorToIndustry,
+  mapTimelineToCanonical,
   type MarcosPortfolioPayload,
 } from '../src/lib/marcos-portfolio-intake';
 import { createSubmissionClaimStore, type SubmissionClaimStore } from '../src/lib/luma-leads-validation';
@@ -32,8 +40,11 @@ function validPayload(overrides: Partial<MarcosPortfolioPayload> = {}): MarcosPo
     email: 'Ana@Example.com',
     phone: '+1 809 555 1234',
     country: 'do',
+    sector: 'Inmobiliaria y construcción',
+    role: 'Propietario o fundador',
     needType: 'CRM y seguimiento comercial',
     budgetRange: 'US$3,000 - US$5,000',
+    timeline: 'Dentro de 1 a 3 meses',
     message: 'Necesito ordenar mi captación y seguimiento comercial este trimestre.',
     consentContact: true,
     honeypot: '',
@@ -118,27 +129,156 @@ async function runTests() {
       assert(lead.acquisition_channels === 'referrer:www.google.com', 'Mapping: referrer minimized into acquisition_channels');
       assert(lead.locale === 'es', 'Mapping: locale defaults to es (structural, not fabricated diagnostic data)');
 
+      // 2. Sector se escribe en industria — vía el normalizador de taxonomía YA existente, no uno nuevo.
+      assert(lead.industry === 'Inmobiliarias y construcción', 'Mapping: sector → industry via the existing normalizeIndustry() taxonomy, not a new one');
+      // 3. Función se escribe en cargo (role) — passthrough exacto del valor admitido.
+      assert(lead.role === 'Propietario o fundador', 'Mapping: role ← sector (función), exact allowlisted value, no transformation needed');
+      // 4. Plazo se escribe en timeline — canonicalizado contra el vocabulario ya usado por /diagnostico.
+      assert(lead.timeline === '1-3 meses', 'Mapping: timeline ← plazo, canonicalized to the same vocabulary already used by the /diagnostico form');
+
       const row = buildLumaLeadV2Row(lead);
       assert(row.length === 29, 'Row built from a portfolio lead still has exactly 29 columns');
-      const notApplicable: (keyof LumaLeadV2Input)[] = ['role', 'industry', 'industry_detail', 'team_size', 'lead_volume', 'advertising_status', 'current_tools', 'desired_outcome', 'timeline'];
+
+      // 5. Los demás campos (sin equivalente en el portafolio) permanecen intactos / vacíos, nunca inventados.
+      const notApplicable: (keyof LumaLeadV2Input)[] = ['industry_detail', 'team_size', 'lead_volume', 'advertising_status', 'current_tools', 'desired_outcome'];
       for (const field of notApplicable) {
         const index = GoogleSheetsV2Columns.indexOf(field);
         assert(row[index] === '', `Row field "${field}" (not collected by the portfolio) stays empty, not fabricated`);
       }
+      assert(row[GoogleSheetsV2Columns.indexOf('role')] === 'Propietario o fundador', 'Row field "role" is correctly populated, not empty');
+      assert(row[GoogleSheetsV2Columns.indexOf('industry')] === 'Inmobiliarias y construcción', 'Row field "industry" is correctly populated, not empty');
+      assert(row[GoogleSheetsV2Columns.indexOf('timeline')] === '1-3 meses', 'Row field "timeline" is correctly populated, not empty');
     }
   }
+
+  // ── 1. Sector / role / timeline validated via allowlists (PASO 1, the new fields) ──
+
+  assert(isValidSector('Inmobiliaria y construcción') === true, 'isValidSector accepts an offered option');
+  assert(isValidSector('Sector inventado') === false, 'isValidSector rejects a value outside the allowlist');
+  assert(isValidSector('') === false, 'isValidSector rejects empty');
+  for (const sector of ALLOWED_SECTORS) {
+    assert(isValidSector(sector) === true, `isValidSector accepts every allowed sector ("${sector}")`);
+  }
+
+  assert(isValidRole('Propietario o fundador') === true, 'isValidRole accepts an offered option');
+  assert(isValidRole('Función inventada') === false, 'isValidRole rejects a value outside the allowlist');
+  assert(isValidRole('') === false, 'isValidRole rejects empty');
+  for (const role of ALLOWED_ROLES) {
+    assert(isValidRole(role) === true, `isValidRole accepts every allowed role ("${role}")`);
+  }
+
+  assert(isValidTimelineOption('Dentro de 1 a 3 meses') === true, 'isValidTimelineOption accepts an offered option');
+  assert(isValidTimelineOption('Plazo inventado') === false, 'isValidTimelineOption rejects a value outside the allowlist');
+  assert(isValidTimelineOption('') === false, 'isValidTimelineOption rejects empty');
+  for (const timeline of ALLOWED_TIMELINE_OPTIONS) {
+    assert(isValidTimelineOption(timeline) === true, `isValidTimelineOption accepts every allowed timeline option ("${timeline}")`);
+    assert(mapTimelineToCanonical(timeline) !== '', `mapTimelineToCanonical resolves every allowed option to a non-empty canonical value ("${timeline}")`);
+  }
+
+  // Every sector option offered by the portfolio's <select> maps to a real, known taxonomy category — never "Otros" by accident.
+  assert(mapSectorToIndustry('Inmobiliaria y construcción') === 'Inmobiliarias y construcción', 'mapSectorToIndustry: real estate sector maps correctly');
+  assert(mapSectorToIndustry('Academia y educación') === 'Educación, academias y cursos', 'mapSectorToIndustry: education sector maps correctly');
+  assert(mapSectorToIndustry('Estética, belleza y bienestar') === 'Belleza, spa y estética', 'mapSectorToIndustry: beauty sector maps correctly');
+  assert(mapSectorToIndustry('Comercio y tienda') === 'Comercio y e-commerce', 'mapSectorToIndustry: retail sector maps correctly');
+  assert(mapSectorToIndustry('Servicios profesionales') === 'Servicios profesionales y B2B', 'mapSectorToIndustry: professional services sector maps correctly');
+  assert(mapSectorToIndustry('Otro') === 'Otros', 'mapSectorToIndustry: "Otro" falls back to the existing "Otros" category, not a fabricated one');
+
+  // Reuse the exact same canonical timeline vocabulary already written by the /diagnostico form.
+  assert(mapTimelineToCanonical('Lo antes posible / próximos 30 días') === 'Inmediato (este mes)', 'mapTimelineToCanonical: immediate plazo matches the diagnostico vocabulary');
+  assert(mapTimelineToCanonical('Dentro de 3 a 6 meses') === '3-6 meses', 'mapTimelineToCanonical: 3-6 month plazo matches the diagnostico vocabulary');
+  assert(mapTimelineToCanonical('Estoy evaluando posibilidades') === 'Todavía evaluando', 'mapTimelineToCanonical: evaluating plazo matches the diagnostico vocabulary');
 
   // ── Field-level rejections (mirrors existing diagnostico validation rules) ──
 
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ email: 'not-an-email' })).valid === false, 'Invalid email rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ phone: '123' })).valid === false, 'Invalid (too short) phone rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ country: 'República Dominicana' })).valid === false, 'Free-text country rejected (must be ISO-2)');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ sector: 'Sector inventado' })).valid === false, 'Sector PRESENT but disallowed is rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ role: 'Función inventada' })).valid === false, 'Role PRESENT but disallowed is rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ timeline: 'Plazo inventado' })).valid === false, 'Timeline PRESENT but disallowed is rejected at the full-payload level');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ consentContact: false })).valid === false, 'Missing consent rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ message: 'short' })).valid === false, 'Too-short message rejected');
 
   {
     const honeypotResult = validateAndMapMarcosPortfolioPayload(validPayload({ honeypot: 'i-am-a-bot' }));
     assert(honeypotResult.valid === false && honeypotResult.fakeSuccess === true, 'Honeypot filled: flagged as fake-success, no validation error message');
+  }
+
+  // ── GATE 1: V1/V2 rollout backward compatibility ────────────────────────────
+  // The pre-Fase-5 portfolio payload never sent sector/role/timeline at all.
+  // A stale cached frontend bundle could still submit that exact shape while
+  // this intake is already live — it must keep working, not start failing
+  // with 400 just because three new, optional fields are absent.
+
+  {
+    // Simulates the OLD payload shape literally — the keys don't exist at
+    // all, not just empty strings — exactly as an old client would send it.
+    const v1Payload: MarcosPortfolioPayload = {
+      name: 'Luis Fernández',
+      company: 'Fernández Servicios',
+      email: 'luis@example.com',
+      phone: '+1 809 555 9000',
+      country: 'DO',
+      needType: 'CRM y seguimiento comercial',
+      budgetRange: 'US$3,000 - US$5,000',
+      message: 'Necesito ordenar el seguimiento de mis clientes actuales.',
+      consentContact: true,
+      honeypot: '',
+      source: 'marcos_portfolio',
+      utm_source: '',
+      utm_medium: '',
+      utm_campaign: '',
+      utm_content: '',
+      utm_term: '',
+      page_origin: 'https://marcoshilario.com/#audit',
+      referrer: '',
+      // sector / role / timeline intentionally omitted — old contract.
+    };
+
+    const result = validateAndMapMarcosPortfolioPayload(v1Payload);
+    assert(result.valid === true, 'GATE 1: a V1 payload (no sector/role/timeline at all) is still accepted, not rejected with 400');
+    if (result.valid) {
+      const row = buildLumaLeadV2Row(result.lead);
+      assert(row[GoogleSheetsV2Columns.indexOf('role')] === '', 'GATE 1: V1 payload leaves the role column empty, not fabricated');
+      assert(row[GoogleSheetsV2Columns.indexOf('industry')] === '', 'GATE 1: V1 payload leaves the industry column empty, not fabricated');
+      assert(row[GoogleSheetsV2Columns.indexOf('timeline')] === '', 'GATE 1: V1 payload leaves the timeline column empty, not fabricated');
+      // Everything else about the V1 contract still works exactly as before.
+      assert(result.lead.full_name === 'Luis Fernández', 'GATE 1: V1 payload still maps full_name correctly');
+      assert(result.lead.solution_interest === 'CRM y seguimiento comercial', 'GATE 1: V1 payload still maps needType → solution_interest');
+    }
+  }
+
+  {
+    // A V2 payload with all three new fields present is still validated and mapped correctly (unchanged from before this fix).
+    const result = validateAndMapMarcosPortfolioPayload(validPayload());
+    assert(result.valid === true, 'GATE 1: a full V2 payload (sector/role/timeline present) is still accepted');
+    if (result.valid) {
+      assert(result.lead.role === 'Propietario o fundador', 'GATE 1: V2 payload still maps role correctly');
+      assert(result.lead.industry === 'Inmobiliarias y construcción', 'GATE 1: V2 payload still maps sector → industry correctly');
+      assert(result.lead.timeline === '1-3 meses', 'GATE 1: V2 payload still maps timeline correctly');
+    }
+  }
+
+  {
+    // Each of the three new fields, when present but invalid, is still rejected with a safe 400-style error — never silently accepted, never crashing.
+    assert(validateAndMapMarcosPortfolioPayload(validPayload({ sector: 'Sector inventado' })).valid === false, 'GATE 1: invalid sector (present) is rejected');
+    assert(validateAndMapMarcosPortfolioPayload(validPayload({ role: 'Función inventada' })).valid === false, 'GATE 1: invalid role (present) is rejected');
+    assert(validateAndMapMarcosPortfolioPayload(validPayload({ timeline: 'Plazo inventado' })).valid === false, 'GATE 1: invalid timeline (present) is rejected');
+  }
+
+  {
+    // Mixed: some V2 fields present and valid, others absent — each is handled independently.
+    const mixedPayload = validPayload();
+    delete (mixedPayload as Record<string, unknown>).role;
+    delete (mixedPayload as Record<string, unknown>).timeline;
+    const result = validateAndMapMarcosPortfolioPayload(mixedPayload);
+    assert(result.valid === true, 'GATE 1: a mixed payload (sector present, role/timeline absent) is accepted');
+    if (result.valid) {
+      assert(result.lead.industry === 'Inmobiliarias y construcción', 'GATE 1: mixed payload still maps the present sector');
+      const row = buildLumaLeadV2Row(result.lead);
+      assert(row[GoogleSheetsV2Columns.indexOf('role')] === '', 'GATE 1: mixed payload leaves role empty (absent), not fabricated');
+      assert(row[GoogleSheetsV2Columns.indexOf('timeline')] === '', 'GATE 1: mixed payload leaves timeline empty (absent), not fabricated');
+    }
   }
 
   // ── Behavioral (not grep-based): claim guard + duplicate + persistence-error resolution ──

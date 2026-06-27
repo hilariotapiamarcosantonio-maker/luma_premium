@@ -7,6 +7,7 @@ import {
   type SubmissionClaimStore,
 } from './luma-leads-validation';
 import type { LumaLeadV2Input } from './google-sheets';
+import { normalizeIndustry } from './crm/normalizers';
 
 // ── Shared secret verification ──────────────────────────────────────────────
 // Hashes both sides to a fixed-length sha256 digest before comparing so
@@ -55,6 +56,67 @@ export function isValidCountryCode(country: string): boolean {
   return /^[A-Z]{2}$/.test(country) && ALLOWED_COUNTRY_CODE_SET.has(country);
 }
 
+// ── Sector / role / timeline ─────────────────────────────────────────────────
+// Mirrors the exact closed option sets offered by the portfolio's form (see
+// src/content/site.ts in marcos-portfolio-premium: sectors/roles/timelines).
+// The claimed sector/role/timeline is never trusted as free text — only one
+// of these known options is accepted; anything else is rejected outright, no
+// silent fallback, exactly like the country-code check above.
+
+export const ALLOWED_SECTORS: readonly string[] = [
+  'Inmobiliaria y construcción',
+  'Academia y educación',
+  'Estética, belleza y bienestar',
+  'Comercio y tienda',
+  'Servicios profesionales',
+  'Otro',
+];
+
+export const ALLOWED_ROLES: readonly string[] = [
+  'Propietario o fundador',
+  'Director o gerente',
+  'Ventas o marketing',
+  'Operaciones',
+  'Consultor o aliado',
+  'Otro',
+];
+
+// Maps the portfolio's plazo labels to the exact canonical strings already
+// used by the /diagnostico form's own `timeline` options, so the CRM's
+// timeline column doesn't end up with two parallel, differently-worded
+// vocabularies for the same concept.
+const TIMELINE_CANONICAL_MAP: Readonly<Record<string, string>> = {
+  'Lo antes posible / próximos 30 días': 'Inmediato (este mes)',
+  'Dentro de 1 a 3 meses': '1-3 meses',
+  'Dentro de 3 a 6 meses': '3-6 meses',
+  'Estoy evaluando posibilidades': 'Todavía evaluando',
+};
+
+export const ALLOWED_TIMELINE_OPTIONS: readonly string[] = Object.keys(TIMELINE_CANONICAL_MAP);
+
+export function isValidSector(sector: string): boolean {
+  return ALLOWED_SECTORS.includes(sector);
+}
+
+export function isValidRole(role: string): boolean {
+  return ALLOWED_ROLES.includes(role);
+}
+
+export function isValidTimelineOption(timeline: string): boolean {
+  return Object.prototype.hasOwnProperty.call(TIMELINE_CANONICAL_MAP, timeline);
+}
+
+// Reuses the CRM's existing industry taxonomy normalizer instead of
+// inventing a second one — every option offered by the portfolio's sector
+// <select> already matches one of normalizeIndustry()'s known synonyms.
+export function mapSectorToIndustry(sector: string): string {
+  return normalizeIndustry(sector);
+}
+
+export function mapTimelineToCanonical(timeline: string): string {
+  return TIMELINE_CANONICAL_MAP[timeline] ?? '';
+}
+
 // ── Referrer minimization ────────────────────────────────────────────────────
 // Only the hostname is kept — never the full URL (path/query may carry
 // unrelated, unnecessary detail). page_origin (the capture page itself,
@@ -83,8 +145,11 @@ export interface MarcosPortfolioPayload {
   email?: unknown;
   phone?: unknown;
   country?: unknown;
+  sector?: unknown;
+  role?: unknown;
   needType?: unknown;
   budgetRange?: unknown;
+  timeline?: unknown;
   message?: unknown;
   consentContact?: unknown;
   honeypot?: unknown;
@@ -112,8 +177,11 @@ export function validateAndMapMarcosPortfolioPayload(body: MarcosPortfolioPayloa
   const email = sanitize(body.email, 200).toLowerCase();
   const phone = sanitize(body.phone, 30);
   const country = normalizeCountryCode(sanitize(body.country, 5));
+  const sector = sanitize(body.sector, 100);
+  const role = sanitize(body.role, 100);
   const needType = sanitize(body.needType, 100);
   const budgetRange = sanitize(body.budgetRange, 100);
+  const timeline = sanitize(body.timeline, 100);
   const message = sanitize(body.message, 2000);
   const company = sanitize(body.company, 150);
 
@@ -121,8 +189,16 @@ export function validateAndMapMarcosPortfolioPayload(body: MarcosPortfolioPayloa
   if (!isValidEmail(email)) return { valid: false, fakeSuccess: false, error: 'Ingrese un correo válido.' };
   if (!isValidPhone(phone)) return { valid: false, fakeSuccess: false, error: 'Ingrese un teléfono válido.' };
   if (!isValidCountryCode(country)) return { valid: false, fakeSuccess: false, error: 'Ingrese un país válido.' };
+  // sector/role/timeline are optional for backward compatibility with the
+  // pre-Fase-5 portfolio payload (which never sent them) — e.g. a stale
+  // cached frontend bundle still in flight during a rollout. Each is only
+  // validated (against its allowlist) when actually present; absence is not
+  // a 400, it just leaves the corresponding column empty below.
+  if (sector && !isValidSector(sector)) return { valid: false, fakeSuccess: false, error: 'Seleccione un sector válido.' };
+  if (role && !isValidRole(role)) return { valid: false, fakeSuccess: false, error: 'Seleccione una función válida.' };
   if (!needType) return { valid: false, fakeSuccess: false, error: 'Seleccione el tipo de necesidad.' };
   if (!budgetRange) return { valid: false, fakeSuccess: false, error: 'Seleccione el rango de inversión.' };
+  if (timeline && !isValidTimelineOption(timeline)) return { valid: false, fakeSuccess: false, error: 'Seleccione un plazo válido.' };
   if (message.length < 20) return { valid: false, fakeSuccess: false, error: 'El mensaje es demasiado corto.' };
   if (body.consentContact !== true) return { valid: false, fakeSuccess: false, error: 'Debe aceptar el consentimiento de contacto.' };
 
@@ -145,6 +221,12 @@ export function validateAndMapMarcosPortfolioPayload(body: MarcosPortfolioPayloa
     utm_term: sanitize(body.utm_term, 200),
     acquisition_channels: sanitizeReferrerHost(sanitize(body.referrer, 300)),
   };
+
+  // Each V2 field is only written when actually provided — never inventing
+  // a value for an older payload that doesn't have it.
+  if (role) lead.role = role;
+  if (sector) lead.industry = mapSectorToIndustry(sector);
+  if (timeline) lead.timeline = mapTimelineToCanonical(timeline);
 
   return { valid: true, fakeSuccess: false, lead };
 }
