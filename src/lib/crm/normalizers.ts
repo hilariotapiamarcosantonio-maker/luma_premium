@@ -353,6 +353,9 @@ export function normalizeAttribution(fields: AttributionFields): { platform: Lea
     if (source.includes('diagnostico') || source.includes('assessment') || source.includes('web') || source.includes('website')) {
       return { platform: 'web', channel: 'direct' };
     }
+    if (/^marcos[-_]portfolio([-_]premium)?$/.test(source)) {
+      return { platform: 'web', channel: 'direct' };
+    }
   }
 
   // 3. Evaluate page_origin
