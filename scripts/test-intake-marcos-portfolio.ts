@@ -9,6 +9,14 @@ import {
   validateAndMapMarcosPortfolioPayload,
   resolveMarcosPortfolioSubmission,
   ALLOWED_COUNTRY_CODES,
+  ALLOWED_SECTORS,
+  ALLOWED_ROLES,
+  ALLOWED_TIMELINE_OPTIONS,
+  isValidSector,
+  isValidRole,
+  isValidTimelineOption,
+  mapSectorToIndustry,
+  mapTimelineToCanonical,
   type MarcosPortfolioPayload,
 } from '../src/lib/marcos-portfolio-intake';
 import { createSubmissionClaimStore, type SubmissionClaimStore } from '../src/lib/luma-leads-validation';
@@ -32,8 +40,11 @@ function validPayload(overrides: Partial<MarcosPortfolioPayload> = {}): MarcosPo
     email: 'Ana@Example.com',
     phone: '+1 809 555 1234',
     country: 'do',
+    sector: 'Inmobiliaria y construcción',
+    role: 'Propietario o fundador',
     needType: 'CRM y seguimiento comercial',
     budgetRange: 'US$3,000 - US$5,000',
+    timeline: 'Dentro de 1 a 3 meses',
     message: 'Necesito ordenar mi captación y seguimiento comercial este trimestre.',
     consentContact: true,
     honeypot: '',
@@ -118,21 +129,76 @@ async function runTests() {
       assert(lead.acquisition_channels === 'referrer:www.google.com', 'Mapping: referrer minimized into acquisition_channels');
       assert(lead.locale === 'es', 'Mapping: locale defaults to es (structural, not fabricated diagnostic data)');
 
+      // 2. Sector se escribe en industria — vía el normalizador de taxonomía YA existente, no uno nuevo.
+      assert(lead.industry === 'Inmobiliarias y construcción', 'Mapping: sector → industry via the existing normalizeIndustry() taxonomy, not a new one');
+      // 3. Función se escribe en cargo (role) — passthrough exacto del valor admitido.
+      assert(lead.role === 'Propietario o fundador', 'Mapping: role ← sector (función), exact allowlisted value, no transformation needed');
+      // 4. Plazo se escribe en timeline — canonicalizado contra el vocabulario ya usado por /diagnostico.
+      assert(lead.timeline === '1-3 meses', 'Mapping: timeline ← plazo, canonicalized to the same vocabulary already used by the /diagnostico form');
+
       const row = buildLumaLeadV2Row(lead);
       assert(row.length === 29, 'Row built from a portfolio lead still has exactly 29 columns');
-      const notApplicable: (keyof LumaLeadV2Input)[] = ['role', 'industry', 'industry_detail', 'team_size', 'lead_volume', 'advertising_status', 'current_tools', 'desired_outcome', 'timeline'];
+
+      // 5. Los demás campos (sin equivalente en el portafolio) permanecen intactos / vacíos, nunca inventados.
+      const notApplicable: (keyof LumaLeadV2Input)[] = ['industry_detail', 'team_size', 'lead_volume', 'advertising_status', 'current_tools', 'desired_outcome'];
       for (const field of notApplicable) {
         const index = GoogleSheetsV2Columns.indexOf(field);
         assert(row[index] === '', `Row field "${field}" (not collected by the portfolio) stays empty, not fabricated`);
       }
+      assert(row[GoogleSheetsV2Columns.indexOf('role')] === 'Propietario o fundador', 'Row field "role" is correctly populated, not empty');
+      assert(row[GoogleSheetsV2Columns.indexOf('industry')] === 'Inmobiliarias y construcción', 'Row field "industry" is correctly populated, not empty');
+      assert(row[GoogleSheetsV2Columns.indexOf('timeline')] === '1-3 meses', 'Row field "timeline" is correctly populated, not empty');
     }
   }
+
+  // ── 1. Sector / role / timeline validated via allowlists (PASO 1, the new fields) ──
+
+  assert(isValidSector('Inmobiliaria y construcción') === true, 'isValidSector accepts an offered option');
+  assert(isValidSector('Sector inventado') === false, 'isValidSector rejects a value outside the allowlist');
+  assert(isValidSector('') === false, 'isValidSector rejects empty');
+  for (const sector of ALLOWED_SECTORS) {
+    assert(isValidSector(sector) === true, `isValidSector accepts every allowed sector ("${sector}")`);
+  }
+
+  assert(isValidRole('Propietario o fundador') === true, 'isValidRole accepts an offered option');
+  assert(isValidRole('Función inventada') === false, 'isValidRole rejects a value outside the allowlist');
+  assert(isValidRole('') === false, 'isValidRole rejects empty');
+  for (const role of ALLOWED_ROLES) {
+    assert(isValidRole(role) === true, `isValidRole accepts every allowed role ("${role}")`);
+  }
+
+  assert(isValidTimelineOption('Dentro de 1 a 3 meses') === true, 'isValidTimelineOption accepts an offered option');
+  assert(isValidTimelineOption('Plazo inventado') === false, 'isValidTimelineOption rejects a value outside the allowlist');
+  assert(isValidTimelineOption('') === false, 'isValidTimelineOption rejects empty');
+  for (const timeline of ALLOWED_TIMELINE_OPTIONS) {
+    assert(isValidTimelineOption(timeline) === true, `isValidTimelineOption accepts every allowed timeline option ("${timeline}")`);
+    assert(mapTimelineToCanonical(timeline) !== '', `mapTimelineToCanonical resolves every allowed option to a non-empty canonical value ("${timeline}")`);
+  }
+
+  // Every sector option offered by the portfolio's <select> maps to a real, known taxonomy category — never "Otros" by accident.
+  assert(mapSectorToIndustry('Inmobiliaria y construcción') === 'Inmobiliarias y construcción', 'mapSectorToIndustry: real estate sector maps correctly');
+  assert(mapSectorToIndustry('Academia y educación') === 'Educación, academias y cursos', 'mapSectorToIndustry: education sector maps correctly');
+  assert(mapSectorToIndustry('Estética, belleza y bienestar') === 'Belleza, spa y estética', 'mapSectorToIndustry: beauty sector maps correctly');
+  assert(mapSectorToIndustry('Comercio y tienda') === 'Comercio y e-commerce', 'mapSectorToIndustry: retail sector maps correctly');
+  assert(mapSectorToIndustry('Servicios profesionales') === 'Servicios profesionales y B2B', 'mapSectorToIndustry: professional services sector maps correctly');
+  assert(mapSectorToIndustry('Otro') === 'Otros', 'mapSectorToIndustry: "Otro" falls back to the existing "Otros" category, not a fabricated one');
+
+  // Reuse the exact same canonical timeline vocabulary already written by the /diagnostico form.
+  assert(mapTimelineToCanonical('Lo antes posible / próximos 30 días') === 'Inmediato (este mes)', 'mapTimelineToCanonical: immediate plazo matches the diagnostico vocabulary');
+  assert(mapTimelineToCanonical('Dentro de 3 a 6 meses') === '3-6 meses', 'mapTimelineToCanonical: 3-6 month plazo matches the diagnostico vocabulary');
+  assert(mapTimelineToCanonical('Estoy evaluando posibilidades') === 'Todavía evaluando', 'mapTimelineToCanonical: evaluating plazo matches the diagnostico vocabulary');
 
   // ── Field-level rejections (mirrors existing diagnostico validation rules) ──
 
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ email: 'not-an-email' })).valid === false, 'Invalid email rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ phone: '123' })).valid === false, 'Invalid (too short) phone rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ country: 'República Dominicana' })).valid === false, 'Free-text country rejected (must be ISO-2)');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ sector: 'Sector inventado' })).valid === false, 'Disallowed sector rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ sector: '' })).valid === false, 'Missing sector rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ role: 'Función inventada' })).valid === false, 'Disallowed role rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ role: '' })).valid === false, 'Missing role rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ timeline: 'Plazo inventado' })).valid === false, 'Disallowed timeline rejected at the full-payload level');
+  assert(validateAndMapMarcosPortfolioPayload(validPayload({ timeline: '' })).valid === false, 'Missing timeline rejected at the full-payload level');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ consentContact: false })).valid === false, 'Missing consent rejected');
   assert(validateAndMapMarcosPortfolioPayload(validPayload({ message: 'short' })).valid === false, 'Too-short message rejected');
 
