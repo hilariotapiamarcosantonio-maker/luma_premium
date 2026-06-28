@@ -372,10 +372,16 @@ async function runTests() {
     assert(notes[0].body === 'Nota número dos', 'Notes sorted newest first');
     assert(notes[1].body === 'Nota número uno', 'Notes sorted oldest last');
 
-    // 7.2 Verify Activity Log sorting
+    // 7.2 Verify Activity Log sorting (ActivityLog never carries note text — Gate 1 — so
+    // ordering is verified via metadata.note_id, not body content).
     const logs = await repo.listActivity(leadId);
     assert(logs.length === 2, 'Lists both activities');
-    assert(logs[0].action_type === 'add_note' && logs[0].new_value === 'Nota número dos', 'Activity sorted newest first');
+    assert(
+      logs[0].action_type === 'add_note' &&
+        logs[0].new_value === 'Nota agregada' &&
+        logs[0].metadata === JSON.stringify({ note_id: note2.id }),
+      'Activity sorted newest first'
+    );
   }
 
   // 8. Owner Normalization
@@ -1880,24 +1886,53 @@ async function runTests() {
       assert(logsAfter[0].action_type === 'add_note', 'The new ActivityLog entry has action_type add_note');
     }
 
-    // 9. Never logs the full note body or PII — only a truncated, non-identifying preview
+    // 9. Never logs the note body or any fragment/preview of it in ActivityLog or server logs —
+    // Gate 1 (Fase 6A security gate): ActivityLog may only carry safe metadata (action_type,
+    // lead id, author, date, a fixed descriptive string), never any user-authored text.
     {
-      const secretBody = 'Resumen confidencial de la llamada con datos sensibles del cliente que jamas deberia aparecer completo en ningun log del sistema.';
+      const secretBody = 'Cliente: Juan Perez, tel 809-555-1234, correo juan.perez@example.com, precio acordado US$4,800. Objecion: dijo que el presupuesto lo decide su socio. Nunca debe aparecer ni un fragmento de esto fuera de LeadNotes.';
       const res = await executeCreateNote({ lead_id: leadA.id, body: secretBody }, { user: { email: 'sales1@example.com' } });
-      assert(res.success === true, 'Note created for no-PII-in-logs check');
+      assert(res.success === true, 'Note created for the Gate 1 privacy check');
 
+      // (a) The full body is present, verbatim, in LeadNotes.
+      const notes = await noteOpsRepo.listNotes(leadA.id);
+      assert(notes.some((n) => n.body === secretBody), 'LeadNotes stores the full note body verbatim');
+
+      // (b) No fragment of the body appears anywhere in ActivityLog — new_value must be the
+      // fixed descriptive string, never a slice/substring of the secret body.
       const logs = await noteOpsRepo.listActivity(leadA.id);
-      const matchingLog = logs.find((l) => l.action_type === 'add_note' && !!l.new_value && secretBody.startsWith(l.new_value));
-      assert(!!matchingLog, 'Found the matching add_note ActivityLog entry');
-      assert((matchingLog?.new_value?.length ?? 0) <= 50, 'ActivityLog only stores a truncated (<=50 char) preview, never the full note body');
+      const addNoteLogs = logs.filter((l) => l.action_type === 'add_note');
+      assert(addNoteLogs.length > 0, 'At least one add_note ActivityLog entry exists');
+      for (const log of addNoteLogs) {
+        assert(log.new_value === 'Nota agregada', 'ActivityLog new_value is the fixed literal "Nota agregada", never note content');
+        assert((log.previous_value ?? '') === '' || log.previous_value === null, 'ActivityLog previous_value carries no note content');
+        const metadataStr = log.metadata ?? '';
+        for (const fragment of ['Juan Perez', '809-555-1234', 'juan.perez@example.com', '4,800', 'socio']) {
+          assert(!metadataStr.includes(fragment), `ActivityLog metadata does not leak the fragment "${fragment}"`);
+        }
+      }
 
+      // (c) Static source check: none of the three places that build an add_note ActivityLog
+      // entry derive new_value/metadata from the note body (no .slice/.substring on body).
       const fs = await import('fs');
       const path = await import('path');
-      const serviceSource = fs.readFileSync(path.join(__dirname, '../src/lib/crm/create-note-service.ts'), 'utf8');
-      assert(
-        !/console\.(log|info|warn|error)\([^;]*\b(input\.body|note\.body|rawInput)\b/.test(serviceSource),
-        'create-note-service.ts source contains no console logging of the raw note body or input'
-      );
+      const filesToCheck = [
+        '../src/lib/crm/create-note-service.ts',
+        '../src/lib/crm/google-sheets-operations-repository.ts',
+        '../src/lib/crm/mock-operations-repository.ts',
+        '../src/lib/crm/create-manual-lead-service.ts',
+      ];
+      for (const relPath of filesToCheck) {
+        const source = fs.readFileSync(path.join(__dirname, relPath), 'utf8');
+        assert(
+          !/\.body\.(slice|substring|substr)\(/.test(source),
+          `${relPath} never slices/truncates a note body into any other field`
+        );
+        assert(
+          !/console\.(log|info|warn|error)\([^;]*\b(input\.body|note\.body|noteRecord\.body|rawInput)\b/.test(source),
+          `${relPath} contains no console logging of the raw note body or input`
+        );
+      }
     }
 
     // Edge cases: unauthenticated, not-in-allowlist, and a truly non-existent lead

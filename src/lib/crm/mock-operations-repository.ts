@@ -213,7 +213,7 @@ export class MockOperationsRepository implements CrmOperationsRepository {
       lead_id: leadId,
       action_type: 'add_note',
       previous_value: null,
-      new_value: validated.body.slice(0, 50),
+      new_value: 'Nota agregada',
       metadata: JSON.stringify({ note_id: noteEntry.id }),
       created_by: validatedActor,
       created_at: now,

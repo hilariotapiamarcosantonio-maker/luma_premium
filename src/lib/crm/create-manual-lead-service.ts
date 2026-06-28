@@ -199,7 +199,7 @@ export async function executeCreateManualLead(
         lead_id: leadId,
         action_type: 'add_note',
         previous_value: null,
-        new_value: noteRecord.body.slice(0, 50),
+        new_value: 'Nota agregada',
         metadata: JSON.stringify({ note_id: noteRecord.id }),
         created_by: user.email,
         created_at: now,

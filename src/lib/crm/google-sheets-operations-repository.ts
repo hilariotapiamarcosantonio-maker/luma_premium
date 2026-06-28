@@ -526,7 +526,7 @@ export class GoogleSheetsOperationsRepository implements CrmOperationsRepository
       leadId,
       'add_note',
       '',
-      validated.body.slice(0, 50),
+      'Nota agregada',
       JSON.stringify({ note_id: noteId }),
       validatedActor,
       now

@@ -87,6 +87,8 @@ async function runTests() {
   assert(createdLogs !== undefined && createdLogs.length === 2, 'Exactly two activity logs created (create_operation & add_note)');
   assert(createdLogs?.[0]?.action_type === 'create_operation', 'First activity log is create_operation');
   assert(createdLogs?.[1]?.action_type === 'add_note', 'Second activity log is add_note');
+  // Gate 1: the initial_note's body must never leak into ActivityLog, even via this manual-lead path.
+  assert(createdLogs?.[1]?.new_value === 'Nota agregada', 'add_note activity log carries the fixed literal, never the initial_note body');
 
   // 7. Duplication checks
   // A: Duplicate by email against ManualLeads

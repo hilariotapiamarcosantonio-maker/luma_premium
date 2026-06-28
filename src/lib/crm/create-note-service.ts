@@ -96,7 +96,8 @@ export async function executeCreateNote(
     }
 
     // 6. Persist via the existing repository method — creates the LeadNotes row
-    // and the add_note ActivityLog entry (already truncates to 50 chars there).
+    // (full body) and an add_note ActivityLog entry that never carries any note
+    // content, not even a truncated preview.
     const opsRepo = await getCrmOperationsRepository();
     const note = await opsRepo.createNote({ lead_id: leadId, body: input.body }, user.email);
 
