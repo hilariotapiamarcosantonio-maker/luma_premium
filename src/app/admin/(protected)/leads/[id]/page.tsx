@@ -5,6 +5,7 @@ import { ForbiddenError } from '@/lib/auth/permissions';
 import { getSalesEmails } from '@/lib/auth/authorized-users';
 import { toLeadOperationClientDto } from '@/lib/crm/operations-dto';
 import LeadOperationEditor from '@/components/crm/LeadOperationEditor';
+import LeadNotesPanel from '@/components/crm/LeadNotesPanel';
 import { getCountryLabel, getPlatformLabel, getChannelLabel } from '@/lib/crm/normalizers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -194,43 +195,7 @@ export default async function LeadDetailPage({ params }: PageProps) {
           />
 
           {/* Card: Notas del Lead */}
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 space-y-5">
-            <div className="flex items-center gap-2 pb-4 border-b border-neutral-800">
-              <MessageSquare className="h-4 w-4 text-amber-500" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-300">
-                Notas
-              </h2>
-              {notes.length > 0 && (
-                <span className="ml-auto text-[10px] font-mono text-neutral-500 bg-neutral-950 px-2 py-0.5 rounded border border-neutral-800">
-                  {notes.length}
-                </span>
-              )}
-            </div>
-
-            {notes.length === 0 ? (
-              <p className="text-sm text-neutral-500 italic">
-                No hay notas registradas para este lead.
-              </p>
-            ) : (
-              <ul className="space-y-4">
-                {notes.map((note, index) => (
-                  <li
-                    key={index}
-                    className="rounded-lg border border-neutral-800 bg-neutral-950/40 p-4"
-                  >
-                    <p className="text-sm text-neutral-200 leading-relaxed whitespace-pre-wrap break-words">
-                      {note.body}
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500">
-                      <span className="font-medium text-neutral-400 break-all">{note.author}</span>
-                      <span aria-hidden="true">·</span>
-                      <span>{new Date(note.createdAt).toLocaleString('es-ES')}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <LeadNotesPanel leadId={leadId} initialNotes={notes} canEdit={canEdit} />
 
           {/* Card 1: Ficha Operativa (Datos Normalizados) */}
           <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-6 space-y-6">

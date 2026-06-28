@@ -40,6 +40,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
     channel: typeof rawParams.channel === 'string' ? rawParams.channel : undefined,
     date_from: typeof rawParams.date_from === 'string' ? rawParams.date_from : undefined,
     date_to: typeof rawParams.date_to === 'string' ? rawParams.date_to : undefined,
+    next_action_due: typeof rawParams.next_action_due === 'string' ? rawParams.next_action_due : undefined,
     page: typeof rawParams.page === 'string' ? rawParams.page : undefined,
     page_size: typeof rawParams.page_size === 'string' ? rawParams.page_size : undefined,
   });
@@ -227,6 +228,21 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                   {camp}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Next action due (Dropdown) */}
+          <div>
+            <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Próxima acción</label>
+            <select
+              name="next_action_due"
+              defaultValue={activeFilters.next_action_due || ''}
+              className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-amber-500 font-medium"
+            >
+              <option value="">Todas</option>
+              <option value="overdue">Vencidas</option>
+              <option value="today">Para hoy</option>
+              <option value="future">Futuras</option>
             </select>
           </div>
         </div>

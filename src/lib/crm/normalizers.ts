@@ -212,7 +212,7 @@ export function normalizeIndustry(industry: string): string {
   if (has(['ecommerce', 'e-commerce', 'e commerce', 'commerce', 'retail', 'tienda', 'comercio'])) {
     return 'Comercio y e-commerce';
   }
-  if (has(['spa', 'beauty', 'estética', 'estetica', 'salon de belleza', 'salón de belleza', 'centro de estética']) && !clean.includes('cosmética') && !clean.includes('cosmetica')) {
+  if (has(['spa', 'beauty', 'estética', 'estetica', 'salon de belleza', 'salón de belleza', 'centro de estética', 'cosmetología', 'cosmetologia', 'centro de masajes', 'masajes']) && !clean.includes('cosmética') && !clean.includes('cosmetica')) {
     return 'Belleza, spa y estética';
   }
   if (has(['cosmetics', 'cosmética', 'cosmetica', 'skincare', 'cuidado personal'])) {
@@ -356,6 +356,12 @@ export function normalizeAttribution(fields: AttributionFields): { platform: Lea
     if (/^marcos[-_]portfolio([-_]premium)?$/.test(source)) {
       return { platform: 'web', channel: 'direct' };
     }
+    if (source.includes('contacto directo') || source.includes('direct contact')) {
+      return { platform: 'other', channel: 'direct' };
+    }
+    if (source.includes('networking') || source.includes('alianza') || source === 'partner' || source === 'socio') {
+      return { platform: 'referral', channel: 'partner' };
+    }
   }
 
   // 3. Evaluate page_origin
@@ -381,6 +387,12 @@ export function normalizeAttribution(fields: AttributionFields): { platform: Lea
     }
     if (acquisition_channels.includes('whatsapp')) {
       return { platform: 'whatsapp', channel: 'direct' };
+    }
+    if (acquisition_channels.includes('contacto directo')) {
+      return { platform: 'other', channel: 'direct' };
+    }
+    if (acquisition_channels.includes('networking') || acquisition_channels.includes('alianza') || acquisition_channels.includes('socio') || acquisition_channels.includes('partner')) {
+      return { platform: 'referral', channel: 'partner' };
     }
   }
 

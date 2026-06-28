@@ -5,6 +5,8 @@ export type CrmStatus =
   | 'contacted'
   | 'qualified'
   | 'meeting_scheduled'
+  | 'diagnosis_completed'
+  | 'demo_completed'
   | 'proposal_sent'
   | 'negotiation'
   | 'won'

@@ -159,6 +159,30 @@ export class CrmReadService {
       const toTime = new Date(filters.date_to).getTime();
       mergedLeads = mergedLeads.filter((l) => new Date(l.created_at).getTime() <= toTime);
     }
+    // Same today/overdue/future window semantics already established for OperationsFilters
+    // (see google-sheets-operations-repository.ts / mock-operations-repository.ts) — reused
+    // here, not redefined, so "vencida" means the same thing everywhere in the CRM.
+    if (filters.next_action_due) {
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+      mergedLeads = mergedLeads.filter((l) => {
+        if (!l.next_action_at) return false;
+        const due = new Date(l.next_action_at);
+
+        if (filters.next_action_due === 'today') {
+          return due >= startOfToday && due <= endOfToday;
+        }
+        if (filters.next_action_due === 'overdue') {
+          return due < startOfToday && l.crm_status !== 'won' && l.crm_status !== 'lost';
+        }
+        if (filters.next_action_due === 'future') {
+          return due > endOfToday;
+        }
+        return true;
+      });
+    }
 
     mergedLeads.sort(
       (a, b) =>
@@ -265,6 +289,8 @@ export class CrmReadService {
       contacted: 0,
       qualified: 0,
       meeting_scheduled: 0,
+      diagnosis_completed: 0,
+      demo_completed: 0,
       proposal_sent: 0,
       negotiation: 0,
       won: 0,
